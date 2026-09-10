@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=29" />
+  <link rel="stylesheet" href="css/style.css?v=30" />
   <script>
     document.addEventListener('contextmenu', (e) => e.preventDefault());
     document.addEventListener('keydown', (e) => {
@@ -21,13 +21,6 @@
         return false;
       }
     });
-    setInterval(() => {
-      const s = performance.now();
-      debugger;
-      if (performance.now() - s > 100) {
-        document.body.innerHTML = '<div style="background:#0b0e14;color:#ff5252;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;font-size:20px;font-weight:bold;">⚠️ Không được phép kiểm tra mã nguồn trang web này!</div>';
-      }
-    }, 1000);
   </script>
 </head>
 <body>
@@ -777,6 +770,6 @@
   </div>
 
   <script src="data/cases.js?v=8"></script>
-  <script src="js/app.js?v=32"></script>
+  <script src="js/app.js?v=33"></script>
 </body>
 </html>
