@@ -42,7 +42,7 @@
         damageHead: 100,
         fireRate: 105, // ms (approx 600 RPM)
         price: 12500.00,
-        img: 'assets/ak47_wild_lotus.png'
+        img: 'assets/ak47_wild_lotus_exact.png'
       },
       2: {
         type: 'secondary',
@@ -95,7 +95,7 @@
       rarity: 'covert',
       rarityColor: '#eb4b4b',
       price: 12500.00,
-      img: 'assets/ak47_wild_lotus.png'
+      img: 'assets/ak47_wild_lotus_exact.png'
     },
     {
       id: 'ak-asiimov',
