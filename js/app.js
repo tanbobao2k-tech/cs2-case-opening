@@ -563,8 +563,13 @@ function playInspect(short = false) {
 }
 function tiltTo(nx, ny) {
   const wrap = $('#zoom-wrap');
-  if (wrap.classList.contains('inspecting') || zoom.scale > 1) return;
-  wrap.style.transform = `rotateY(${(nx * 18).toFixed(1)}deg) rotateX(${(-ny * 14).toFixed(1)}deg)`;
+  if (!wrap || wrap.classList.contains('inspecting') || zoom.scale > 1) return;
+  wrap.style.transform = `rotateY(${(nx * 26).toFixed(1)}deg) rotateX(${(-ny * 18).toFixed(1)}deg)`;
+  const shine = $('#zoom-shine');
+  if (shine && !shine.classList.contains('run')) {
+    shine.style.opacity = '0.35';
+    shine.style.backgroundPosition = `${((nx + 1) * 50).toFixed(0)}% 0`;
+  }
 }
 
 // ---------- CS2 3D Inspect Studio (Three.js WebGL Engine) ----------
@@ -585,109 +590,7 @@ const viewer3D = (function () {
   let inspectSeq = { active: false, start: 0, duration: 2000, initialRot: null, isKnife: false };
   let canvasWrap, canvasEl;
 
-  // Marching Squares & RDP for contour extraction
-  function extractContour(canvas, step = 2, threshold = 25) {
-    const ctx = canvas.getContext('2d');
-    const w = canvas.width, h = canvas.height;
-    let imgData;
-    try {
-      imgData = ctx.getImageData(0, 0, w, h).data;
-    } catch {
-      return null;
-    }
-    const gw = Math.floor(w / step), gh = Math.floor(h / step);
-    const grid = new Uint8Array(gw * gh);
-    for (let gy = 0; gy < gh; gy++) {
-      const sy = gy * step;
-      for (let gx = 0; gx < gw; gx++) {
-        const sx = gx * step;
-        grid[gy * gw + gx] = imgData[(sy * w + sx) * 4 + 3] > threshold ? 1 : 0;
-      }
-    }
-    const pw = gw + 2, ph = gh + 2;
-    const getVal = (x, y) => (x < 1 || x > gw || y < 1 || y > gh) ? 0 : grid[(y - 1) * gw + (x - 1)];
-    const segments = [];
-    for (let y = 0; y < ph - 1; y++) {
-      for (let x = 0; x < pw - 1; x++) {
-        const c = (getVal(x, y) << 3) | (getVal(x + 1, y) << 2) | (getVal(x + 1, y + 1) << 1) | getVal(x, y + 1);
-        if (c === 0 || c === 15) continue;
-        const rx = (x - 1) * step, ry = (y - 1) * step;
-        const top = [rx + step * 0.5, ry];
-        const right = [rx + step, ry + step * 0.5];
-        const bottom = [rx + step * 0.5, ry + step];
-        const left = [rx, ry + step * 0.5];
-        switch (c) {
-          case 1:  segments.push([left, bottom]); break;
-          case 2:  segments.push([bottom, right]); break;
-          case 3:  segments.push([left, right]); break;
-          case 4:  segments.push([top, right]); break;
-          case 5:  segments.push([left, top]); segments.push([bottom, right]); break;
-          case 6:  segments.push([top, bottom]); break;
-          case 7:  segments.push([left, top]); break;
-          case 8:  segments.push([top, left]); break;
-          case 9:  segments.push([top, bottom]); break;
-          case 10: segments.push([top, right]); segments.push([left, bottom]); break;
-          case 11: segments.push([top, right]); break;
-          case 12: segments.push([right, left]); break;
-          case 13: segments.push([bottom, right]); break;
-          case 14: segments.push([bottom, left]); break;
-        }
-      }
-    }
-    const chains = [];
-    const visited = new Uint8Array(segments.length);
-    for (let i = 0; i < segments.length; i++) {
-      if (visited[i]) continue;
-      visited[i] = 1;
-      const chain = [segments[i][0], segments[i][1]];
-      let growing = true;
-      while (growing) {
-        growing = false;
-        const tip = chain[chain.length - 1];
-        for (let j = 0; j < segments.length; j++) {
-          if (visited[j]) continue;
-          const [p1, p2] = segments[j];
-          if (Math.hypot(tip[0] - p1[0], tip[1] - p1[1]) <= step * 1.5) {
-            chain.push(p2); visited[j] = 1; growing = true; break;
-          } else if (Math.hypot(tip[0] - p2[0], tip[1] - p2[1]) <= step * 1.5) {
-            chain.push(p1); visited[j] = 1; growing = true; break;
-          }
-        }
-      }
-      if (chain.length > 8) chains.push(chain);
-    }
-    chains.sort((a, b) => b.length - a.length);
-    return chains.length ? chains : null;
-  }
 
-  function rdp(pts, eps) {
-    if (pts.length <= 2) return pts;
-    let maxD = 0, idx = 0;
-    const [x1, y1] = pts[0], [x2, y2] = pts[pts.length - 1];
-    const dx = x2 - x1, dy = y2 - y1, lenSq = dx * dx + dy * dy;
-    for (let i = 1; i < pts.length - 1; i++) {
-      const [x, y] = pts[i];
-      const d = lenSq === 0 ? Math.hypot(x - x1, y - y1) : Math.hypot(x - (x1 + Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / lenSq)) * dx), y - (y1 + Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / lenSq)) * dy));
-      if (d > maxD) { maxD = d; idx = i; }
-    }
-    if (maxD > eps) {
-      return rdp(pts.slice(0, idx + 1), eps).slice(0, -1).concat(rdp(pts.slice(idx), eps));
-    }
-    return [pts[0], pts[pts.length - 1]];
-  }
-
-  function simplifyClosedLoop(pts, eps) {
-    if (pts.length <= 4) return pts;
-    let maxD = 0, split = Math.floor(pts.length / 2);
-    const [x0, y0] = pts[0];
-    for (let i = 1; i < pts.length; i++) {
-      const d = Math.hypot(pts[i][0] - x0, pts[i][1] - y0);
-      if (d > maxD) { maxD = d; split = i; }
-    }
-    const c1 = rdp(pts.slice(0, split + 1), eps);
-    const c2 = rdp(pts.slice(split), eps);
-    return c1.slice(0, -1).concat(c2);
-  }
 
   function init() {
     if (inited || !window.THREE) return;
@@ -899,208 +802,13 @@ const viewer3D = (function () {
       currentGroup = null;
     }
 
-    const group = new THREE.Group();
-    scene.add(group);
-    currentGroup = group;
+    const loadingEl = $('#zoom-3d-loading');
+    if (loadingEl) loadingEl.hidden = true;
 
-    $('#zoom-3d-loading').hidden = false;
-
-    const isKnife = item.cat === 'Knives' || (item.w && item.w.includes('Knife')) || item.n.includes('★');
-    const isGlove = item.cat === 'Gloves' || item.w?.includes('Gloves') || item.w?.includes('Wraps');
-    const isSniper = item.w === 'AWP' || item.w === 'SSG 08' || item.w === 'SCAR-20' || item.w === 'G3SG1';
-    const isRifle = item.cat === 'Rifles' || item.cat === 'Sniper Rifles';
-    const isPistol = item.cat === 'Pistols';
-
-    inspectSeq.isKnife = isKnife;
-
-    const thickness = isKnife ? 0.13 : isGlove ? 0.28 : isRifle ? 0.23 : isPistol ? 0.19 : 0.18;
-    const bevel = isKnife ? 0.035 : isGlove ? 0.05 : 0.04;
-
-    const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(item.img)}&w=640&output=png`;
-    const loader = new THREE.TextureLoader();
-    loader.setCrossOrigin('anonymous');
-
-    const placeholder = createWeaponSlab(item, 5.0, 2.8, thickness);
-    group.add(placeholder);
-
-    loader.load(
-      proxyUrl,
-      (tex) => {
-        tex.anisotropy = renderer?.capabilities.getMaxAnisotropy() || 8;
-        const img = tex.image;
-        if (img && img.width && img.height) {
-          const offCanvas = document.createElement('canvas');
-          offCanvas.width = img.width;
-          offCanvas.height = img.height;
-          const ctx = offCanvas.getContext('2d');
-          ctx.drawImage(img, 0, 0);
-
-          try {
-            const chains = extractContour(offCanvas, offCanvas.width > 300 ? 2 : 1, 20);
-            if (chains && chains.length) {
-              const mainLoop = simplifyClosedLoop(chains[0], 1.2);
-              if (mainLoop && mainLoop.length >= 8) {
-                const shape = new THREE.Shape();
-                const scale = 5.0 / offCanvas.width;
-                const ox = offCanvas.width * 0.5;
-                const oy = offCanvas.height * 0.5;
-
-                shape.moveTo((mainLoop[0][0] - ox) * scale, (oy - mainLoop[0][1]) * scale);
-                for (let i = 1; i < mainLoop.length; i++) {
-                  shape.lineTo((mainLoop[i][0] - ox) * scale, (oy - mainLoop[i][1]) * scale);
-                }
-                shape.closePath();
-
-                const extrudeGeom = new THREE.ExtrudeGeometry(shape, {
-                  depth: thickness,
-                  bevelEnabled: true,
-                  bevelThickness: bevel,
-                  bevelSize: bevel,
-                  bevelSegments: 3,
-                });
-
-                extrudeGeom.computeBoundingBox();
-                const bbox = extrudeGeom.boundingBox;
-                const uvAttr = extrudeGeom.attributes.uv;
-                const posAttr = extrudeGeom.attributes.position;
-                const normAttr = extrudeGeom.attributes.normal;
-                const spanX = bbox.max.x - bbox.min.x || 1;
-                const spanY = bbox.max.y - bbox.min.y || 1;
-
-                for (let i = 0; i < posAttr.count; i++) {
-                  const nz = normAttr.getZ(i);
-                  const px = posAttr.getX(i);
-                  const py = posAttr.getY(i);
-                  if (nz > 0.4) {
-                    uvAttr.setXY(i, (px - bbox.min.x) / spanX, (py - bbox.min.y) / spanY);
-                  } else if (nz < -0.4) {
-                    uvAttr.setXY(i, 1.0 - (px - bbox.min.x) / spanX, (py - bbox.min.y) / spanY);
-                  } else {
-                    uvAttr.setXY(i, 0.5, 0.5);
-                  }
-                }
-                extrudeGeom.uvsNeedUpdate = true;
-
-                const pbrMat = createPBRMaterial(item, tex, wearVal);
-                const extrudedMesh = new THREE.Mesh(extrudeGeom, pbrMat);
-
-                let pivotX = 0, pivotY = 0;
-                if (isKnife) {
-                  pivotX = bbox.min.x + spanX * 0.35;
-                  pivotY = bbox.min.y + spanY * 0.45;
-                } else if (isRifle) {
-                  pivotX = bbox.min.x + spanX * 0.48;
-                  pivotY = bbox.min.y + spanY * 0.5;
-                }
-                extrudeGeom.translate(-pivotX, -pivotY, -thickness * 0.5);
-
-                if (isSniper) {
-                  addSniperScope(group, bbox, pivotX, pivotY, thickness);
-                }
-
-                group.remove(placeholder);
-                disposeHierarchy(placeholder);
-                group.add(extrudedMesh);
-                meshObject = extrudedMesh;
-              }
-            }
-          } catch (err) {
-            console.warn('Contour trace fallback:', err);
-          }
-        }
-        $('#zoom-3d-loading').hidden = true;
-      },
-      undefined,
-      () => {
-        loader.load(item.img, (tex2) => {
-          updateSlabTexture(placeholder, tex2);
-          $('#zoom-3d-loading').hidden = true;
-        }, undefined, () => {
-          $('#zoom-3d-loading').hidden = true;
-        });
-      }
-    );
-
-    group.rotation.set(0.08, -0.25, 0.02);
     if (controls) {
       controls.target.set(0, 0, 0);
       controls.update();
     }
-  }
-
-  function createPBRMaterial(item, tex, wearVal) {
-    const f = Math.max(0, Math.min(1, wearVal ?? 0.02));
-    const isKnife = item.cat === 'Knives' || item.n.includes('★');
-    const baseMetal = isKnife ? 0.88 : (item.cat === 'Pistols' ? 0.65 : 0.42);
-    const baseRough = 0.16 + f * 0.58;
-    const baseClearcoat = Math.max(0, 0.75 - f * 1.1);
-
-    const isHolo = /doppler|fade|marble|ruby|sapphire|emerald|case hardened|printstream/i.test(item.n);
-
-    const mat = new THREE.MeshPhysicalMaterial({
-      map: tex,
-      metalness: baseMetal,
-      roughness: baseRough,
-      clearcoat: baseClearcoat,
-      clearcoatRoughness: 0.12 + f * 0.35,
-      reflectivity: 0.8,
-      envMapIntensity: 1.6,
-    });
-
-    if (isHolo) {
-      mat.onBeforeCompile = (shader) => {
-        shader.uniforms.uIridCol1 = { value: new THREE.Color(item.n.includes('Ruby') ? 0xff0044 : item.n.includes('Emerald') ? 0x00ff88 : 0x00e5ff) };
-        shader.uniforms.uIridCol2 = { value: new THREE.Color(item.n.includes('Sapphire') ? 0x0066ff : 0xff00aa) };
-        shader.fragmentShader = shader.fragmentShader.replace(
-          '#include <dithering_fragment>',
-          `
-          #include <dithering_fragment>
-          float vFresnel = pow(1.0 - max(0.0, dot(geometryNormal, geometryViewDir)), 2.6);
-          vec3 vIrid = mix(uIridCol1, uIridCol2, sin(vFresnel * 6.28 + vUv.x * 4.0) * 0.5 + 0.5);
-          gl_FragColor.rgb += vIrid * vFresnel * 0.55;
-          `
-        );
-      };
-    }
-    return mat;
-  }
-
-  function createWeaponSlab(item, w, h, thickness) {
-    const geo = new THREE.BoxGeometry(w, h, thickness);
-    const pbrMat = new THREE.MeshStandardMaterial({
-      color: 0x222630,
-      metalness: 0.7,
-      roughness: 0.3,
-    });
-    const mesh = new THREE.Mesh(geo, pbrMat);
-    meshObject = mesh;
-    return mesh;
-  }
-
-  function updateSlabTexture(slabMesh, tex) {
-    if (!slabMesh) return;
-    slabMesh.material.map = tex;
-    slabMesh.material.needsUpdate = true;
-  }
-
-  function addSniperScope(group, bbox, px, py, thickness) {
-    const scopeMat = new THREE.MeshStandardMaterial({
-      color: 0x181a20,
-      metalness: 0.85,
-      roughness: 0.25,
-    });
-    const scopeGeo = new THREE.CylinderGeometry(0.16, 0.16, 1.7, 24);
-    scopeGeo.rotateZ(Math.PI / 2);
-    const scopeMesh = new THREE.Mesh(scopeGeo, scopeMat);
-    scopeMesh.position.set(-px + (bbox.max.x - bbox.min.x) * 0.42, -py + (bbox.max.y - bbox.min.y) * 0.68, thickness * 0.5 + 0.05);
-    group.add(scopeMesh);
-
-    const lensMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.65 });
-    const lensGeo = new THREE.CircleGeometry(0.15, 20);
-    const lensFront = new THREE.Mesh(lensGeo, lensMat);
-    lensFront.position.set(scopeMesh.position.x + 0.86, scopeMesh.position.y, scopeMesh.position.z);
-    lensFront.rotateY(Math.PI / 2);
-    group.add(lensFront);
   }
 
   function updateFloat(f) {
@@ -1110,11 +818,23 @@ const viewer3D = (function () {
     if (valEl) valEl.textContent = f.toFixed(4);
 
     let wearName = 'Factory New', badgeBg = 'rgba(0,230,150,0.2)', badgeCol = '#00e696';
-    if (f < 0.07) { wearName = 'Factory New'; badgeBg = 'rgba(0,230,150,0.2)'; badgeCol = '#00e696'; }
-    else if (f < 0.15) { wearName = 'Minimal Wear'; badgeBg = 'rgba(75,105,255,0.2)'; badgeCol = '#4b69ff'; }
-    else if (f < 0.38) { wearName = 'Field-Tested'; badgeBg = 'rgba(255,215,0,0.2)'; badgeCol = '#ffd700'; }
-    else if (f < 0.45) { wearName = 'Well-Worn'; badgeBg = 'rgba(255,140,0,0.2)'; badgeCol = '#ff8c00'; }
-    else { wearName = 'Battle-Scarred'; badgeBg = 'rgba(235,75,75,0.2)'; badgeCol = '#eb4b4b'; }
+    let filterCss = 'drop-shadow(0 25px 45px rgba(0,0,0,0.8))';
+    if (f < 0.07) {
+      wearName = 'Factory New'; badgeBg = 'rgba(0,230,150,0.2)'; badgeCol = '#00e696';
+      filterCss += ' brightness(1.06) contrast(1.03)';
+    } else if (f < 0.15) {
+      wearName = 'Minimal Wear'; badgeBg = 'rgba(75,105,255,0.2)'; badgeCol = '#4b69ff';
+      filterCss += ' brightness(1.0) contrast(1.0)';
+    } else if (f < 0.38) {
+      wearName = 'Field-Tested'; badgeBg = 'rgba(255,215,0,0.2)'; badgeCol = '#ffd700';
+      filterCss += ' brightness(0.92) contrast(0.96) saturate(0.95)';
+    } else if (f < 0.45) {
+      wearName = 'Well-Worn'; badgeBg = 'rgba(255,140,0,0.2)'; badgeCol = '#ff8c00';
+      filterCss += ' brightness(0.85) contrast(0.92) saturate(0.88) sepia(0.08)';
+    } else {
+      wearName = 'Battle-Scarred'; badgeBg = 'rgba(235,75,75,0.2)'; badgeCol = '#eb4b4b';
+      filterCss += ' brightness(0.76) contrast(0.86) saturate(0.8) sepia(0.22)';
+    }
 
     if (badge) {
       badge.textContent = wearName;
@@ -1123,12 +843,9 @@ const viewer3D = (function () {
       badge.style.borderColor = badgeCol;
     }
 
-    if (meshObject && meshObject.material) {
-      meshObject.material.roughness = 0.16 + f * 0.58;
-      if (meshObject.material.clearcoat !== undefined) {
-        meshObject.material.clearcoat = Math.max(0, 0.75 - f * 1.1);
-      }
-      meshObject.material.needsUpdate = true;
+    const zoomImg = $('#zoom-img');
+    if (zoomImg) {
+      zoomImg.style.filter = filterCss;
     }
   }
 
@@ -1268,16 +985,16 @@ const viewer3D = (function () {
     const tipText = $('#zoom-tip-text');
 
     if (wrap3D) wrap3D.hidden = !is3D;
-    if (wrap2D) wrap2D.hidden = is3D;
-    if (glow2D) glow2D.hidden = is3D;
+    if (wrap2D) wrap2D.hidden = false;
+    if (glow2D) glow2D.hidden = false;
     if (lightsBar) lightsBar.style.display = is3D ? 'inline-flex' : 'none';
 
     if (is3D) {
-      if (tipText) tipText.innerHTML = '🎮 <b>Chế độ 3D:</b> Kéo chuột/vuốt để xoay 360° tự do · Lăn chuột để zoom cận cảnh · Chuột phải để di chuyển vị trí · Bấm Inspect để xoay lật ngắm vũ khí chuẩn CS2!';
+      if (tipText) tipText.innerHTML = '🎮 <b>Chế độ 3D Studio:</b> Di chuột để nghiêng 3D đa chiều · Bấm Inspect (F) để xoay lật ngắm 360° chuẩn CS2!';
       start();
       resize();
     } else {
-      if (tipText) tipText.innerHTML = '🖼️ <b>Chế độ 2D:</b> Di chuột để nghiêng skin · lăn chuột / véo hai ngón để zoom · kéo để di chuyển · Inspect để xoay 360°';
+      if (tipText) tipText.innerHTML = '🖼️ <b>Chế độ Tối giản:</b> Nền tối giản tập trung soi chi tiết ảnh · Kéo chuột / lăn chuột để zoom cận cảnh';
       stop();
     }
   }
@@ -1291,7 +1008,7 @@ const viewer3D = (function () {
     stop,
     start,
     updateFloat,
-    playInspect: playInspect3D,
+    playInspect,
     resetCamera,
     toggleAutoRotate,
     takeScreenshot,
@@ -1329,35 +1046,38 @@ function openZoom(item) {
   const floatSlider = $('#zoom-float-slider');
   if (floatSlider) {
     floatSlider.value = initialFloat;
-    viewer3D.updateFloat(initialFloat);
   }
+
+  // Ensure elements are unhidden
+  if (wrap) wrap.hidden = false;
+  if ($('#zoom-glow')) $('#zoom-glow').hidden = false;
 
   openModal('#modal-zoom');
 
-  // Trigger 3D or 2D
-  viewer3D.setMode(viewer3D.getMode());
+  // Trigger 3D Studio
+  viewer3D.setMode('3d');
   viewer3D.showItem(item, initialFloat);
+  viewer3D.updateFloat(initialFloat);
 }
 (function bindZoom() {
   const stage = $('#zoom-stage');
   const rel = (e) => { const r = stage.getBoundingClientRect(); return [e.clientX - r.left - r.width / 2, e.clientY - r.top - r.height / 2]; };
   stage.addEventListener('wheel', (e) => {
-    if (viewer3D.getMode() === '3d') return; // Handled by OrbitControls in 3D mode
     e.preventDefault();
     const [cx, cy] = rel(e);
     setZoom(zoom.scale * (e.deltaY < 0 ? 1.15 : 1 / 1.15), cx, cy);
   }, { passive: false });
   stage.addEventListener('pointerdown', (e) => {
-    if (viewer3D.getMode() === '3d') return;
     stage.setPointerCapture(e.pointerId);
     zoom.pointers.set(e.pointerId, [e.clientX, e.clientY]);
     stage.classList.add('dragging');
   });
   stage.addEventListener('pointermove', (e) => {
-    if (viewer3D.getMode() === '3d') return;
     if (!zoom.pointers.size && e.pointerType === 'mouse') {
       const r = stage.getBoundingClientRect();
-      tiltTo((e.clientX - r.left) / r.width * 2 - 1, (e.clientY - r.top) / r.height * 2 - 1);
+      const nx = (e.clientX - r.left) / r.width * 2 - 1;
+      const ny = (e.clientY - r.top) / r.height * 2 - 1;
+      tiltTo(nx, ny);
       return;
     }
     if (!zoom.pointers.has(e.pointerId)) return;
@@ -1375,6 +1095,11 @@ function openZoom(item) {
       zoom.x += e.clientX - prev[0];
       zoom.y += e.clientY - prev[1];
       applyZoom();
+    } else {
+      const r = stage.getBoundingClientRect();
+      const nx = (e.clientX - r.left) / r.width * 2 - 1;
+      const ny = (e.clientY - r.top) / r.height * 2 - 1;
+      tiltTo(nx, ny);
     }
   });
   const up = (e) => { zoom.pointers.delete(e.pointerId); zoom.lastDist = 0; if (!zoom.pointers.size) stage.classList.remove('dragging'); };
@@ -1382,19 +1107,12 @@ function openZoom(item) {
   stage.addEventListener('pointercancel', up);
   stage.addEventListener('pointerleave', () => { const w = $('#zoom-wrap'); if (!w.classList.contains('inspecting')) w.style.transform = ''; });
   stage.addEventListener('dblclick', (e) => {
-    if (viewer3D.getMode() === '3d') {
-      viewer3D.resetCamera();
-      return;
-    }
     const [cx, cy] = rel(e);
-    setZoom(zoom.scale > 1 ? 1 : 2.5, cx, cy);
+    setZoom(zoom.scale > 1 ? 1 : 2.2, cx, cy);
   });
 
   // 3D Controls buttons
-  $('#zoom-inspect').onclick = () => {
-    if (viewer3D.getMode() === '3d') viewer3D.playInspect();
-    else playInspect();
-  };
+  $('#zoom-inspect').onclick = () => playInspect();
   $('#zoom-equip').onclick = () => zoomItem && toggleEquip(zoomItem);
   $('#zoom-mode-3d').onclick = () => viewer3D.setMode('3d');
   $('#zoom-mode-2d').onclick = () => viewer3D.setMode('2d');
@@ -1415,14 +1133,13 @@ function openZoom(item) {
   window.addEventListener('keydown', (e) => {
     if ((e.key === 'f' || e.key === 'F') && !$('#modal-zoom').hidden && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
       e.preventDefault();
-      if (viewer3D.getMode() === '3d') viewer3D.playInspect();
-      else playInspect();
+      playInspect();
     }
   });
 
   // Device orientation tilt for phone
   window.addEventListener('deviceorientation', (e) => {
-    if ($('#modal-zoom').hidden || e.gamma == null || viewer3D.getMode() === '3d') return;
+    if ($('#modal-zoom').hidden || e.gamma == null) return;
     tiltTo(Math.max(-1, Math.min(1, e.gamma / 30)), Math.max(-1, Math.min(1, (e.beta - 45) / 30)));
   });
   $$('[data-zoom]').forEach((b) => { b.onclick = () => { const d = Number(b.dataset.zoom); setZoom(d === 0 ? 1 : zoom.scale * (d > 0 ? 1.4 : 1 / 1.4)); }; });

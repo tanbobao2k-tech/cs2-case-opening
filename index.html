@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=15" />
+  <link rel="stylesheet" href="css/style.css?v=16" />
 </head>
 <body>
   <header class="topbar">
@@ -311,7 +311,7 @@
           <p id="res-price" class="res-price"></p>
         </div>
         <div class="result-actions">
-          <button id="res-view-3d" class="btn btn-primary btn-lg res-btn-3d">🎮 Xem 3D Siêu thực</button>
+          <button id="res-view-3d" class="btn btn-primary btn-lg res-btn-3d">🔍 Soi Skin 3D</button>
           <button id="res-again" class="btn btn-lg">Mở tiếp</button>
           <button id="res-sell" class="btn btn-lg">Bán ngay</button>
           <button id="res-close" class="btn btn-ghost btn-lg">Đóng</button>
@@ -326,8 +326,8 @@
     
     <div class="zoom-top-toolbar">
       <div class="zoom-mode-toggle">
-        <button class="btn btn-sm active" id="zoom-mode-3d">🎮 3D Siêu thực</button>
-        <button class="btn btn-sm" id="zoom-mode-2d">🖼️ 2D Ảnh</button>
+        <button class="btn btn-sm active" id="zoom-mode-3d">🎮 3D Studio</button>
+        <button class="btn btn-sm" id="zoom-mode-2d">🖼️ Tối giản</button>
       </div>
       <div class="zoom-lights-bar" id="zoom-lights-bar">
         <span class="zoom-bar-label">Ánh sáng:</span>
@@ -343,18 +343,14 @@
     </div>
 
     <div class="zoom-stage" id="zoom-stage">
-      <!-- 3D WebGL Canvas Container -->
+      <!-- 3D WebGL Canvas Container: Floor, Hologram Rings, Ambient Particles -->
       <div id="zoom-3d-wrap" class="zoom-3d-wrap">
         <canvas id="zoom-3d-canvas"></canvas>
-        <div id="zoom-3d-loading" class="zoom-3d-loading" hidden>
-          <div class="spinner-sm"></div>
-          <span>Đang tạo mô hình 3D...</span>
-        </div>
       </div>
 
-      <!-- 2D Fallback / Classic Stage -->
-      <div class="zoom-glow" id="zoom-glow" hidden></div>
-      <div class="zoom-wrap" id="zoom-wrap" hidden>
+      <!-- Foreground Weapon 3D Holographic Display -->
+      <div class="zoom-glow" id="zoom-glow"></div>
+      <div class="zoom-wrap" id="zoom-wrap">
         <img id="zoom-img" alt="" draggable="false" />
         <div class="zoom-shine" id="zoom-shine"></div>
       </div>
@@ -693,6 +689,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="data/cases.js?v=8"></script>
-  <script src="js/app.js?v=15"></script>
+  <script src="js/app.js?v=16"></script>
 </body>
 </html>

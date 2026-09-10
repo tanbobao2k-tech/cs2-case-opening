@@ -760,16 +760,14 @@ main { max-width: 1240px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px) 80px
   height: 100%;
   overflow: hidden;
   z-index: 1;
+  pointer-events: none;
 }
 #zoom-3d-canvas {
   width: 100% !important;
   height: 100% !important;
   display: block;
-  cursor: grab;
   outline: none;
-}
-#zoom-3d-canvas:active {
-  cursor: grabbing;
+  pointer-events: none;
 }
 .zoom-3d-loading {
   position: absolute;
