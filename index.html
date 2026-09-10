@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css?v=4" />
 </head>
 <body>
   <header class="topbar">
@@ -23,7 +23,8 @@
       <button id="topup" class="btn btn-sm">+ Nạp $1.000</button>
     </div>
     <nav class="topnav">
-      <a href="#cases">Hòm</a>
+      <a href="#cases">Hòm đặc biệt</a>
+      <a href="#official">Hòm chính thức</a>
       <a href="#battle">Battle</a>
       <a href="#trade">Trade</a>
       <a href="#inventory">Kho đồ <span id="inv-count" class="pill">0</span></a>
@@ -46,17 +47,21 @@
 
     <section id="cases" class="section">
       <div class="section-head">
-        <h2>Chọn hòm</h2>
+        <h2>Hòm đặc biệt <span class="h-sub">kiểu Skin Club</span></h2>
         <div class="section-tools">
-          <div class="seg" id="case-tabs">
-            <button data-tab="official" class="active">Chính thức</button>
-            <button data-tab="custom">Đặc biệt</button>
-          </div>
           <input id="case-search" type="search" placeholder="Tìm hòm…" />
           <label class="toggle"><input type="checkbox" id="fast-mode" /> <span>Mở nhanh</span></label>
         </div>
       </div>
-      <p id="case-tab-note" class="muted case-note"></p>
+      <p class="muted case-note">Hòm theo chủ đề: toàn dao, găng tay, Karambit, Doppler, AK-47, AWP, đồ huyền thoại… Tỷ lệ mỗi món tỷ lệ nghịch với giá, giá hòm đặt ở mức hoàn trả ~90%. Bấm "Xem" để thấy tỷ lệ từng món.</p>
+      <div id="custom-grid" class="case-grid"></div>
+    </section>
+
+    <section id="official" class="section">
+      <div class="section-head">
+        <h2>Hòm chính thức <span class="h-sub">42 hòm của Valve</span></h2>
+      </div>
+      <p class="muted case-note">Tỷ lệ rớt theo công bố của Valve, riêng dao/găng nâng lên 1% (gốc 0,26%) cho dễ trúng. Giá mở = giá hòm + key $2,49.</p>
       <div id="case-grid" class="case-grid"></div>
     </section>
 
@@ -406,7 +411,7 @@
     </div>
   </div>
 
-  <script src="data/cases.js"></script>
-  <script src="js/app.js"></script>
+  <script src="data/cases.js?v=4"></script>
+  <script src="js/app.js?v=4"></script>
 </body>
 </html>

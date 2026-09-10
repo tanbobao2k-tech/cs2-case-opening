@@ -416,3 +416,6 @@ main { max-width: 1240px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px) 80px
   .topnav a:nth-child(2), .topnav a:nth-child(3), .topnav a:nth-child(4) { display: inline; }
   .topnav a:nth-child(5), .topnav a:nth-child(6) { display: none; }
 }
+
+.h-sub { font-size: 14px; font-weight: 500; color: var(--muted); margin-left: 10px; letter-spacing: 0; }
+@media (max-width: 760px) { .topnav a:nth-child(2) { display: inline; } .topnav a:nth-child(5), .topnav a:nth-child(6), .topnav a:nth-child(7) { display: none; } }

@@ -204,34 +204,33 @@ function itemCard(item, { showFrom = false, sell = false, odds } = {}) {
 }
 
 // ---------- Case grid ----------
-let caseTab = 'official';
+function caseCard(c) {
+  const el = document.createElement('div');
+  el.className = 'case-card' + (c.custom ? ' custom' : '');
+  if (c.custom) el.style.setProperty('--tag', c.color);
+  const meta = c.custom
+    ? `<div class="desc">${c.desc}</div><div class="year">${c.pool.length} món</div>`
+    : `<div class="year">${c.date ? c.date.slice(0, 4) : ''} · ${c.items.length} skin · ${new Set(c.rare.map((i) => ITEMS[i].n)).size} dao/găng</div>`;
+  el.innerHTML = `
+    ${c.custom ? `<span class="tag">${c.tag}</span>` : ''}
+    <img src="${c.image}" alt="${c.name}" loading="lazy" />
+    <h3>${c.name}</h3>
+    ${meta}
+    <div class="cost">Giá mở <b>${fmtUSD(caseCost(c))}</b> <span class="price-vnd">≈ ${fmtVND(caseCost(c))}</span></div>
+    <div class="actions">
+      <button class="btn" data-view="${c.id}">Xem</button>
+      <button class="btn btn-primary" data-open="${c.id}">Mở hòm</button>
+    </div>`;
+  return el;
+}
 function renderCases(filter = $('#case-search').value) {
-  const grid = $('#case-grid');
-  grid.innerHTML = '';
   const q = filter.trim().toLowerCase();
-  $('#case-tab-note').textContent = caseTab === 'official'
-    ? '42 hòm chính thức của Valve, tỷ lệ rớt theo công bố nhưng dao/găng được nâng lên 1% (gốc 0,26%) cho vui. Giá mở = giá hòm + key $2,49.'
-    : 'Hòm tự chọn kiểu Skin Club: tỷ lệ mỗi món tỷ lệ nghịch với giá, giá hòm đặt ở mức hoàn trả ~90%. Bấm "Xem" để thấy tỷ lệ từng món.';
-  const list = caseTab === 'official' ? OFFICIAL : CUSTOM;
-  list.filter((c) => c.name.toLowerCase().includes(q)).forEach((c) => {
-    const el = document.createElement('div');
-    el.className = 'case-card' + (c.custom ? ' custom' : '');
-    if (c.custom) el.style.setProperty('--tag', c.color);
-    const meta = c.custom
-      ? `<div class="desc">${c.desc}</div><div class="year">${c.pool.length} món</div>`
-      : `<div class="year">${c.date ? c.date.slice(0, 4) : ''} · ${c.items.length} skin · ${new Set(c.rare.map((i) => ITEMS[i].n)).size} dao/găng</div>`;
-    el.innerHTML = `
-      ${c.custom ? `<span class="tag">${c.tag}</span>` : ''}
-      <img src="${c.image}" alt="${c.name}" loading="lazy" />
-      <h3>${c.name}</h3>
-      ${meta}
-      <div class="cost">Giá mở <b>${fmtUSD(caseCost(c))}</b> <span class="price-vnd">≈ ${fmtVND(caseCost(c))}</span></div>
-      <div class="actions">
-        <button class="btn" data-view="${c.id}">Xem</button>
-        <button class="btn btn-primary" data-open="${c.id}">Mở hòm</button>
-      </div>`;
-    grid.appendChild(el);
-  });
+  const match = (c) => c.name.toLowerCase().includes(q) || (c.desc || '').toLowerCase().includes(q);
+  const cg = $('#custom-grid'), og = $('#case-grid');
+  cg.innerHTML = ''; og.innerHTML = '';
+  CUSTOM.filter(match).forEach((c) => cg.appendChild(caseCard(c)));
+  OFFICIAL.filter(match).forEach((c) => og.appendChild(caseCard(c)));
+  $('#official').hidden = q && !OFFICIAL.some(match);
 }
 
 // ---------- Case detail ----------
@@ -954,12 +953,10 @@ document.addEventListener('click', (e) => {
   const open = e.target.closest('[data-open]');
   const add = e.target.closest('[data-add], [data-inc]');
   const dec = e.target.closest('[data-dec]');
-  const tab = e.target.closest('#case-tabs [data-tab]');
   if (view) showCaseDetail(caseById(view.dataset.view));
   if (open) openCase(caseById(open.dataset.open));
   if (add) { if (bs.cases.length < MAX_ROUNDS) bs.cases.push(add.dataset.add || add.dataset.inc); renderBattleSetup(); }
   if (dec) { bs.cases.splice(bs.cases.lastIndexOf(dec.dataset.dec), 1); renderBattleSetup(); }
-  if (tab) { caseTab = tab.dataset.tab; $$('#case-tabs button').forEach((b) => b.classList.toggle('active', b === tab)); renderCases(); }
   if (e.target.matches('[data-close]')) closeModal('#' + e.target.closest('.modal').id);
   if (e.target.classList.contains('modal') && !spinning && e.target.id !== 'modal-battle') closeModal('#' + e.target.id);
 });
