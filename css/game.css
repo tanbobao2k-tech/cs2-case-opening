@@ -494,3 +494,90 @@ body, html {
   color: var(--accent-gold);
   font-weight: 700;
 }
+
+/* Inspect Card Overlay (Phím F) */
+.inspect-card {
+  position: absolute;
+  top: 90px;
+  left: 28px;
+  background: rgba(18, 22, 32, 0.94);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-left: 6px solid var(--accent-gold);
+  border-radius: 14px;
+  padding: 16px;
+  width: 320px;
+  z-index: 50;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.inspect-card.hidden {
+  opacity: 0;
+  transform: translateY(-20px);
+  pointer-events: none;
+}
+
+.inspect-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--accent-gold);
+  margin-bottom: 10px;
+}
+
+.inspect-img-wrap {
+  width: 100%;
+  height: 160px;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.08) 0%, rgba(0, 0, 0, 0.4) 80%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.inspect-img-wrap img {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.6));
+}
+
+.inspect-info h3 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.inspect-info p {
+  font-size: 0.85rem;
+  color: #8fa0b5;
+  margin-bottom: 12px;
+}
+
+.inspect-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.badge-rarity {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(235, 75, 75, 0.2);
+  color: #eb4b4b;
+}
+
+.badge-price {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #00ff88;
+}
+

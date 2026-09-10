@@ -425,34 +425,271 @@
   }
 
   // --- 3D VIEWMODEL (WEAPON & INSPECT RIG) ---
+  // Cache of procedural and composite skin textures
+  const skinCanvasCache = {};
+
+  function generateSkinTexture(skin) {
+    const key = (skin.id || skin.name) + (skin.img ? '_img' : '');
+    if (skinCanvasCache[key]) return skinCanvasCache[key];
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    const nameLower = (skin.name || '').toLowerCase();
+
+    const drawPattern = (imgElement) => {
+      ctx.clearRect(0, 0, 512, 512);
+
+      if (nameLower.includes('asiimov')) {
+        // --- ASIIMOV AUTHENTIC DESIGN ---
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Bold Safety Orange Angled Stripes
+        ctx.fillStyle = '#ff5500';
+        ctx.beginPath();
+        ctx.moveTo(0, 60);
+        ctx.lineTo(260, 0);
+        ctx.lineTo(340, 0);
+        ctx.lineTo(80, 260);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(120, 512);
+        ctx.lineTo(380, 252);
+        ctx.lineTo(460, 252);
+        ctx.lineTo(200, 512);
+        ctx.closePath();
+        ctx.fill();
+
+        // Matte Charcoal Black Blocks
+        ctx.fillStyle = '#15171e';
+        ctx.beginPath();
+        ctx.moveTo(280, 0);
+        ctx.lineTo(512, 0);
+        ctx.lineTo(512, 180);
+        ctx.lineTo(380, 180);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillRect(0, 360, 512, 45);
+
+        // Technical Stencil Decals
+        ctx.fillStyle = '#15171e';
+        ctx.font = '900 38px monospace';
+        ctx.fillText('ASIIMOV // 01', 40, 320);
+
+        ctx.fillStyle = '#ff5500';
+        ctx.font = 'bold 18px monospace';
+        ctx.fillText('WARNING: HIGH VOLTAGE // SPEC-A', 40, 350);
+
+      } else if (nameLower.includes('dragon lore') || nameLower.includes('lore')) {
+        // --- DRAGON LORE AUTHENTIC DESIGN ---
+        const grad = ctx.createLinearGradient(0, 0, 512, 512);
+        grad.addColorStop(0, '#d4af37');
+        grad.addColorStop(0.5, '#aa8c2c');
+        grad.addColorStop(1, '#5c4813');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Golden Celtic Scales
+        ctx.strokeStyle = 'rgba(255, 235, 170, 0.45)';
+        ctx.lineWidth = 4;
+        for (let y = 40; y < 512; y += 45) {
+          ctx.beginPath();
+          ctx.arc(256, y, 65, 0, Math.PI);
+          ctx.stroke();
+        }
+
+        // Fierce Red Fire-Breathing Dragon
+        ctx.fillStyle = '#b71c1c';
+        ctx.beginPath();
+        ctx.moveTo(60, 400);
+        ctx.bezierCurveTo(150, 180, 320, 220, 440, 120);
+        ctx.bezierCurveTo(360, 260, 300, 380, 160, 440);
+        ctx.closePath();
+        ctx.fill();
+
+        // Dragon Fire Flame
+        ctx.fillStyle = '#ff9800';
+        ctx.beginPath();
+        ctx.arc(440, 120, 32, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 32px Georgia, serif';
+        ctx.fillText('DRAGON LORE', 60, 90);
+
+      } else if (nameLower.includes('howl')) {
+        // --- HOWL AUTHENTIC DESIGN ---
+        const grad = ctx.createRadialGradient(256, 256, 40, 256, 256, 360);
+        grad.addColorStop(0, '#e53935');
+        grad.addColorStop(0.55, '#8e0000');
+        grad.addColorStop(1, '#110202');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Blazing Wolf Head
+        ctx.fillStyle = '#ff7961';
+        ctx.beginPath();
+        ctx.moveTo(256, 110);
+        ctx.lineTo(350, 280);
+        ctx.lineTo(256, 390);
+        ctx.lineTo(162, 280);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#ffeb3b';
+        ctx.beginPath();
+        ctx.arc(215, 230, 16, 0, Math.PI * 2);
+        ctx.arc(297, 230, 16, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#fff';
+        ctx.font = '900 42px Impact, sans-serif';
+        ctx.fillText('THE HOWL', 160, 470);
+
+      } else if (nameLower.includes('printstream')) {
+        // --- PRINTSTREAM AUTHENTIC DESIGN ---
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Holographic Pearlescent Sheen
+        const holo = ctx.createLinearGradient(0, 0, 512, 512);
+        holo.addColorStop(0, 'rgba(0, 255, 230, 0.25)');
+        holo.addColorStop(0.5, 'rgba(255, 0, 180, 0.25)');
+        holo.addColorStop(1, 'rgba(255, 255, 0, 0.25)');
+        ctx.fillStyle = holo;
+        ctx.fillRect(0, 0, 512, 512);
+
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(40, 80, 432, 14);
+
+        ctx.font = '900 68px sans-serif';
+        ctx.fillText('X X', 80, 230);
+
+        ctx.font = 'bold 24px monospace';
+        ctx.fillText('PROJECT: PRINTSTREAM', 80, 290);
+        ctx.fillText('STAT: VER 2.0.4 ACTIVE', 80, 324);
+
+        for (let b = 80; b < 420; b += 14) {
+          ctx.fillRect(b, 370, (b % 4 === 0 ? 6 : 2), 55);
+        }
+
+      } else if (nameLower.includes('case hardened') || nameLower.includes('blue gem')) {
+        // --- CASE HARDENED BLUE GEM DESIGN ---
+        const grad = ctx.createLinearGradient(0, 0, 512, 512);
+        grad.addColorStop(0, '#0091ea');
+        grad.addColorStop(0.4, '#00b0ff');
+        grad.addColorStop(0.7, '#aa00ff');
+        grad.addColorStop(0.88, '#ff6d00');
+        grad.addColorStop(1, '#ffd600');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 512, 512);
+
+        for (let p = 0; p < 35; p++) {
+          ctx.fillStyle = p % 2 === 0 ? 'rgba(0, 230, 255, 0.75)' : 'rgba(213, 0, 249, 0.65)';
+          ctx.beginPath();
+          ctx.arc((p * 83) % 512, (p * 119) % 512, 35 + (p * 7) % 75, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.fillStyle = '#fff';
+        ctx.font = '900 32px monospace';
+        ctx.fillText('TIER 1 BLUE GEM #661', 40, 460);
+
+      } else {
+        // --- GENERAL INVENTORY WEAPON SKIN ---
+        const rarityCol = skin.rarityColor || '#de9b35';
+        ctx.fillStyle = '#131720';
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Carbon fiber weave
+        ctx.fillStyle = '#1c2230';
+        for (let x = 0; x < 512; x += 16) {
+          for (let y = 0; y < 512; y += 16) {
+            if ((x + y) % 32 === 0) ctx.fillRect(x, y, 16, 16);
+          }
+        }
+
+        // Rarity racing banners
+        ctx.fillStyle = rarityCol;
+        ctx.fillRect(0, 90, 512, 26);
+        ctx.fillRect(0, 370, 512, 14);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 40px sans-serif';
+        ctx.fillText((skin.weapon || 'CS2').toUpperCase(), 40, 210);
+
+        ctx.fillStyle = rarityCol;
+        ctx.font = 'bold 32px sans-serif';
+        ctx.fillText((skin.name || 'CUSTOM SKIN').toUpperCase(), 40, 260);
+
+        ctx.fillStyle = '#ff9100';
+        ctx.font = 'bold 24px monospace';
+        ctx.fillText('STATTRAK™  001337', 40, 320);
+      }
+
+      // Draw the actual skin image if loaded
+      if (imgElement) {
+        try {
+          ctx.drawImage(imgElement, 180, 50, 320, 320);
+        } catch (e) {}
+      }
+    };
+
+    drawPattern(null);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    skinCanvasCache[key] = texture;
+
+    // Load actual skin image onto canvas
+    if (skin.img) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        drawPattern(img);
+        texture.needsUpdate = true;
+      };
+      img.src = skin.img;
+    }
+
+    return texture;
+  }
+
+  // --- 3D VIEWMODEL (WEAPON & INSPECT RIG) ---
+  let skinDecalMesh = null;
+
   function buildWeaponViewmodel() {
     viewmodelRig = new THREE.Group();
     camera.add(viewmodelRig);
     scene.add(camera);
 
     weaponMesh = new THREE.Group();
-    // Position weapon in lower-right first person view
     weaponMesh.position.set(0.28, -0.28, -0.6);
     viewmodelRig.add(weaponMesh);
 
-    // Primary weapon body material (will receive skin textures)
     const primarySkinMat = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      roughness: 0.35,
-      metalness: 0.45
+      roughness: 0.3,
+      metalness: 0.5
     });
     skinMaterials.push(primarySkinMat);
 
     const darkMetalMat = new THREE.MeshStandardMaterial({
       color: 0x1f232b,
-      roughness: 0.5,
-      metalness: 0.8
+      roughness: 0.45,
+      metalness: 0.85
     });
 
     const goldAccentMat = new THREE.MeshStandardMaterial({
       color: 0xde9b35,
-      roughness: 0.3,
-      metalness: 0.85
+      roughness: 0.25,
+      metalness: 0.9
     });
 
     // 1. Receiver / Gun Body
@@ -461,47 +698,54 @@
     receiver.position.set(0, 0, 0);
     weaponMesh.add(receiver);
 
-    // 2. Barrel
+    // 2. High-Detail Side Skin Decal Plate (Facing Player)
+    const decalGeo = new THREE.PlaneGeometry(0.42, 0.11);
+    skinDecalMesh = new THREE.Mesh(decalGeo, primarySkinMat);
+    skinDecalMesh.rotation.y = -Math.PI / 2;
+    skinDecalMesh.position.set(-0.041, 0, 0);
+    weaponMesh.add(skinDecalMesh);
+
+    // 3. Barrel
     const barrelGeo = new THREE.CylinderGeometry(0.022, 0.022, 0.42, 12);
     const barrel = new THREE.Mesh(barrelGeo, darkMetalMat);
     barrel.rotation.x = Math.PI / 2;
     barrel.position.set(0, 0.02, -0.42);
     weaponMesh.add(barrel);
 
-    // 3. Handguard (Skin coated)
+    // 4. Handguard (Skin coated)
     const handguardGeo = new THREE.BoxGeometry(0.07, 0.09, 0.28);
     const handguard = new THREE.Mesh(handguardGeo, primarySkinMat);
     handguard.position.set(0, 0.015, -0.32);
     weaponMesh.add(handguard);
 
-    // 4. Muzzle Brake
+    // 5. Muzzle Brake
     const muzzleGeo = new THREE.CylinderGeometry(0.028, 0.026, 0.08, 8);
     const muzzle = new THREE.Mesh(muzzleGeo, goldAccentMat);
     muzzle.rotation.x = Math.PI / 2;
     muzzle.position.set(0, 0.02, -0.65);
     weaponMesh.add(muzzle);
 
-    // 5. Curved Magazine
+    // 6. Curved Magazine
     const magGeo = new THREE.BoxGeometry(0.05, 0.24, 0.1);
     const mag = new THREE.Mesh(magGeo, darkMetalMat);
     mag.rotation.x = -0.25;
     mag.position.set(0, -0.15, -0.05);
     weaponMesh.add(mag);
 
-    // 6. Pistol Grip
+    // 7. Pistol Grip
     const gripGeo = new THREE.BoxGeometry(0.055, 0.16, 0.08);
     const grip = new THREE.Mesh(gripGeo, darkMetalMat);
     grip.rotation.x = 0.35;
     grip.position.set(0, -0.12, 0.16);
     weaponMesh.add(grip);
 
-    // 7. Tactical Stock (Skin coated)
+    // 8. Tactical Stock (Skin coated)
     const stockGeo = new THREE.BoxGeometry(0.065, 0.12, 0.32);
     const stock = new THREE.Mesh(stockGeo, primarySkinMat);
     stock.position.set(0, 0, 0.36);
     weaponMesh.add(stock);
 
-    // 8. Iron Sights / Rail
+    // 9. Iron Sights / Picatinny Rail
     const railGeo = new THREE.BoxGeometry(0.03, 0.03, 0.38);
     const rail = new THREE.Mesh(railGeo, goldAccentMat);
     rail.position.set(0, 0.07, -0.05);
@@ -535,30 +779,30 @@
       bannerEl.style.borderLeftColor = skin.rarityColor || '#de9b35';
     }
 
-    // Load texture from Steam CDN onto 3D weapon
-    if (skin.img) {
-      textureLoader.load(
-        skin.img,
-        (texture) => {
-          texture.wrapS = THREE.RepeatWrapping;
-          texture.wrapT = THREE.RepeatWrapping;
-          texture.repeat.set(1.5, 1.5);
-          skinMaterials.forEach(mat => {
-            mat.map = texture;
-            mat.needsUpdate = true;
-          });
-        },
-        undefined,
-        () => {
-          // Fallback if texture fails: use vibrant color
-          skinMaterials.forEach(mat => {
-            mat.map = null;
-            mat.color.setStyle(skin.rarityColor || '#de9b35');
-            mat.needsUpdate = true;
-          });
-        }
-      );
+    // Update Inspect Card Info
+    const insImg = document.getElementById('inspect-img');
+    const insName = document.getElementById('inspect-name');
+    const insWear = document.getElementById('inspect-wear');
+    const insRarity = document.getElementById('inspect-rarity');
+    const insPrice = document.getElementById('inspect-price');
+
+    if (insImg && skin.img) insImg.src = skin.img;
+    if (insName) insName.textContent = `${skin.weapon || ''} | ${skin.name || ''}`;
+    if (insWear) insWear.textContent = `${skin.wear || 'Factory New'} (Float: 0.0194)`;
+    if (insRarity) {
+      insRarity.textContent = (skin.rarity || 'Covert').toUpperCase();
+      insRarity.style.color = skin.rarityColor || '#eb4b4b';
+      insRarity.style.background = (skin.rarityColor || '#eb4b4b') + '26';
     }
+    if (insPrice) insPrice.textContent = skin.price ? `$${Number(skin.price).toFixed(2)}` : '$250.00';
+
+    // Apply high-res procedural / composite skin texture
+    const texture = generateSkinTexture(skin);
+    skinMaterials.forEach(mat => {
+      mat.map = texture;
+      mat.color.setHex(0xffffff);
+      mat.needsUpdate = true;
+    });
   }
 
   // --- INVENTORY & ACCOUNT INTEGRATION ---
@@ -764,12 +1008,16 @@
     STATE.isInspecting = true;
     inspectTarget = 1;
 
+    const insCard = document.getElementById('inspect-card');
+    if (insCard) insCard.classList.remove('hidden');
+
     setTimeout(() => {
       inspectTarget = 0;
       setTimeout(() => {
         STATE.isInspecting = false;
+        if (insCard) insCard.classList.add('hidden');
       }, 1000);
-    }, 1500);
+    }, 1800);
   }
 
   function updateHUD() {
