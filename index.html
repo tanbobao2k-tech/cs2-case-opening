@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=16" />
+  <link rel="stylesheet" href="css/style.css?v=17" />
 </head>
 <body>
   <header class="topbar">
@@ -327,6 +327,7 @@
     <div class="zoom-top-toolbar">
       <div class="zoom-mode-toggle">
         <button class="btn btn-sm active" id="zoom-mode-3d">🎮 3D Studio</button>
+        <button class="btn btn-sm" id="zoom-mode-video">🎬 Video In-Game</button>
         <button class="btn btn-sm" id="zoom-mode-2d">🖼️ Tối giản</button>
       </div>
       <div class="zoom-lights-bar" id="zoom-lights-bar">
@@ -354,6 +355,29 @@
         <img id="zoom-img" alt="" draggable="false" />
         <div class="zoom-shine" id="zoom-shine"></div>
       </div>
+
+      <!-- Video In-Game Showcase Player -->
+      <div id="zoom-video-wrap" class="zoom-video-wrap" hidden>
+        <div class="zoom-video-box">
+          <div class="zoom-video-player-box">
+            <video id="zoom-video-player" playsinline loop controls preload="auto"></video>
+          </div>
+          <div class="zoom-video-controls-bar">
+            <div class="zoom-v-tabs" id="zoom-video-tabs">
+              <button class="btn btn-xs zoom-vtab active" data-v="awp">🎯 AWP Dragon Lore</button>
+              <button class="btn btn-xs zoom-vtab" data-v="ak47">🔥 AK-47 Vulcan</button>
+              <button class="btn btn-xs zoom-vtab" data-v="knife">🗡️ Karambit Doppler</button>
+            </div>
+            <a id="zoom-video-yt-btn" href="#" target="_blank" rel="noopener" class="btn btn-xs zoom-yt-link">
+              <span>▶ Xem 4K YouTube của skin này</span> ↗
+            </a>
+          </div>
+          <div class="zoom-video-footer">
+            <span class="zoom-video-status">🎮 <b id="zoom-video-label">AWP Dragon Lore</b> · Video In-Game CS2 (60 FPS)</span>
+            <span class="muted text-xs">Góc nhìn FPS & âm thanh bắn/inspect thật</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="zoom-bar">
@@ -371,6 +395,7 @@
       </div>
       <div class="zoom-ctrl">
         <button class="btn btn-primary" id="zoom-inspect">▶ Inspect (F)</button>
+        <button class="btn" id="zoom-quick-video" title="Xem video gameplay CS2">🎬 Video</button>
         <button class="btn" id="zoom-equip" hidden>Trang bị</button>
         <button class="btn" id="zoom-reset-cam" title="Đặt lại góc nhìn">⟲ Góc chuẩn</button>
         <button class="btn" data-zoom="-1">−</button>
@@ -689,6 +714,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="data/cases.js?v=8"></script>
-  <script src="js/app.js?v=16"></script>
+  <script src="js/app.js?v=17"></script>
 </body>
 </html>

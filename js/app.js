@@ -973,29 +973,93 @@ const viewer3D = (function () {
     });
   }
 
+  const CS2_VIDEOS = {
+    awp: {
+      src: 'assets/videos/dragon_lore.mp4',
+      label: 'AWP Dragon Lore (Góc nhìn FPS 60FPS)',
+    },
+    ak47: {
+      src: 'assets/videos/ak47_inspect.mp4',
+      label: 'AK-47 Vulcan (Inspect & Thay đạn 60FPS)',
+    },
+    knife: {
+      src: 'assets/videos/knife_inspect.mp4',
+      label: 'Karambit Doppler (Múa dao & Xoay 60FPS)',
+    }
+  };
+
+  function playVideoClip(type) {
+    const p = $('#zoom-video-player');
+    const entry = CS2_VIDEOS[type] || CS2_VIDEOS.ak47;
+    if (p) {
+      if (!p.src.endsWith(entry.src)) {
+        p.src = entry.src;
+        p.load();
+      }
+      p.play().catch(() => {});
+    }
+    $$('#zoom-video-tabs .zoom-vtab').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.v === type);
+    });
+    const label = $('#zoom-video-label');
+    if (label) label.textContent = entry.label;
+  }
+
+  function pickBestVideoType(item) {
+    if (!item || !item.n) return 'ak47';
+    const n = item.n.toLowerCase();
+    if (n.includes('awp') || n.includes('ssg') || n.includes('scout') || n.includes('scar') || n.includes('g3sg1')) return 'awp';
+    if (n.includes('knife') || n.includes('karambit') || n.includes('bayonet') || n.includes('daggers') || n.includes('gloves') || n.includes('glove') || n.startsWith('★')) return 'knife';
+    return 'ak47';
+  }
+
   function setMode(newMode) {
     mode = newMode;
     const is3D = mode === '3d';
+    const isVideo = mode === 'video';
+    const is2D = mode === '2d';
+
     $('#zoom-mode-3d')?.classList.toggle('active', is3D);
-    $('#zoom-mode-2d')?.classList.toggle('active', !is3D);
+    $('#zoom-mode-video')?.classList.toggle('active', isVideo);
+    $('#zoom-mode-2d')?.classList.toggle('active', is2D);
+
     const wrap3D = $('#zoom-3d-wrap');
     const wrap2D = $('#zoom-wrap');
     const glow2D = $('#zoom-glow');
+    const wrapVideo = $('#zoom-video-wrap');
     const lightsBar = $('#zoom-lights-bar');
     const tipText = $('#zoom-tip-text');
+    const quickVideoBtn = $('#zoom-quick-video');
+    const videoPlayer = $('#zoom-video-player');
 
     if (wrap3D) wrap3D.hidden = !is3D;
-    if (wrap2D) wrap2D.hidden = false;
-    if (glow2D) glow2D.hidden = false;
     if (lightsBar) lightsBar.style.display = is3D ? 'inline-flex' : 'none';
 
-    if (is3D) {
-      if (tipText) tipText.innerHTML = '🎮 <b>Chế độ 3D Studio:</b> Di chuột để nghiêng 3D đa chiều · Bấm Inspect (F) để xoay lật ngắm 360° chuẩn CS2!';
-      start();
-      resize();
-    } else {
-      if (tipText) tipText.innerHTML = '🖼️ <b>Chế độ Tối giản:</b> Nền tối giản tập trung soi chi tiết ảnh · Kéo chuột / lăn chuột để zoom cận cảnh';
+    if (quickVideoBtn) {
+      quickVideoBtn.textContent = isVideo ? '🎮 3D Studio' : '🎬 Video';
+    }
+
+    if (isVideo) {
+      if (wrap2D) wrap2D.hidden = true;
+      if (glow2D) glow2D.hidden = true;
+      if (wrapVideo) wrapVideo.hidden = false;
+      if (tipText) tipText.innerHTML = '🎬 <b>Video In-Game CS2:</b> Video quay trực tiếp góc nhìn thứ nhất với âm thanh bắn/inspect thật!';
       stop();
+      playVideoClip(pickBestVideoType(zoomItem));
+    } else {
+      if (wrapVideo) wrapVideo.hidden = true;
+      if (videoPlayer) videoPlayer.pause();
+      if (wrap2D) wrap2D.hidden = false;
+      if (glow2D) glow2D.hidden = false;
+
+      if (is3D) {
+        if (tipText) tipText.innerHTML = '🎮 <b>Chế độ 3D Studio:</b> Di chuột để nghiêng 3D đa chiều · Bấm Inspect (F) để ngắm chi tiết!';
+        start();
+        resize();
+      } else {
+        if (tipText) tipText.innerHTML = '🖼️ <b>Chế độ Tối giản:</b> Nền tối giản tập trung soi chi tiết ảnh · Kéo chuột / lăn chuột để zoom cận cảnh';
+        stop();
+      }
     }
   }
 
@@ -1014,6 +1078,8 @@ const viewer3D = (function () {
     takeScreenshot,
     setLighting,
     setMode,
+    playVideoClip,
+    pickBestVideoType,
     getMode() { return mode; },
   };
 })();
@@ -1053,6 +1119,12 @@ function openZoom(item) {
   if ($('#zoom-glow')) $('#zoom-glow').hidden = false;
 
   openModal('#modal-zoom');
+
+  // Update YouTube search link for this skin
+  const ytBtn = $('#zoom-video-yt-btn');
+  if (ytBtn) {
+    ytBtn.href = `https://www.youtube.com/results?search_query=${encodeURIComponent('CS2 ' + item.n + ' inspect 4k gameplay')}`;
+  }
 
   // Trigger 3D Studio
   viewer3D.setMode('3d');
@@ -1111,11 +1183,24 @@ function openZoom(item) {
     setZoom(zoom.scale > 1 ? 1 : 2.2, cx, cy);
   });
 
-  // 3D Controls buttons
+  // 3D & Video Controls buttons
   $('#zoom-inspect').onclick = () => playInspect();
   $('#zoom-equip').onclick = () => zoomItem && toggleEquip(zoomItem);
   $('#zoom-mode-3d').onclick = () => viewer3D.setMode('3d');
+  $('#zoom-mode-video').onclick = () => viewer3D.setMode('video');
   $('#zoom-mode-2d').onclick = () => viewer3D.setMode('2d');
+  $('#zoom-quick-video').onclick = () => {
+    viewer3D.setMode(viewer3D.getMode() === 'video' ? '3d' : 'video');
+  };
+
+  const videoTabs = $('#zoom-video-tabs');
+  if (videoTabs) {
+    videoTabs.onclick = (e) => {
+      const btn = e.target.closest('[data-v]');
+      if (btn) viewer3D.playVideoClip(btn.dataset.v);
+    };
+  }
+
   $('#zoom-autorotate').onclick = () => viewer3D.toggleAutoRotate();
   $('#zoom-screenshot').onclick = () => viewer3D.takeScreenshot();
   $('#zoom-reset-cam').onclick = () => viewer3D.resetCamera();
@@ -1972,7 +2057,11 @@ function renderStats() {
 function openModal(sel) { $(sel).hidden = false; document.body.style.overflow = 'hidden'; }
 function closeModal(sel) {
   $(sel).hidden = true;
-  if (sel === '#modal-zoom') viewer3D?.stop();
+  if (sel === '#modal-zoom') {
+    viewer3D?.stop();
+    const vp = $('#zoom-video-player');
+    if (vp) vp.pause();
+  }
   if (!$$('.modal').some((m) => !m.hidden)) document.body.style.overflow = '';
 }
 function closeBattle() {
