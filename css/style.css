@@ -743,6 +743,172 @@ main { max-width: 1240px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px) 80px
 .topup-chip:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
 .topup-chip:disabled { opacity: 0.35; cursor: not-allowed; border-color: transparent; }
 
+/* Thẻ nạp vượt hạn mức ngày */
+.topup-overlimit-card {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.08), rgba(0, 245, 160, 0.05));
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 14px 0;
+  text-align: left;
+}
+.overlimit-badge {
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffd700;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+.overlimit-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #d1d5db;
+  margin: 0;
+}
+.zalo-footer-link {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+.zalo-link-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #38bdf8;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color .2s;
+}
+.zalo-link-chip:hover {
+  color: #7dd3fc;
+  text-decoration: underline;
+}
+.zalo-btn-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #38bdf8 !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+}
+.zalo-btn-link:hover {
+  border-color: #38bdf8 !important;
+  background: rgba(56, 189, 248, 0.1) !important;
+}
+
+/* ===== Modal Nạp Vượt Hạn Mức (VIP 10k VNĐ / $5.000) ===== */
+.modal-vip-box {
+  max-width: 480px;
+  width: 92vw;
+  padding: 24px;
+  text-align: center;
+}
+.vip-qr-section {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  margin: 16px 0;
+}
+@media (max-width: 520px) {
+  .vip-qr-section { flex-direction: column; text-align: center; }
+  .vip-payment-info { width: 100%; }
+}
+.vip-qr-card {
+  background: #ffffff;
+  padding: 8px 10px 10px;
+  border-radius: 10px;
+  text-align: center;
+  color: #000;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.zalopay-badge {
+  background: #0068ff;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 6px;
+}
+.vip-qr-img {
+  width: 140px;
+  height: 140px;
+  display: block;
+  border-radius: 4px;
+}
+.vip-qr-scan-hint {
+  font-size: 10px;
+  color: #4b5563;
+  margin-top: 6px;
+}
+.vip-payment-info {
+  flex: 1;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+}
+.vip-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 6px;
+}
+.copy-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.copy-btn {
+  padding: 2px 8px !important;
+  font-size: 11px !important;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+.copy-btn:hover {
+  background: rgba(255, 255, 255, 0.18) !important;
+}
+.price-vnd-big {
+  color: #ffb703;
+  font-weight: 800;
+  font-size: 15px;
+}
+.vip-status-box {
+  background: rgba(0, 245, 160, 0.1);
+  border: 1px solid rgba(0, 245, 160, 0.3);
+  color: #00f5a0;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin: 12px 0;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.vip-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #00f5a0;
+  box-shadow: 0 0 8px #00f5a0;
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
 /* ===== Chế độ View 3D Siêu Thực (Three.js Stage) ===== */
 #modal-zoom,
 .modal-3d-stage {

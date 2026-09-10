@@ -133,6 +133,82 @@ async function sendAdminNotification(env, { name, approveToken, reqUrl, ip }) {
   }
 }
 
+async function sendTopupNotification(env, { name, amount, fee, approveToken, reqUrl, ip }) {
+  const adminEmail = env.ADMIN_EMAIL;
+  const apiKey = env.RESEND_API_KEY;
+  if (!apiKey || !adminEmail || adminEmail === 'your_email@gmail.com') {
+    console.warn('[Email] Chưa cấu hình RESEND_API_KEY hoặc ADMIN_EMAIL hợp lệ; bỏ qua gửi mail.');
+    return false;
+  }
+  const origin = new URL(reqUrl).origin;
+  const approveUrl = `${origin}/approve-topup?token=${approveToken}`;
+  const rejectUrl = `${origin}/reject-topup?token=${approveToken}`;
+  const timeStr = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"></head>
+    <body style="margin: 0; padding: 24px; background-color: #0b0e13; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #d1d7df;">
+      <div style="max-width: 560px; margin: 0 auto; background: #151a23; border: 1px solid #262f3d; border-radius: 14px; padding: 32px; box-shadow: 0 12px 36px rgba(0,0,0,0.6);">
+        <div style="border-bottom: 1px solid #262f3d; padding-bottom: 18px; margin-bottom: 22px;">
+          <h2 style="margin: 0; font-size: 22px; color: #ffd700; display: flex; align-items: center; gap: 8px;">
+            💳 Mở Hòm CS2 — Yêu Cầu Nạp Vượt Hạn Mức
+          </h2>
+        </div>
+        <p style="font-size: 15px; line-height: 1.6; color: #cfd8dc; margin-bottom: 20px;">
+          Xin chào Quản trị viên, vừa có một yêu cầu nạp tiền vượt hạn mức ngày cần bạn kiểm tra và phê duyệt:
+        </p>
+        <div style="background: #0d1117; border-radius: 10px; padding: 18px; margin-bottom: 26px; border-left: 4px solid #ffd700;">
+          <p style="margin: 0 0 10px 0; font-size: 15px;"><strong>👤 Tên tài khoản:</strong> <span style="color: #ffd700; font-size: 17px; font-weight: bold;">${name}</span></p>
+          <p style="margin: 0 0 10px 0; font-size: 15px;"><strong>💰 Số tiền yêu cầu nạp:</strong> <span style="color: #00f5a0; font-weight: bold; font-size: 16px;">+$${amount.toLocaleString('en-US')} USD</span></p>
+          <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>💵 Phí dịch vụ:</strong> <span style="color: #ffb703; font-weight: bold;">${fee.toLocaleString('vi-VN')} VNĐ</span> (ZaloPay 0982460638)</p>
+          <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>📝 Nội dung chuyển:</strong> <code style="background: #1c2430; color: #00f5a0; padding: 3px 8px; border-radius: 6px;">NAP ${name}</code></p>
+          <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>⏰ Thời gian gửi:</strong> ${timeStr}</p>
+          ${ip ? `<p style="margin: 0; font-size: 14px;"><strong>🌐 Địa chỉ IP:</strong> ${ip}</p>` : ''}
+        </div>
+        <p style="font-size: 14px; color: #90a4ae; margin-bottom: 24px;">
+          Hãy kiểm tra ví ZaloPay <b>0982460638</b> xem đã nhận được 10.000đ từ người chơi này chưa. Nếu đã nhận thành công, bấm nút phê duyệt bên dưới:
+        </p>
+        <div style="display: flex; gap: 14px; margin: 28px 0; text-align: center;">
+          <a href="${approveUrl}" style="display: inline-block; background: #ffd700; color: #081512; text-decoration: none; padding: 13px 30px; font-weight: 700; border-radius: 8px; font-size: 15px; box-shadow: 0 4px 18px rgba(255, 215, 0, 0.4); margin-right: 12px;">
+            ✔ PHÊ DUYỆT NẠP $${amount.toLocaleString('en-US')}
+          </a>
+          <a href="${rejectUrl}" style="display: inline-block; background: #261e20; color: #ff5252; text-decoration: none; padding: 13px 22px; font-weight: 600; border-radius: 8px; font-size: 14px; border: 1px solid #5a2626;">
+            ✖ Từ chối
+          </a>
+        </div>
+        <div style="border-top: 1px solid #232b38; padding-top: 18px; font-size: 12px; color: #607182; line-height: 1.6;">
+          Nếu nút không bấm được, bạn có thể copy link này mở trên trình duyệt:<br>
+          <a href="${approveUrl}" style="color: #ffd700; word-break: break-all;">${approveUrl}</a>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  try {
+    const fromSender = env.RESEND_FROM || 'Mở Hòm CS2 <onboarding@resend.dev>';
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: fromSender,
+        to: [adminEmail],
+        subject: `[CS2 Case] Yêu cầu nạp $${amount} (10k VNĐ): ${name}`,
+        html,
+      }),
+    });
+    return res.ok;
+  } catch (err) {
+    console.error('[Resend Exception]', err);
+    return false;
+  }
+}
+
 function renderHtmlStatus({ title, isSuccess, message, userName }) {
   const accentColor = isSuccess ? '#00f5a0' : '#ff5252';
   const icon = isSuccess ? '✔' : '✖';
@@ -290,6 +366,67 @@ export default {
         });
       }
 
+      // Duyệt nạp tiền vượt hạn mức qua email 1-click
+      if (path === '/approve-topup' && req.method === 'GET') {
+        const token = url.searchParams.get('token');
+        if (!token) return renderHtmlStatus({ title: 'Lỗi', isSuccess: false, message: 'Thiếu mã xác nhận duyệt nạp tiền.' });
+        const reqRow = await env.DB.prepare("SELECT * FROM topup_requests WHERE approve_token = ? AND status = 'pending'").bind(token).first();
+        if (!reqRow) {
+          return renderHtmlStatus({
+            title: 'Liên Kết Không Khả Dụng',
+            isSuccess: false,
+            message: 'Yêu cầu nạp tiền này không tồn tại, đã được xử lý hoặc hết hạn.',
+          });
+        }
+        const now = Date.now();
+        await env.DB.prepare("UPDATE topup_requests SET status = 'approved', approve_token = NULL, updated = ? WHERE id = ?").bind(now, reqRow.id).run();
+
+        // Tự động cộng số tiền vào states của người chơi trong cơ sở dữ liệu D1
+        const stRow = await env.DB.prepare('SELECT data FROM states WHERE user_id = ?').bind(reqRow.user_id).first();
+        if (stRow) {
+          try {
+            const stData = JSON.parse(stRow.data);
+            stData.stats ??= {};
+            stData.stats.balance = (Number(stData.stats.balance) || 0) + reqRow.amount;
+            stData.stats.topup = (Number(stData.stats.topup) || 0) + reqRow.amount;
+            const worth = Number(stData.stats.balance || 0) + (stData.inv || []).reduce((s, i) => s + (Number(i.price) || 0), 0);
+            await env.DB.prepare('UPDATE states SET data = ?, worth = ?, updated = ? WHERE user_id = ?')
+              .bind(JSON.stringify(stData), worth, now, reqRow.user_id).run();
+          } catch (e) {
+            console.error('[Approve Topup state update error]', e);
+          }
+        }
+
+        return renderHtmlStatus({
+          title: 'Phê Duyệt Nạp Tiền Thành Công',
+          isSuccess: true,
+          userName: reqRow.user_name,
+          message: `Đã cộng thành công +$${reqRow.amount.toLocaleString('en-US')} vào tài khoản của người chơi.`,
+        });
+      }
+
+      // Từ chối nạp tiền qua email 1-click
+      if (path === '/reject-topup' && req.method === 'GET') {
+        const token = url.searchParams.get('token');
+        if (!token) return renderHtmlStatus({ title: 'Lỗi', isSuccess: false, message: 'Thiếu mã xác nhận từ chối.' });
+        const reqRow = await env.DB.prepare("SELECT * FROM topup_requests WHERE approve_token = ? AND status = 'pending'").bind(token).first();
+        if (!reqRow) {
+          return renderHtmlStatus({
+            title: 'Liên Kết Không Khả Dụng',
+            isSuccess: false,
+            message: 'Yêu cầu này không tồn tại hoặc đã được xử lý trước đó.',
+          });
+        }
+        const now = Date.now();
+        await env.DB.prepare("UPDATE topup_requests SET status = 'rejected', approve_token = NULL, updated = ? WHERE id = ?").bind(now, reqRow.id).run();
+        return renderHtmlStatus({
+          title: 'Đã Từ Chối Yêu Cầu Nạp Tiền',
+          isSuccess: false,
+          userName: reqRow.user_name,
+          message: `Đã từ chối yêu cầu nạp +$${reqRow.amount.toLocaleString('en-US')} của tài khoản này.`,
+        });
+      }
+
       if (path === '/register' && req.method === 'POST') {
         const { name, password } = await readBody(req);
         if (!validName(name)) return reply({ error: 'Tên 1–20 ký tự: chữ, số, khoảng trắng, . _ -' }, 400);
@@ -361,6 +498,41 @@ export default {
           'INSERT INTO states (user_id, data, worth, opened, updated) VALUES (?, ?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET data = excluded.data, worth = excluded.worth, opened = excluded.opened, updated = excluded.updated'
         ).bind(me.id, JSON.stringify(data), worth, opened, updated).run();
         return reply({ updated });
+      }
+
+      if (path === '/topup-request' && req.method === 'POST') {
+        const pending = await env.DB.prepare("SELECT id FROM topup_requests WHERE user_id = ? AND status = 'pending'").bind(me.id).first();
+        if (pending) {
+          return reply({ ok: false, pending: true, message: 'Bạn đang có một yêu cầu nạp tiền đang chờ Quản trị viên duyệt. Vui lòng chờ hoặc nhắn tin Zalo 0968070182 để được duyệt nhanh!' });
+        }
+        const approveToken = randomHex(32);
+        const now = Date.now();
+        const amount = 5000;
+        const fee = 10000;
+        await env.DB.prepare(
+          "INSERT INTO topup_requests (user_id, user_name, amount, fee, status, approve_token, created) VALUES (?, ?, ?, ?, 'pending', ?, ?)"
+        ).bind(me.id, me.name, amount, fee, approveToken, now).run();
+
+        const ip = req.headers.get('CF-Connecting-IP') || req.headers.get('X-Forwarded-For') || '';
+        await sendTopupNotification(env, { name: me.name, amount, fee, approveToken, reqUrl: req.url, ip });
+
+        return reply({
+          ok: true,
+          pending: true,
+          message: 'Đã gửi yêu cầu nạp $5.000 (phí 10.000đ) tới Quản trị viên thành công!',
+        });
+      }
+
+      if (path === '/topup-status' && req.method === 'GET') {
+        const reqRow = await env.DB.prepare(
+          "SELECT id, amount, status, created, updated, acknowledged FROM topup_requests WHERE user_id = ? ORDER BY id DESC LIMIT 1"
+        ).bind(me.id).first();
+        if (!reqRow) return reply({ request: null });
+        if (reqRow.status === 'approved' && !reqRow.acknowledged) {
+          await env.DB.prepare("UPDATE topup_requests SET acknowledged = 1 WHERE id = ?").bind(reqRow.id).run();
+          return reply({ request: reqRow, justApproved: true });
+        }
+        return reply({ request: reqRow, justApproved: false });
       }
 
       if (path === '/password' && req.method === 'POST') {
