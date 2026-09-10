@@ -997,18 +997,28 @@
     rifleGroup = new THREE.Group();
     weaponMesh.add(rifleGroup);
 
-    const rifleSkinMat = new THREE.MeshStandardMaterial({ roughness: 0.3, metalness: 0.5 });
+    const rifleSkinMat = new THREE.MeshStandardMaterial({
+      roughness: 0.3,
+      metalness: 0.5,
+      side: THREE.DoubleSide
+    });
     rifleMaterials.push(rifleSkinMat);
 
     // Body
     const rReceiver = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.12, 0.48), rifleSkinMat);
     rifleGroup.add(rReceiver);
 
-    // Side Decal Plate facing player
-    const rDecal = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.11), rifleSkinMat);
-    rDecal.rotation.y = -Math.PI / 2;
+    // Side Decal Plate facing camera (Normal towards -X)
+    const rDecal = new THREE.Mesh(new THREE.PlaneGeometry(0.44, 0.11), rifleSkinMat);
+    rDecal.rotation.y = Math.PI / 2;
     rDecal.position.set(-0.041, 0, 0);
     rifleGroup.add(rDecal);
+
+    // Top Decal Plate facing camera from above
+    const rTopDecal = new THREE.Mesh(new THREE.PlaneGeometry(0.075, 0.46), rifleSkinMat);
+    rTopDecal.rotation.x = -Math.PI / 2;
+    rTopDecal.position.set(0, 0.061, 0);
+    rifleGroup.add(rTopDecal);
 
     // Barrel
     const rBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.42, 12), darkMetalMat);
@@ -1057,7 +1067,11 @@
     pistolGroup.visible = false;
     weaponMesh.add(pistolGroup);
 
-    const pistolSkinMat = new THREE.MeshStandardMaterial({ roughness: 0.28, metalness: 0.55 });
+    const pistolSkinMat = new THREE.MeshStandardMaterial({
+      roughness: 0.28,
+      metalness: 0.55,
+      side: THREE.DoubleSide
+    });
     pistolMaterials.push(pistolSkinMat);
 
     // Deagle Slide (Top)
@@ -1065,11 +1079,17 @@
     pSlide.position.set(0, 0.04, -0.08);
     pistolGroup.add(pSlide);
 
-    // Slide Decal Plate
+    // Slide Decal Plate facing camera
     const pDecal = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.07), pistolSkinMat);
-    pDecal.rotation.y = -Math.PI / 2;
+    pDecal.rotation.y = Math.PI / 2;
     pDecal.position.set(-0.033, 0.04, -0.08);
     pistolGroup.add(pDecal);
+
+    // Slide Top Decal
+    const pTopDecal = new THREE.Mesh(new THREE.PlaneGeometry(0.062, 0.32), pistolSkinMat);
+    pTopDecal.rotation.x = -Math.PI / 2;
+    pTopDecal.position.set(0, 0.078, -0.08);
+    pistolGroup.add(pTopDecal);
 
     // Deagle Barrel tip
     const pBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.06, 12), darkMetalMat);
@@ -1096,7 +1116,11 @@
     knifeGroup.visible = false;
     weaponMesh.add(knifeGroup);
 
-    const knifeSkinMat = new THREE.MeshStandardMaterial({ roughness: 0.15, metalness: 0.85 });
+    const knifeSkinMat = new THREE.MeshStandardMaterial({
+      roughness: 0.15,
+      metalness: 0.85,
+      side: THREE.DoubleSide
+    });
     knifeMaterials.push(knifeSkinMat);
 
     // Curved Blade (Karambit claw)
@@ -1106,9 +1130,9 @@
     kBlade.position.set(0, 0.06, -0.16);
     knifeGroup.add(kBlade);
 
-    // Blade Decal Plate
+    // Blade Decal Plate facing camera
     const kDecal = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.075), knifeSkinMat);
-    kDecal.rotation.y = -Math.PI / 2;
+    kDecal.rotation.y = Math.PI / 2;
     kDecal.position.set(-0.009, 0.06, -0.16);
     knifeGroup.add(kDecal);
 
@@ -1788,14 +1812,14 @@
       const bobX = Math.cos(bobTimer * 0.5) * 0.015;
       const bobY = Math.sin(bobTimer) * 0.015;
 
-      // Base stance
+      // Base stance with CS2 natural inward weapon canting
       let posX = 0.28 + recoilOffset.x + player.swayX + bobX - (inspectProgress * 0.1);
       let posY = -0.28 + recoilOffset.y + player.swayY + bobY + (inspectProgress * 0.05) - switchOffset;
       let posZ = -0.6 + recoilOffset.z;
 
-      let rotX = recoilRot.x - (inspectProgress * 0.2);
-      let rotY = recoilRot.y + (inspectProgress * 0.85);
-      let rotZ = recoilRot.z - (inspectProgress * 0.6);
+      let rotX = recoilRot.x - (inspectProgress * 0.2) + 0.03;
+      let rotY = recoilRot.y + (inspectProgress * 0.85) - 0.14;
+      let rotZ = recoilRot.z - (inspectProgress * 0.6) + 0.06;
 
       // Knife attack slash motion
       if (STATE.currentSlot === 3 && slashProgress > 0.01) {
