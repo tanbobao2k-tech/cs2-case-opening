@@ -593,12 +593,16 @@
     camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 100);
     camera.rotation.order = 'YXZ';
 
-    // Dedicated crisp lighting attached to camera for weapon viewmodel & skin brilliance
-    const vmDirLight = new THREE.DirectionalLight(0xffffff, 0.95);
+    // Dedicated crisp bright lighting attached to camera for weapon viewmodel & skin brilliance
+    const vmDirLight = new THREE.DirectionalLight(0xffffff, 1.35);
     vmDirLight.position.set(1.5, 2.2, 1.2);
     camera.add(vmDirLight);
 
-    const vmAmbientLight = new THREE.AmbientLight(0xffffff, 0.65);
+    const vmFillLight = new THREE.DirectionalLight(0xffffff, 0.7);
+    vmFillLight.position.set(-1.2, 0.6, 1.0);
+    camera.add(vmFillLight);
+
+    const vmAmbientLight = new THREE.AmbientLight(0xffffff, 0.85);
     camera.add(vmAmbientLight);
 
     renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
@@ -607,7 +611,7 @@
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.12;
+    renderer.toneMappingExposure = 1.22;
     renderer.outputEncoding = THREE.sRGBEncoding;
     container.appendChild(renderer.domElement);
 
@@ -1341,6 +1345,12 @@
         akRealGroup.setRotationFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(5), THREE.MathUtils.degToRad(185), 0));
 
         akRealGroup.traverse((child) => {
+          if (child.name === 'SkeletalMeshComponent0') {
+            // User requested: "không cần quan tâm nhân vật hãy làm kỹ vào cái skin súng thôi nhân vật cho 2 cục tượng trưng là được"
+            // Hide bulky character arms so the screen is 100% focused on the AK-47 Wild Lotus skin!
+            child.visible = false;
+            return;
+          }
           if (child.isMesh || child.isSkinnedMesh) {
             child.castShadow = true;
             child.receiveShadow = true;
@@ -1350,14 +1360,49 @@
                 if (m.name === 'Material.002') {
                   akRealMaterial = m;
                   m.map = akBakedLotusTexture;
-                  m.roughness = 0.35;
-                  m.metalness = 0.28;
+                  m.roughness = 0.18; // Smooth satin finish to keep skin vibrant
+                  m.metalness = 0.08; // Low metalness so skin colors stay luminous and bright
                   m.needsUpdate = true;
                 }
               });
             }
           }
         });
+
+        // 2 symbolic compact glove blocks as requested ("nhân vật cho 2 cục tượng trưng là được")
+        const symbolicGloveMat = new THREE.MeshStandardMaterial({ color: 0x181a20, roughness: 0.8, metalness: 0.15 });
+        const gloveR = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.8, 0.65), symbolicGloveMat);
+        gloveR.position.set(-0.06, -0.65, 0.85);
+        gloveR.rotation.set(0.35, 0.05, -0.15);
+        akRealGroup.add(gloveR);
+
+        const gloveL = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.6, 0.85), symbolicGloveMat);
+        gloveL.position.set(-0.05, -0.35, 4.8);
+        gloveL.rotation.set(-0.15, -0.2, 0.25);
+        akRealGroup.add(gloveL);
+
+        // High-definition transparent skin decals on the real 3D AK-47 model for 100% razor-sharp clarity
+        const akSideDecalMat = new THREE.MeshBasicMaterial({
+          map: texLoader.load('assets/ak47_wild_lotus_vibrant.png'),
+          transparent: true,
+          opacity: 0.98,
+          alphaTest: 0.12,
+          side: THREE.DoubleSide,
+          depthWrite: false
+        });
+
+        // Left face decal (faces player camera directly in 1st person)
+        const akSideDecalL = new THREE.Mesh(new THREE.PlaneGeometry(8.188, 2.247), akSideDecalMat);
+        akSideDecalL.rotation.y = -Math.PI / 2;
+        akSideDecalL.position.set(-0.355, -0.328, 3.499);
+        akRealGroup.add(akSideDecalL);
+
+        // Right face decal (for inspect turnaround)
+        const akSideDecalR = new THREE.Mesh(new THREE.PlaneGeometry(8.188, 2.247), akSideDecalMat);
+        akSideDecalR.rotation.y = Math.PI / 2;
+        akSideDecalR.scale.x = -1;
+        akSideDecalR.position.set(0.245, -0.328, 3.499);
+        akRealGroup.add(akSideDecalR);
 
         viewmodelRig.add(akRealGroup);
 
