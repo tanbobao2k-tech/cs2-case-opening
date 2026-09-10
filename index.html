@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=24" />
+  <link rel="stylesheet" href="css/style.css?v=25" />
   <script>
     document.addEventListener('contextmenu', (e) => e.preventDefault());
     document.addEventListener('keydown', (e) => {
@@ -259,38 +259,53 @@
     </div>
   </div>
 
-  <!-- Modal: nạp tiền ví ảo -->
+  <!-- Modal: nạp tiền ví ảo có giới hạn -->
   <div id="modal-topup" class="modal" hidden>
     <div class="modal-box modal-topup-box">
       <button class="modal-close" data-close id="topup-close">&times;</button>
       <div class="pf-head">
         <span class="pf-avatar">💳</span>
         <h2>Nạp tiền ví ảo</h2>
-        <p class="muted">Nhập số tiền USD bạn muốn nạp vào ví ảo (hoàn toàn miễn phí, nạp bao nhiêu tùy thích).</p>
+        <p class="muted">Hạn mức mỗi lần nạp tối đa <b>$1.000</b> · Số dư ví tối đa <b>$5.000</b> (khi hết hoặc gần hết tiền mới nạp thêm được).</p>
+      </div>
+
+      <div class="topup-limit-card">
+        <div class="topup-limit-header">
+          <span>Số dư ví: <b id="topup-cur-balance" class="pos">$0.00</b></span>
+          <span class="topup-max-tag">Hạn mức: $5.000</span>
+        </div>
+        <div class="topup-bar-track">
+          <div id="topup-bar-fill" class="topup-bar-fill" style="width: 0%;"></div>
+        </div>
+        <div class="topup-limit-sub" id="topup-remaining-notice">
+          Có thể nạp thêm tối đa: <b id="topup-max-allowed" class="pos">+$1.000</b>
+        </div>
+      </div>
+
+      <div id="topup-full-alert" class="topup-full-alert" hidden>
+        ⚠️ Ví của bạn đã đạt hạn mức tối đa ($5.000). Hãy dùng số dư để mở hòm hoặc tham gia Case Battle trước khi nạp tiếp!
       </div>
 
       <form id="topup-form" class="topup-form" autocomplete="off">
         <div class="topup-input-wrap">
           <span class="topup-currency">$</span>
-          <input id="topup-amount-input" type="number" min="1" max="100000000" step="any" placeholder="Nhập số tiền..." value="1000" required autofocus />
+          <input id="topup-amount-input" type="number" min="1" max="1000" step="1" placeholder="Nhập số tiền..." value="500" required autofocus />
         </div>
 
-        <p class="muted" style="font-size: 12px; margin: 0 0 8px;">Gợi ý chọn nhanh:</p>
+        <p class="muted" style="font-size: 12px; margin: 0 0 8px;">Gợi ý chọn nhanh (tối đa $1.000/lần):</p>
         <div class="topup-chips" id="topup-chips">
+          <button type="button" class="btn btn-sm topup-chip" data-amt="50">+$50</button>
+          <button type="button" class="btn btn-sm topup-chip" data-amt="100">+$100</button>
+          <button type="button" class="btn btn-sm topup-chip" data-amt="250">+$250</button>
           <button type="button" class="btn btn-sm topup-chip" data-amt="500">+$500</button>
           <button type="button" class="btn btn-sm topup-chip" data-amt="1000">+$1.000</button>
-          <button type="button" class="btn btn-sm topup-chip" data-amt="5000">+$5.000</button>
-          <button type="button" class="btn btn-sm topup-chip" data-amt="10000">+$10.000</button>
-          <button type="button" class="btn btn-sm topup-chip" data-amt="50000">+$50.000</button>
-          <button type="button" class="btn btn-sm topup-chip" data-amt="100000">+$100.000</button>
+          <button type="button" class="btn btn-sm topup-chip" id="topup-chip-max" data-amt="max">Nạp tối đa</button>
         </div>
 
         <button type="submit" class="btn btn-primary btn-lg" id="topup-submit" style="width: 100%; margin-top: 10px;">
           ✓ Nạp ngay vào ví
         </button>
       </form>
-
-      <p class="note" style="margin-top: 14px; text-align: center;">Số dư hiện tại: <b id="topup-cur-balance" class="pos">$0.00</b></p>
     </div>
   </div>
 
@@ -767,6 +782,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="data/cases.js?v=8"></script>
-  <script src="js/app.js?v=25"></script>
+  <script src="js/app.js?v=26"></script>
 </body>
 </html>
