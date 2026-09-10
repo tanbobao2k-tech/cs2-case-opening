@@ -338,6 +338,41 @@ function tick(freq = 900) {
     o.stop(audioCtx.currentTime + 0.05);
   } catch {}
 }
+function playWinSound() {
+  try {
+    audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
+    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+    notes.forEach((freq, idx) => {
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      const t = audioCtx.currentTime + idx * 0.09;
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(0.001, t);
+      g.gain.exponentialRampToValueAtTime(0.12, t + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+      o.connect(g).connect(audioCtx.destination);
+      o.start(t);
+      o.stop(t + 0.65);
+    });
+  } catch {}
+}
+function playLoseSound() {
+  try {
+    audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
+    const t = audioCtx.currentTime;
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(160, t);
+    o.frequency.exponentialRampToValueAtTime(55, t + 0.5);
+    g.gain.setValueAtTime(0.08, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+    o.connect(g).connect(audioCtx.destination);
+    o.start(t);
+    o.stop(t + 0.55);
+  } catch {}
+}
 function animateSpin({ target, duration, onFrame, onTick, pitch }) {
   return new Promise((resolve) => {
     const ease = (t) => 1 - Math.pow(1 - t, 5);
@@ -755,83 +790,353 @@ function finishBattle(current, me) {
   tick(winner === me ? 1400 : 300);
 }
 
-// ---------- Trade với bot ----------
+// ---------- NÂNG CẤP SKIN (SKIN UPGRADE) ----------
 const BOT_STOCK = ITEMS.map((base) => {
-  // bot bán ở độ mòn Field-Tested nếu skin có, không thì độ mòn gần nhất trong khoảng float
+  // bot có sẵn skin ở độ mòn Field-Tested nếu có, không thì độ mòn gần nhất trong khoảng float
   const [lo, hi] = base.f;
   const wi = Math.max(wearIndex(lo), Math.min(2, wearIndex(hi - 1e-6)));
   const mid = Math.min(hi, Math.max(lo, (WEARS[wi].min + WEARS[wi].max) / 2));
   return instanceOf(base, +mid.toFixed(6), false, { caseName: 'Bot' });
 });
-const tr = { mine: new Set(), bot: new Set(), botShown: 60 };
+
+const up = {
+  wager: new Set(),
+  target: null,
+  side: 'right', // 'left' hoặc 'right'
+  rolling: false,
+  rotation: 0,
+  botShown: 60,
+  multFilter: 'all',
+};
+
 function pickCard(item, selected, onToggle, { disabled = false } = {}) {
   const el = itemCard(item, { showFrom: false });
   el.classList.add('pick');
   el.classList.toggle('selected', selected);
   el.classList.toggle('disabled', disabled);
   el.insertAdjacentHTML('afterbegin', '<span class="chk"></span><button class="zoom-btn" data-zoomer>🔍</button>');
-  el.onclick = (e) => { if (e.target.matches('[data-zoomer]')) openZoom(item); else onToggle(item); };
+  el.onclick = (e) => {
+    if (up.rolling) return;
+    if (e.target.matches('[data-zoomer]')) openZoom(item);
+    else onToggle(item);
+  };
   return el;
 }
+
 function openTrade() {
-  tr.mine.clear(); tr.bot.clear(); tr.botShown = 60;
-  renderTrade();
+  up.wager.clear();
+  up.target = null;
+  up.botShown = 60;
+  up.multFilter = 'all';
+  const resPanel = $('#up-result-panel');
+  if (resPanel) resPanel.hidden = true;
+  const needle = $('#up-needle-wrap');
+  if (needle) needle.style.transform = `rotate(${up.rotation % 360}deg)`;
+  renderUpgrade();
   openModal('#modal-trade');
 }
-function renderTrade() {
-  const mine = $('#tr-mine');
-  mine.innerHTML = '';
-  const list = $('#tr-mine-sort').value === 'price' ? [...inventory].sort((a, b) => (b.price || 0) - (a.price || 0)) : inventory;
-  list.slice(0, 300).forEach((i) => mine.appendChild(pickCard(i, tr.mine.has(i), (it) => { tr.mine.has(it) ? tr.mine.delete(it) : tr.mine.add(it); renderTrade(); })));
-  $('#tr-mine-empty').hidden = inventory.length > 0;
-  $('#tr-mine-count').textContent = inventory.length ? `(${tr.mine.size} chọn / ${inventory.length})` : '';
 
-  const q = $('#tr-search').value.trim().toLowerCase();
-  const f = $('#tr-bot-filter').value;
-  const stock = BOT_STOCK
-    .filter((i) => (f === 'all' || i.r === Number(f)) && (!q || i.n.toLowerCase().includes(q)))
-    .sort((a, b) => b.price - a.price);
-  const bot = $('#tr-bot');
-  bot.innerHTML = '';
-  // Đồ đang chọn luôn hiện đầu danh sách
-  const selectedFirst = [...tr.bot].filter((i) => !stock.slice(0, tr.botShown).includes(i));
-  [...selectedFirst, ...stock.slice(0, tr.botShown)].forEach((i) => bot.appendChild(pickCard(i, tr.bot.has(i), (it) => { tr.bot.has(it) ? tr.bot.delete(it) : tr.bot.add(it); renderTrade(); })));
-  $('#tr-bot-more').hidden = stock.length <= tr.botShown;
-  $('#tr-bot-more').textContent = `Xem thêm (${Math.min(60, stock.length - tr.botShown)} / còn ${stock.length - tr.botShown})`;
-
-  const give = sum([...tr.mine], (i) => i.price || 0);
-  const get = sum([...tr.bot], (i) => i.price);
-  const fee = get * TRADE_FEE;
-  const delta = give - get - fee;
-  const after = stats.balance + delta;
-  $('#tr-give').textContent = fmtUSD(give);
-  $('#tr-get').textContent = fmtUSD(get);
-  $('#tr-fee').textContent = fmtUSD(fee);
-  $('#tr-delta').textContent = (delta >= 0 ? '+' : '−') + fmtUSD(Math.abs(delta));
-  $('#tr-delta').className = delta >= 0 ? 'pos' : 'neg';
-  $('#tr-left').textContent = fmtUSD(after);
-  $('#tr-left').className = after >= 0 ? '' : 'neg';
-  const ok = (tr.mine.size || tr.bot.size) && after >= -1e-9;
-  $('#tr-confirm').disabled = !ok;
-  $('#tr-msg').textContent = !tr.mine.size && !tr.bot.size ? 'Chọn đồ bạn muốn đưa (trái) và/hoặc đồ muốn lấy (phải). Chênh lệch tự bù trừ qua ví.'
-    : after < 0 ? `Thiếu ${fmtUSD(-after)} — chọn thêm đồ để đưa, bỏ bớt đồ nhận, hoặc nạp ví.`
-    : tr.bot.size === 0 ? 'Bạn đang bán đồ cho bot lấy tiền vào ví (không mất phí).'
-    : 'Sẵn sàng trade.';
+// Hàm tính toán và vẽ cung tròn SVG cho Vòng xoay Nâng cấp
+function polarToCartesian(cx, cy, r, angleInDegrees) {
+  const rad = (angleInDegrees - 90) * Math.PI / 180.0;
+  return {
+    x: +(cx + (r * Math.cos(rad))).toFixed(2),
+    y: +(cy + (r * Math.sin(rad))).toFixed(2),
+  };
 }
-function confirmTrade() {
-  const give = [...tr.mine], get = [...tr.bot];
-  const giveV = sum(give, (i) => i.price || 0), getV = sum(get, (i) => i.price);
-  const delta = giveV - getV - getV * TRADE_FEE;
-  if (stats.balance + delta < -1e-9) return;
-  removeFromInventory(give);
-  const received = get.map((i) => ({ ...i, t: Date.now(), caseName: 'Trade bot' }));
-  addToInventory(received);
-  stats.balance += delta;
-  stats.trades++;
-  persistAndRender();
-  toast(`Trade xong: đưa ${give.length} món, nhận ${received.length} món, ví ${delta >= 0 ? '+' : '−'}${fmtUSD(Math.abs(delta))}`);
-  tr.mine.clear(); tr.bot.clear();
-  renderTrade();
+
+function describeArc(cx, cy, r, startAngle, endAngle) {
+  const start = polarToCartesian(cx, cy, r, endAngle);
+  const end = polarToCartesian(cx, cy, r, startAngle);
+  const diff = (endAngle - startAngle + 360) % 360;
+  const largeArcFlag = diff > 180 ? '1' : '0';
+  return [
+    'M', start.x, start.y,
+    'A', r, r, 0, largeArcFlag, 0, end.x, end.y,
+  ].join(' ');
+}
+
+function updateWheelArc(rate) {
+  const path = $('#up-wheel-arc');
+  if (!path) return;
+  if (rate <= 0) {
+    path.setAttribute('d', '');
+    return;
+  }
+  const angle = Math.min(359.99, (rate / 100) * 360);
+  let d = '';
+  if (up.side === 'right') {
+    // Từ 12h (0°) thuận chiều kim đồng hồ đến angle
+    d = describeArc(140, 140, 110, 0, angle);
+  } else {
+    // Từ 12h (0°) ngược chiều kim đồng hồ (từ 360 - angle đến 360)
+    d = describeArc(140, 140, 110, 360 - angle, 360);
+  }
+  path.setAttribute('d', d);
+}
+
+function getUpgradeWinRate() {
+  const wagerVal = sum([...up.wager], (i) => i.price || 0);
+  const targetVal = up.target?.price || 0;
+  if (wagerVal <= 0 || targetVal <= 0) return 0;
+  return Math.min(95, Math.max(0.01, (wagerVal / targetVal) * 100));
+}
+
+function renderUpgrade() {
+  if (!$('#modal-trade') || $('#modal-trade').hidden) return;
+
+  // 1. Cột Đồ của bạn (Wager)
+  const mineList = $('#up-mine-list');
+  if (mineList) {
+    mineList.innerHTML = '';
+    const mineSearch = ($('#up-mine-search')?.value || '').trim().toLowerCase();
+    const mineRarity = $('#up-mine-rarity')?.value || 'all';
+    const mineSort = $('#up-mine-sort')?.value || 'price-desc';
+
+    let myItems = [...inventory].filter((item) => {
+      if (mineRarity !== 'all' && item.r !== Number(mineRarity)) return false;
+      if (mineSearch && !item.n.toLowerCase().includes(mineSearch)) return false;
+      return true;
+    });
+
+    if (mineSort === 'price-desc') myItems.sort((a, b) => (b.price || 0) - (a.price || 0));
+    else if (mineSort === 'price-asc') myItems.sort((a, b) => (a.price || 0) - (b.price || 0));
+
+    myItems.slice(0, 300).forEach((item) => {
+      mineList.appendChild(pickCard(item, up.wager.has(item), (it) => {
+        if (up.wager.has(it)) up.wager.delete(it);
+        else up.wager.add(it);
+        renderUpgrade();
+      }));
+    });
+
+    $('#up-mine-empty').hidden = inventory.length > 0;
+  }
+
+  const wagerVal = sum([...up.wager], (i) => i.price || 0);
+  $('#up-wager-summary').textContent = `${up.wager.size} món · ${fmtUSD(wagerVal)}`;
+  $('#up-compare-wager-val').textContent = fmtUSD(wagerVal);
+  $('#up-compare-wager-count').textContent = `${up.wager.size} món đã chọn`;
+
+  // 2. Cột Đồ mong muốn (Target)
+  const targetSearch = ($('#up-target-search')?.value || '').trim().toLowerCase();
+  const targetRarity = $('#up-target-rarity')?.value || 'all';
+
+  let targetPool = BOT_STOCK.filter((item) => {
+    if (targetRarity !== 'all' && item.r !== Number(targetRarity)) return false;
+    if (targetSearch && !item.n.toLowerCase().includes(targetSearch)) return false;
+    return true;
+  });
+
+  // Áp dụng multiplier filter nếu có
+  if (up.multFilter !== 'all' && wagerVal > 0) {
+    const mult = Number(up.multFilter);
+    const targetPrice = wagerVal * mult;
+    targetPool = targetPool
+      .filter((i) => i.price >= targetPrice * 0.7 && i.price <= targetPrice * 1.35)
+      .sort((a, b) => Math.abs(a.price - targetPrice) - Math.abs(b.price - targetPrice));
+  } else {
+    targetPool.sort((a, b) => b.price - a.price);
+  }
+
+  const targetList = $('#up-target-list');
+  if (targetList) {
+    targetList.innerHTML = '';
+    const targetsToShow = [...(up.target ? [up.target] : []), ...targetPool.filter((i) => i !== up.target)];
+    targetsToShow.slice(0, up.botShown).forEach((item) => {
+      targetList.appendChild(pickCard(item, up.target === item, (it) => {
+        up.target = (up.target === it ? null : it);
+        renderUpgrade();
+      }));
+    });
+  }
+
+  $('#up-target-more').hidden = targetPool.length <= up.botShown;
+  $('#up-target-count').textContent = `${targetPool.length} món có sẵn`;
+
+  // Target preview
+  if (up.target) {
+    $('#up-compare-target-val').textContent = fmtUSD(up.target.price);
+    $('#up-compare-target-name').textContent = up.target.n;
+    $('#up-compare-target-name').title = up.target.n;
+  } else {
+    $('#up-compare-target-val').textContent = '$0.00';
+    $('#up-compare-target-name').textContent = 'Chưa chọn skin';
+    $('#up-compare-target-name').title = '';
+  }
+
+  // 3. Vòng xoay & Tỷ lệ
+  const winRate = getUpgradeWinRate();
+  $('#up-rate-num').textContent = winRate > 0 ? winRate.toFixed(2) + '%' : '0.00%';
+  if (wagerVal > 0 && up.target) {
+    const mult = up.target.price / wagerVal;
+    $('#up-target-multiplier').textContent = mult >= 1 ? `${mult.toFixed(2)}x` : `0.${Math.round(mult * 100)}x`;
+  } else {
+    $('#up-target-multiplier').textContent = '—';
+  }
+
+  updateWheelArc(winRate);
+
+  // Selector Trái / Phải
+  $('#up-dir-left').classList.toggle('active', up.side === 'left');
+  $('#up-dir-right').classList.toggle('active', up.side === 'right');
+
+  // Nút Nâng Cấp
+  const canRoll = !up.rolling && up.wager.size > 0 && up.target != null;
+  $('#up-roll-btn').disabled = !canRoll;
+  if (!up.rolling) {
+    $('#up-roll-text').textContent = winRate > 0 ? `NÂNG CẤP (${winRate.toFixed(2)}%)` : 'NÂNG CẤP';
+  }
+
+  // Status message
+  if (up.wager.size === 0) {
+    $('#up-status-msg').textContent = 'Chọn ít nhất 1 món từ kho bên trái (hoặc bấm Chọn tất cả).';
+  } else if (!up.target) {
+    $('#up-status-msg').textContent = 'Chọn 1 món đồ mong muốn từ danh sách bên phải.';
+  } else {
+    $('#up-status-msg').textContent = `Sẵn sàng! Tỷ lệ trúng: ${winRate.toFixed(2)}% (Vùng ${up.side === 'left' ? 'TRÁI' : 'PHẢI'}). Bấm Nâng cấp để quay!`;
+  }
+}
+
+function selectAllWager() {
+  if (up.rolling) return;
+  const mineSearch = ($('#up-mine-search')?.value || '').trim().toLowerCase();
+  const mineRarity = $('#up-mine-rarity')?.value || 'all';
+  let count = 0;
+  inventory.forEach((item) => {
+    if (mineRarity !== 'all' && item.r !== Number(mineRarity)) return;
+    if (mineSearch && !item.n.toLowerCase().includes(mineSearch)) return;
+    up.wager.add(item);
+    count++;
+  });
+  renderUpgrade();
+  toast(`Đã chọn tất cả ${count} món vào cược`);
+}
+
+function clearWager() {
+  if (up.rolling) return;
+  up.wager.clear();
+  renderUpgrade();
+}
+
+async function startUpgrade() {
+  if (up.rolling) return;
+  const winRate = getUpgradeWinRate();
+  if (winRate <= 0 || up.wager.size === 0 || !up.target) return;
+
+  up.rolling = true;
+  $('#up-roll-btn').disabled = true;
+  $('#up-roll-text').textContent = 'ĐANG QUAY...';
+  $('#up-result-panel').hidden = true;
+
+  // Tính góc trúng thưởng
+  // Nếu up.side === 'right': vùng trúng là [0, theta)
+  // Nếu up.side === 'left': vùng trúng là [360 - theta, 360)
+  const theta = (winRate / 100) * 360;
+
+  // Roll góc dừng ngẫu nhiên đồng đều 0 -> 360
+  const stopAngle = Math.random() * 360;
+
+  // Kiểm tra thắng hay thua dựa trên góc dừng
+  let isWin = false;
+  if (up.side === 'right') {
+    isWin = stopAngle >= 0 && stopAngle < theta;
+  } else {
+    isWin = stopAngle >= (360 - theta) && stopAngle < 360;
+  }
+
+  // Số vòng quay tối thiểu: 5-6 vòng (1800-2160 độ) + góc tới stopAngle
+  const currentNormalized = up.rotation % 360;
+  const deltaToStop = (stopAngle - currentNormalized + 360) % 360;
+  const fullSpins = (5 + Math.floor(Math.random() * 2)) * 360;
+  const totalTargetDeg = up.rotation + fullSpins + deltaToStop;
+
+  const needle = $('#up-needle-wrap');
+  const duration = 3800;
+  const start = performance.now();
+  const startDeg = up.rotation;
+  const diffDeg = totalTargetDeg - startDeg;
+
+  // Easing: bezier mượt mà giảm tốc
+  const easeOut = (t) => 1 - Math.pow(1 - t, 4);
+
+  let lastSector = -1;
+  await new Promise((resolve) => {
+    function frame(now) {
+      const p = Math.min(1, (now - start) / duration);
+      const current = startDeg + diffDeg * easeOut(p);
+      needle.style.transform = `rotate(${current}deg)`;
+
+      // Âm thanh tick mỗi 20 độ xoay
+      const sector = Math.floor(current / 20);
+      if (sector !== lastSector) {
+        lastSector = sector;
+        tick(600 + (1 - p) * 500);
+      }
+
+      if (p < 1) requestAnimationFrame(frame);
+      else resolve();
+    }
+    requestAnimationFrame(frame);
+  });
+
+  up.rotation = totalTargetDeg;
+  await sleep(400);
+
+  // Xử lý kết quả
+  const wageredItems = [...up.wager];
+  const wonItem = up.target;
+
+  // Luôn xoá đồ cược khỏi kho
+  removeFromInventory(wageredItems);
+
+  if (isWin) {
+    // Thắng!
+    playWinSound();
+    const itemToAdd = { ...wonItem, t: Date.now(), caseName: 'Nâng cấp' };
+    addToInventory([itemToAdd]);
+    stats.trades++;
+    if (!stats.best || itemToAdd.price > stats.best.price) {
+      stats.best = { ...itemToAdd };
+    }
+    persistAndRender();
+
+    // Hiển thị panel thắng
+    const panel = $('#up-result-panel');
+    panel.className = 'up-result-panel win';
+    $('#up-res-badge').textContent = 'NÂNG CẤP THÀNH CÔNG!';
+    $('#up-res-img').src = itemToAdd.img;
+    $('#up-res-name').innerHTML = nameHTML(itemToAdd);
+    $('#up-res-meta').textContent = `${itemToAdd.wear} · Float ${itemToAdd.float}`;
+    $('#up-res-price').textContent = fmtUSD(itemToAdd.price);
+    $('#up-res-again').textContent = 'Nâng cấp tiếp';
+    panel.hidden = false;
+
+    // Reset cược
+    up.wager.clear();
+    up.target = null;
+  } else {
+    // Thua
+    playLoseSound();
+    stats.trades++;
+    persistAndRender();
+
+    const panel = $('#up-result-panel');
+    panel.className = 'up-result-panel lose';
+    $('#up-res-badge').textContent = 'NÂNG CẤP THẤT BẠI';
+    $('#up-res-img').src = wonItem.img;
+    $('#up-res-name').innerHTML = `Trượt: ${wonItem.n}`;
+    $('#up-res-meta').textContent = `Kim dừng ở ${stopAngle.toFixed(1)}° (ngoài vùng ${up.side === 'left' ? 'Trái' : 'Phải'})`;
+    $('#up-res-price').textContent = `Mất ${wageredItems.length} món cược`;
+    $('#up-res-again').textContent = 'Thử lại';
+    panel.hidden = false;
+
+    // Reset cược
+    up.wager.clear();
+  }
+
+  up.rolling = false;
+  renderUpgrade();
 }
 
 // ---------- Trade-Up ----------
@@ -1023,7 +1328,7 @@ function renderStats() {
   });
   row('StatTrak™', stats.st, `${fmtPct(stats.opened ? stats.st / stats.opened : 0)} · kỳ vọng 10%`, '#ff8a3d');
   row('Case Battle', `${stats.battles.won}/${stats.battles.played}`, 'thắng / tổng trận', '#f5a524');
-  row('Trade / Trade-Up', `${stats.trades} / ${stats.tradeups}`, 'lượt trade bot / hợp đồng đã ký', '#c77dff');
+  row('Nâng cấp / Trade-Up', `${stats.trades} / ${stats.tradeups}`, 'lượt nâng cấp skin / hợp đồng đã ký', '#c77dff');
 
   const sc = $('#stats-cases');
   sc.innerHTML = '';
@@ -1119,12 +1424,28 @@ $('#bt-close').onclick = closeBattle;
 $('#bt-again').onclick = () => { closeBattle(); startBattle(); };
 
 $('#trade-open').onclick = openTrade;
-$('#tr-mine-sort').onchange = renderTrade;
-$('#tr-search').oninput = () => { tr.botShown = 60; renderTrade(); };
-$('#tr-bot-filter').onchange = () => { tr.botShown = 60; renderTrade(); };
-$('#tr-bot-more').onclick = () => { tr.botShown += 60; renderTrade(); };
-$('#tr-clear').onclick = () => { tr.mine.clear(); tr.bot.clear(); renderTrade(); };
-$('#tr-confirm').onclick = confirmTrade;
+$('#up-select-all').onclick = selectAllWager;
+$('#up-clear-wager').onclick = clearWager;
+$('#up-mine-search').oninput = renderUpgrade;
+$('#up-mine-sort').onchange = renderUpgrade;
+$('#up-mine-rarity').onchange = renderUpgrade;
+$('#up-target-search').oninput = () => { up.botShown = 60; renderUpgrade(); };
+$('#up-target-rarity').onchange = () => { up.botShown = 60; renderUpgrade(); };
+$('#up-target-more').onclick = () => { up.botShown += 60; renderUpgrade(); };
+$('#up-dir-left').onclick = () => { if (!up.rolling) { up.side = 'left'; renderUpgrade(); } };
+$('#up-dir-right').onclick = () => { if (!up.rolling) { up.side = 'right'; renderUpgrade(); } };
+$('#up-roll-btn').onclick = startUpgrade;
+$('#up-res-again').onclick = () => { $('#up-result-panel').hidden = true; };
+$('#up-res-close').onclick = () => { $('#up-result-panel').hidden = true; closeModal('#modal-trade'); };
+$('#up-mult-chips').onclick = (e) => {
+  const chip = e.target.closest('[data-mult]');
+  if (!chip || up.rolling) return;
+  $$('#up-mult-chips .up-chip').forEach((c) => c.classList.remove('active'));
+  chip.classList.add('active');
+  up.multFilter = chip.dataset.mult;
+  up.botShown = 60;
+  renderUpgrade();
+};
 
 $('#tradeup-open').onclick = openTradeUp;
 $('#tu-tabs').onclick = (e) => { const b = e.target.closest('[data-tier]'); if (b) { tu.tier = Number(b.dataset.tier); tu.picked = []; renderTradeUp(); } };

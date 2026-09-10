@@ -8,14 +8,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=8" />
+  <link rel="stylesheet" href="css/style.css?v=9" />
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="#">
       <span class="brand-mark">▣</span>
       <span>Mở Hòm <b>CS2</b></span>
-      <span class="brand-tag">miễn phí</span>
     </a>
     <button id="profile-btn" class="profile-chip" title="Tài khoản">👤 <b id="profile-name">—</b> <span id="sync-dot" class="sync-dot" title="Trạng thái đồng bộ"></span></button>
     <div class="wallet">
@@ -86,9 +85,9 @@
       </div>
       <div class="trade-grid">
         <div class="card trade-card">
-          <h3>Trade với bot</h3>
-          <p class="muted">Đưa skin trong kho, lấy bất kỳ skin nào trong kho bot (toàn bộ hơn 2.100 món). Bot ăn phí 5% trên đồ bạn nhận, chênh lệch bù trừ qua ví ảo.</p>
-          <button id="trade-open" class="btn btn-primary">Mở bàn trade</button>
+          <h3>Nâng cấp Skin (Skin Upgrade)</h3>
+          <p class="muted">Chọn tất cả hoặc từng món trong kho để cược lấy skin mong muốn theo tỷ lệ thắng. Vòng xoay chọn Trái hoặc Phải, kim quay nghẹt thở chuẩn bản gốc CS2!</p>
+          <button id="trade-open" class="btn btn-primary">Mở bàn nâng cấp</button>
         </div>
         <div class="card trade-card">
           <h3>Hợp đồng nâng cấp (Trade-Up)</h3>
@@ -376,25 +375,36 @@
     </div>
   </div>
 
-  <!-- Modal: trade với bot -->
+  <!-- Modal: Nâng cấp Skin (Skin Upgrade / Trade) -->
   <div id="modal-trade" class="modal" hidden>
-    <div class="modal-box modal-trade">
+    <div class="modal-box modal-upgrade">
       <button class="modal-close" data-close>&times;</button>
-      <h2 class="modal-title">Trade với bot</h2>
-      <div class="tr-grid">
-        <div class="tr-col">
-          <div class="tr-col-head">
-            <h4>Đồ của bạn <span id="tr-mine-count" class="muted"></span></h4>
-            <select id="tr-mine-sort"><option value="price">Giá cao</option><option value="new">Mới nhất</option></select>
+      <div class="up-head">
+        <h2 class="modal-title">⚡ Nâng Cấp Skin <span class="h-sub">Skin Upgrade</span></h2>
+        <span class="up-badge">Chuẩn tỷ lệ CS2</span>
+      </div>
+
+      <div class="up-layout">
+        <!-- CỘT 1: ĐỒ CỦA BẠN (WAGER) -->
+        <div class="up-col up-wager-col">
+          <div class="up-col-header">
+            <div>
+              <h4>Đồ cược của bạn</h4>
+              <span id="up-wager-summary" class="muted">0 món · $0.00</span>
+            </div>
+            <div class="up-col-actions">
+              <button id="up-select-all" class="btn btn-sm btn-primary">Chọn tất cả</button>
+              <button id="up-clear-wager" class="btn btn-sm btn-ghost">Bỏ chọn</button>
+            </div>
           </div>
-          <div id="tr-mine" class="tr-list"></div>
-          <p id="tr-mine-empty" class="empty">Kho trống — mở hòm để có đồ trade.</p>
-        </div>
-        <div class="tr-col">
-          <div class="tr-col-head">
-            <h4>Kho của bot</h4>
-            <input id="tr-search" type="search" placeholder="Tìm skin…" />
-            <select id="tr-bot-filter">
+          <div class="up-filters">
+            <input id="up-mine-search" type="search" placeholder="Tìm đồ trong kho…" />
+            <select id="up-mine-sort">
+              <option value="price-desc">Giá cao nhất</option>
+              <option value="price-asc">Giá thấp nhất</option>
+              <option value="new">Mới nhất</option>
+            </select>
+            <select id="up-mine-rarity">
               <option value="all">Mọi bậc</option>
               <option value="5">Dao / Găng</option>
               <option value="4">Covert</option>
@@ -403,22 +413,135 @@
               <option value="1">Mil-Spec</option>
             </select>
           </div>
-          <div id="tr-bot" class="tr-list"></div>
-          <button id="tr-bot-more" class="btn btn-ghost tr-more">Xem thêm</button>
+          <div id="up-mine-list" class="tr-list up-list"></div>
+          <p id="up-mine-empty" class="empty">Kho chưa có đồ. Hãy mở vài hòm trước nhé!</p>
         </div>
-      </div>
-      <div class="tr-summary">
-        <div class="tr-sum-row">
-          <div><span class="muted">Bạn đưa</span><b id="tr-give">$0.00</b></div>
-          <div><span class="muted">Bạn nhận</span><b id="tr-get">$0.00</b></div>
-          <div><span class="muted">Phí bot 5%</span><b id="tr-fee">$0.00</b></div>
-          <div><span class="muted">Ví thay đổi</span><b id="tr-delta">$0.00</b></div>
-          <div><span class="muted">Ví sau trade</span><b id="tr-left">$0.00</b></div>
+
+        <!-- CỘT 2: TRUNG TÂM VÒNG XOAY NÂNG CẤP -->
+        <div class="up-col-center">
+          <!-- So sánh 2 bên -->
+          <div class="up-compare">
+            <div class="up-compare-box up-box-wager">
+              <span class="lbl">Tổng cược</span>
+              <b id="up-compare-wager-val">$0.00</b>
+              <small id="up-compare-wager-count" class="muted">0 món</small>
+            </div>
+            <div class="up-compare-vs">➔</div>
+            <div class="up-compare-box up-box-target" id="up-box-target-preview">
+              <span class="lbl">Mục tiêu</span>
+              <b id="up-compare-target-val">$0.00</b>
+              <small id="up-compare-target-name" class="muted">Chưa chọn skin</small>
+            </div>
+          </div>
+
+          <!-- Vòng xoay Upgrade Wheel -->
+          <div class="up-wheel-container">
+            <div class="up-wheel-outer" id="up-wheel-outer">
+              <svg class="up-wheel-svg" viewBox="0 0 280 280">
+                <defs>
+                  <linearGradient id="winGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#00f5a0" />
+                    <stop offset="100%" stop-color="#00d9f5" />
+                  </linearGradient>
+                  <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="6" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                </defs>
+                <!-- Track nền xám -->
+                <circle cx="140" cy="140" r="110" class="up-wheel-track" />
+                <!-- Cung tròn trúng thưởng -->
+                <path id="up-wheel-arc" class="up-wheel-arc" d="" />
+              </svg>
+              <!-- Kim quay -->
+              <div class="up-needle-wrap" id="up-needle-wrap">
+                <div class="up-needle" id="up-needle">
+                  <div class="up-needle-tip"></div>
+                </div>
+              </div>
+              <!-- Tâm vòng tròn hiển thị tỷ lệ % -->
+              <div class="up-wheel-center-info">
+                <span class="up-center-title">TỶ LỆ THẮNG</span>
+                <span id="up-rate-num" class="up-rate-num">0.00%</span>
+                <span id="up-target-multiplier" class="up-multiplier-badge">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chọn TRÁI hoặc PHẢI -->
+          <div class="up-direction-selector">
+            <span class="up-dir-label">Vùng trúng thưởng:</span>
+            <div class="up-dir-btns">
+              <button type="button" id="up-dir-left" class="up-dir-btn" data-dir="left">
+                <span class="icon">◀</span> TRÁI
+              </button>
+              <button type="button" id="up-dir-right" class="up-dir-btn active" data-dir="right">
+                PHẢI <span class="icon">▶</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Nút hành động chính: BẮT ĐẦU NÂNG CẤP -->
+          <div class="up-action-wrap">
+            <button type="button" id="up-roll-btn" class="btn btn-primary btn-lg up-btn-roll" disabled>
+              <span class="up-roll-icon">⚡</span>
+              <span id="up-roll-text">NÂNG CẤP</span>
+            </button>
+            <p id="up-status-msg" class="muted up-status-msg">Chọn đồ cược bên trái và chọn mục tiêu bên phải để nâng cấp.</p>
+          </div>
+
+          <!-- Hộp kết quả (ẩn ban đầu) -->
+          <div id="up-result-panel" class="up-result-panel" hidden>
+            <div id="up-res-badge" class="up-res-badge">THẮNG!</div>
+            <div class="up-res-content">
+              <img id="up-res-img" src="" alt="" />
+              <div>
+                <h4 id="up-res-name"></h4>
+                <p id="up-res-meta" class="muted"></p>
+                <b id="up-res-price" class="up-res-price"></b>
+              </div>
+            </div>
+            <div class="up-res-actions">
+              <button type="button" id="up-res-again" class="btn btn-primary">Nâng cấp tiếp</button>
+              <button type="button" id="up-res-close" class="btn btn-ghost">Đóng</button>
+            </div>
+          </div>
         </div>
-        <p id="tr-msg" class="muted"></p>
-        <div class="row-btns">
-          <button id="tr-confirm" class="btn btn-primary btn-lg" disabled>Xác nhận trade</button>
-          <button id="tr-clear" class="btn btn-ghost btn-lg">Bỏ chọn</button>
+
+        <!-- CỘT 3: ĐỒ MONG MUỐN (TARGET) -->
+        <div class="up-col up-target-col">
+          <div class="up-col-header">
+            <div>
+              <h4>Chọn đồ mong muốn</h4>
+              <span id="up-target-count" class="muted">Toàn bộ kho đồ</span>
+            </div>
+          </div>
+          <!-- Bội số chọn nhanh -->
+          <div class="up-mult-row">
+            <span class="up-mult-label">Gợi ý:</span>
+            <div class="up-mult-chips" id="up-mult-chips">
+              <button type="button" class="up-chip active" data-mult="all">Tất cả</button>
+              <button type="button" class="up-chip" data-mult="1.5">1.5x</button>
+              <button type="button" class="up-chip" data-mult="2">2x</button>
+              <button type="button" class="up-chip" data-mult="5">5x</button>
+              <button type="button" class="up-chip" data-mult="10">10x</button>
+              <button type="button" class="up-chip" data-mult="20">20x</button>
+              <button type="button" class="up-chip" data-mult="50">50x</button>
+            </div>
+          </div>
+          <div class="up-filters">
+            <input id="up-target-search" type="search" placeholder="Tìm skin mong muốn…" />
+            <select id="up-target-rarity">
+              <option value="all">Mọi bậc</option>
+              <option value="5">Dao / Găng</option>
+              <option value="4">Covert</option>
+              <option value="3">Classified</option>
+              <option value="2">Restricted</option>
+              <option value="1">Mil-Spec</option>
+            </select>
+          </div>
+          <div id="up-target-list" class="tr-list up-list"></div>
+          <button type="button" id="up-target-more" class="btn btn-ghost tr-more">Xem thêm skin</button>
         </div>
       </div>
     </div>
@@ -474,6 +597,6 @@
   </div>
 
   <script src="data/cases.js?v=8"></script>
-  <script src="js/app.js?v=8"></script>
+  <script src="js/app.js?v=9"></script>
 </body>
 </html>
