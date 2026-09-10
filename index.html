@@ -9,6 +9,26 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css?v=24" />
+  <script>
+    document.addEventListener('contextmenu', (e) => e.preventDefault());
+    document.addEventListener('keydown', (e) => {
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && ['I', 'i', 'J', 'j', 'C', 'c'].includes(e.key)) ||
+        (e.ctrlKey && ['u', 'U', 's', 'S'].includes(e.key))
+      ) {
+        e.preventDefault();
+        return false;
+      }
+    });
+    setInterval(() => {
+      const s = performance.now();
+      debugger;
+      if (performance.now() - s > 100) {
+        document.body.innerHTML = '<div style="background:#0b0e14;color:#ff5252;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;font-size:20px;font-weight:bold;">⚠️ Không được phép kiểm tra mã nguồn trang web này!</div>';
+      }
+    }, 1000);
+  </script>
 </head>
 <body>
   <header class="topbar">
