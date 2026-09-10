@@ -2123,11 +2123,10 @@ document.addEventListener('click', (e) => {
   if (add) { if (bs.cases.length < MAX_ROUNDS) bs.cases.push(add.dataset.add || add.dataset.inc); renderBattleSetup(); }
   if (dec) { bs.cases.splice(bs.cases.lastIndexOf(dec.dataset.dec), 1); renderBattleSetup(); }
   if (e.target.matches('[data-close]')) closeModal('#' + e.target.closest('.modal').id);
-  if (e.target.classList.contains('modal') && !spinning && e.target.id !== 'modal-battle' && !(e.target.id === 'modal-profile' && !profile)) closeModal('#' + e.target.id);
+  if (e.target.classList.contains('modal') && !spinning && e.target.id !== 'modal-battle') closeModal('#' + e.target.id);
 });
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape' || spinning) return;
-  if (!$('#modal-profile').hidden && !profile) return;
   if (!$('#modal-zoom').hidden) return closeModal('#modal-zoom');
   if (!$('#modal-battle').hidden) return closeBattle();
   $$('.modal').forEach((m) => { if (!m.hidden) closeModal('#' + m.id); });
@@ -2352,7 +2351,10 @@ async function loadFromServer() {
 
 const knownNames = () => lsGet(PROFILES_KEY, []);
 const rememberName = (n) => lsSet(PROFILES_KEY, [n, ...knownNames().filter((x) => x !== n)].slice(0, 8));
-const validName = (n) => /^[\p{L}\p{N} _.-]{1,20}$/u.test(n);
+const validName = (n) => {
+  if (typeof n !== 'string' || !n.trim() || n.length > 20) return false;
+  try { return /^[\p{L}\p{N} _.-]{1,20}$/u.test(n); } catch { return /^[a-zA-Z0-9 _.-]{1,20}$/.test(n); }
+};
 function accountSummary(name) {
   const st = lsGet(`cs2-stats:${name}`, null);
   const inv = lsGet(`cs2-inv:${name}`, []);
@@ -2384,14 +2386,18 @@ function renderAccountList() {
   $('.auth-hint').hidden = names.length === 0;
 }
 function enterAccount(name, tok) {
-  localStorage.setItem(TOKEN_KEY, tok);
-  lsSet(CURRENT_KEY, name);
-  rememberName(name);
-  // Dữ liệu chơi từ bản cũ (chưa có tài khoản) chuyển cho tài khoản đầu tiên trên máy này
-  if (localStorage.getItem('cs2-inv') && !localStorage.getItem(`cs2-inv:${name}`)) {
-    localStorage.setItem(`cs2-inv:${name}`, localStorage.getItem('cs2-inv'));
-    if (localStorage.getItem('cs2-stats')) localStorage.setItem(`cs2-stats:${name}`, localStorage.getItem('cs2-stats'));
-    localStorage.removeItem('cs2-inv'); localStorage.removeItem('cs2-stats');
+  try {
+    localStorage.setItem(TOKEN_KEY, tok);
+    lsSet(CURRENT_KEY, name);
+    rememberName(name);
+    // Dữ liệu chơi từ bản cũ (chưa có tài khoản) chuyển cho tài khoản đầu tiên trên máy này
+    if (localStorage.getItem('cs2-inv') && !localStorage.getItem(`cs2-inv:${name}`)) {
+      localStorage.setItem(`cs2-inv:${name}`, localStorage.getItem('cs2-inv'));
+      if (localStorage.getItem('cs2-stats')) localStorage.setItem(`cs2-stats:${name}`, localStorage.getItem('cs2-stats'));
+      localStorage.removeItem('cs2-inv'); localStorage.removeItem('cs2-stats');
+    }
+  } catch (err) {
+    console.warn('Storage warning:', err);
   }
   location.reload();
 }
@@ -2439,7 +2445,7 @@ async function deleteAccount() {
   location.reload();
 }
 function openProfileModal(force = false) {
-  $('#profile-close').hidden = force;
+  $('#profile-close').hidden = false;
   $('#auth-guest').hidden = !!profile;
   $('#auth-user').hidden = !profile;
   if (profile) {
@@ -2448,7 +2454,7 @@ function openProfileModal(force = false) {
     $('#pw-form').hidden = true;
   } else {
     renderAccountList();
-    setAuthMode(knownNames().length ? 'login' : 'register');
+    setAuthMode('login');
     $('#auth-name').value = ''; $('#auth-pass').value = ''; $('#auth-pass2').value = '';
   }
   openModal('#modal-profile');
@@ -2471,6 +2477,8 @@ async function renderLeaderboard() {
 }
 $('#auth-tabs').onclick = (e) => { const b = e.target.closest('[data-mode]'); if (b) setAuthMode(b.dataset.mode); };
 $('#auth-form').onsubmit = submitAuth;
+const guestBtn = $('#auth-guest-btn');
+if (guestBtn) guestBtn.onclick = () => closeModal('#modal-profile');
 $('#auth-logout').onclick = logout;
 $('#auth-changepw').onclick = () => { $('#pw-form').hidden = !$('#pw-form').hidden; showAuthErr('', '#pw-err'); $('#pw-old').value = $('#pw-new').value = $('#pw-new2').value = ''; };
 $('#pw-form').onsubmit = changePassword;
@@ -2478,7 +2486,7 @@ $('#auth-delete').onclick = deleteAccount;
 $('#profile-btn').onclick = () => openProfileModal(false);
 $('#profile-name').textContent = profile || 'Đăng nhập';
 if (profile) $('#hero-title').innerHTML = `Chào ${profile}.<br />Mở hòm không tốn một xu.`;
-if (!profile || !token()) { localStorage.removeItem(TOKEN_KEY); setSync('offline'); openProfileModal(true); }
+if (!profile || !token()) { localStorage.removeItem(TOKEN_KEY); setSync('offline'); openProfileModal(false); }
 else { loadFromServer(); }
 renderLeaderboard();
 setInterval(renderLeaderboard, 60000);

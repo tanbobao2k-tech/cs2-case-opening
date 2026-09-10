@@ -594,13 +594,15 @@ main { max-width: 1240px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px) 80px
 
 /* Header mobile gọn */
 @media (max-width: 760px) {
-  .topbar { flex-wrap: wrap; gap: 6px 8px; padding: 8px 12px; }
-  .brand { font-size: 15px; }
+  .topbar { flex-wrap: wrap; gap: 6px 8px; padding: 8px 12px; align-items: center; }
+  .brand { font-size: 14px; flex-shrink: 0; }
   .brand-tag { display: none; }
-  .wallet { order: 0; width: auto; margin: 0 0 0 auto; padding: 3px 4px 3px 10px; gap: 6px; }
+  .profile-chip { order: 1; margin-left: auto; padding: 4px 8px; font-size: 11px; flex-shrink: 0; }
+  .profile-chip b { max-width: 72px; }
+  .wallet { order: 2; width: auto; margin: 0 0 0 4px; padding: 3px 6px; gap: 4px; flex-shrink: 0; }
   .wallet-label { display: none; }
-  .wallet b { font-size: 13px; }
-  .wallet .btn-sm { padding: 4px 8px; font-size: 11px; }
+  .wallet b { font-size: 12px; }
+  .wallet .btn-sm { padding: 3px 6px; font-size: 11px; }
   .topnav { order: 3; width: 100%; justify-content: space-between; gap: 4px; font-size: 13px; }
   .topnav a:nth-child(2), .topnav a:nth-child(3), .topnav a:nth-child(4) { display: inline; }
   .topnav a:nth-child(5), .topnav a:nth-child(6) { display: none; }
@@ -665,8 +667,6 @@ main { max-width: 1240px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px) 80px
 .pf-item .pf-del { background: none; border: 0; color: var(--muted); font-size: 16px; padding: 0 2px; line-height: 1; }
 .pf-item .pf-del:hover { color: #ff7b7b; }
 @media (max-width: 760px) {
-  .profile-chip { order: 0; margin-left: auto; padding: 4px 10px; font-size: 12px; }
-  .wallet { margin-left: 0; }
   .pf-form { flex-direction: column; }
 }
 @media (max-width: 760px) { .topnav a:nth-child(2) { display: none; } .topnav a:nth-child(5) { display: inline; } }

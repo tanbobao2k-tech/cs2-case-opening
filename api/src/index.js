@@ -17,11 +17,9 @@ const json = (data, status = 200, extra = {}) =>
   new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8', ...extra } });
 
 function cors(req, env) {
-  const origin = req.headers.get('Origin') || '';
-  const allowed = (env.ALLOWED_ORIGINS || '*').split(',').map((s) => s.trim());
-  const ok = allowed.includes('*') || allowed.includes(origin);
+  const origin = req.headers.get('Origin') || '*';
   return {
-    'Access-Control-Allow-Origin': ok ? origin || '*' : allowed[0],
+    'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Max-Age': '86400',

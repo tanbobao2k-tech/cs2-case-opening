@@ -3,7 +3,7 @@ main = "src/index.js"
 compatibility_date = "2025-01-01"
 
 [vars]
-ALLOWED_ORIGINS = "https://tanbobao2k-tech.github.io,http://localhost:5179,http://127.0.0.1:5179"
+ALLOWED_ORIGINS = "*"
 
 [[d1_databases]]
 binding = "DB"

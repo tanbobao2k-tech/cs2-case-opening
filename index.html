@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=21" />
+  <link rel="stylesheet" href="css/style.css?v=22" />
 </head>
 <body>
   <header class="topbar">
@@ -201,15 +201,16 @@
           <p class="muted">Tài khoản lưu trên máy chủ — đăng nhập ở điện thoại hay máy tính đều thấy cùng ví, kho đồ và thống kê.</p>
         </div>
         <div class="seg auth-tabs" id="auth-tabs">
-          <button data-mode="login" class="active">Đăng nhập</button>
-          <button data-mode="register">Tạo tài khoản</button>
+          <button type="button" data-mode="login" class="active">Đăng nhập</button>
+          <button type="button" data-mode="register">Tạo tài khoản</button>
         </div>
         <form id="auth-form" class="auth-form" autocomplete="off">
-          <input id="auth-name" type="text" maxlength="20" placeholder="Tên tài khoản" autocomplete="username" />
-          <input id="auth-pass" type="password" maxlength="64" placeholder="Mật khẩu" autocomplete="current-password" />
-          <input id="auth-pass2" type="password" maxlength="64" placeholder="Nhập lại mật khẩu" autocomplete="new-password" hidden />
+          <input id="auth-name" type="text" maxlength="20" placeholder="Tên tài khoản" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="text" />
+          <input id="auth-pass" type="password" maxlength="64" placeholder="Mật khẩu" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" />
+          <input id="auth-pass2" type="password" maxlength="64" placeholder="Nhập lại mật khẩu" autocomplete="new-password" autocapitalize="none" autocorrect="off" spellcheck="false" hidden />
           <p id="auth-err" class="auth-err" hidden></p>
           <button type="submit" class="btn btn-primary btn-lg" id="auth-submit">Đăng nhập</button>
+          <button type="button" class="btn btn-ghost" id="auth-guest-btn" style="margin-top: 6px; font-size: 13px;">🎮 Chơi thử (không cần tài khoản)</button>
         </form>
         <p class="muted auth-hint">Đã đăng nhập gần đây trên thiết bị này:</p>
         <div id="pf-list" class="pf-list"></div>
@@ -715,6 +716,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="data/cases.js?v=8"></script>
-  <script src="js/app.js?v=21"></script>
+  <script src="js/app.js?v=22"></script>
 </body>
 </html>
