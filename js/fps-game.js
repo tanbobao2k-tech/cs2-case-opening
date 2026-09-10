@@ -590,7 +590,7 @@
     scene.background = new THREE.Color(0x6eb7f0); // Mediterranean sky blue
     scene.fog = new THREE.FogExp2(0x94c8f5, 0.006);
 
-    camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 100);
+    camera = new THREE.PerspectiveCamera(75, width / height, 0.01, 100);
     camera.rotation.order = 'YXZ';
 
     // Dedicated crisp bright lighting attached to camera for weapon viewmodel & skin brilliance
@@ -1341,7 +1341,7 @@
       gltfLoader.load('assets/ak47_viewmodel.glb', (gltf) => {
         akRealGroup = gltf.scene;
         akRealGroup.scale.set(0.05, 0.05, 0.05);
-        akRealGroup.position.set(0.04, -0.02, 0.0);
+        akRealGroup.position.set(0.045, -0.025, -0.04);
         akRealGroup.setRotationFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(5), THREE.MathUtils.degToRad(185), 0));
 
         akRealGroup.traverse((child) => {
@@ -1368,41 +1368,6 @@
             }
           }
         });
-
-        // 2 symbolic compact glove blocks as requested ("nhân vật cho 2 cục tượng trưng là được")
-        const symbolicGloveMat = new THREE.MeshStandardMaterial({ color: 0x181a20, roughness: 0.8, metalness: 0.15 });
-        const gloveR = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.8, 0.65), symbolicGloveMat);
-        gloveR.position.set(-0.06, -0.65, 0.85);
-        gloveR.rotation.set(0.35, 0.05, -0.15);
-        akRealGroup.add(gloveR);
-
-        const gloveL = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.6, 0.85), symbolicGloveMat);
-        gloveL.position.set(-0.05, -0.35, 4.8);
-        gloveL.rotation.set(-0.15, -0.2, 0.25);
-        akRealGroup.add(gloveL);
-
-        // High-definition transparent skin decals on the real 3D AK-47 model for 100% razor-sharp clarity
-        const akSideDecalMat = new THREE.MeshBasicMaterial({
-          map: texLoader.load('assets/ak47_wild_lotus_vibrant.png'),
-          transparent: true,
-          opacity: 0.98,
-          alphaTest: 0.12,
-          side: THREE.DoubleSide,
-          depthWrite: false
-        });
-
-        // Left face decal (faces player camera directly in 1st person)
-        const akSideDecalL = new THREE.Mesh(new THREE.PlaneGeometry(8.188, 2.247), akSideDecalMat);
-        akSideDecalL.rotation.y = -Math.PI / 2;
-        akSideDecalL.position.set(-0.355, -0.328, 3.499);
-        akRealGroup.add(akSideDecalL);
-
-        // Right face decal (for inspect turnaround)
-        const akSideDecalR = new THREE.Mesh(new THREE.PlaneGeometry(8.188, 2.247), akSideDecalMat);
-        akSideDecalR.rotation.y = Math.PI / 2;
-        akSideDecalR.scale.x = -1;
-        akSideDecalR.position.set(0.245, -0.328, 3.499);
-        akRealGroup.add(akSideDecalR);
 
         viewmodelRig.add(akRealGroup);
 
@@ -2483,9 +2448,9 @@
       const bobX = Math.cos(bobTimer * 0.5) * 0.012;
       const bobY = Math.sin(bobTimer) * 0.012;
 
-      let posX = 0.04 + recoilOffset.x + player.swayX + bobX - (inspectProgress * 0.28);
-      let posY = -0.02 + recoilOffset.y + player.swayY + bobY + (inspectProgress * 0.16) - switchOffset - (STATE.isScoped ? 0.4 : 0);
-      let posZ = 0.0 + recoilOffset.z + (inspectProgress * 0.10);
+      let posX = 0.045 + recoilOffset.x + player.swayX + bobX - (inspectProgress * 0.28);
+      let posY = -0.025 + recoilOffset.y + player.swayY + bobY + (inspectProgress * 0.16) - switchOffset - (STATE.isScoped ? 0.4 : 0);
+      let posZ = -0.04 + recoilOffset.z + (inspectProgress * 0.10);
 
       let rotX = THREE.MathUtils.degToRad(5) + recoilRot.x - (inspectProgress * 0.15);
       let rotY = THREE.MathUtils.degToRad(185) + recoilRot.y + (inspectProgress * 0.95);
