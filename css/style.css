@@ -425,6 +425,25 @@ main { max-width: 1240px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px) 80px
 .up-rate-num { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; color: #fff; text-shadow: 0 0 12px rgba(0, 245, 160, 0.6); }
 .up-multiplier-badge { font-size: 11px; font-weight: 700; color: #ffd700; background: rgba(255, 215, 0, 0.12); border-radius: 4px; padding: 2px 6px; margin-top: 2px; }
 
+/* Thanh kéo tỉ lệ */
+.up-slider-box { width: 100%; max-width: 290px; margin: 0 auto 12px; display: flex; flex-direction: column; gap: 6px; }
+.up-slider-header { display: flex; align-items: center; justify-content: space-between; }
+.up-slider-label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.up-slider-val-display { font-size: 14px; font-weight: 800; color: #00f5a0; font-variant-numeric: tabular-nums; }
+.up-slider-control { display: flex; align-items: center; gap: 8px; }
+.up-slider-bound { font-size: 10px; font-weight: 700; color: var(--muted); min-width: 22px; text-align: center; }
+.up-range-slider { flex: 1; -webkit-appearance: none; appearance: none; height: 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.12); outline: none; transition: background .15s; cursor: pointer; }
+.up-range-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #00f5a0; box-shadow: 0 0 10px rgba(0, 245, 160, 0.8); cursor: pointer; border: 2px solid #fff; transition: transform .1s; }
+.up-range-slider::-webkit-slider-thumb:hover { transform: scale(1.2); }
+.up-range-slider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #00f5a0; box-shadow: 0 0 10px rgba(0, 245, 160, 0.8); cursor: pointer; border: 2px solid #fff; }
+.up-slider-presets { display: flex; gap: 4px; justify-content: space-between; margin-top: 2px; }
+.up-preset-btn { flex: 1; background: var(--bg-2); border: 1px solid var(--line); color: var(--muted); font-size: 10px; font-weight: 700; padding: 4px 0; border-radius: 6px; cursor: pointer; transition: all .15s; }
+.up-preset-btn:hover { border-color: #00f5a0; color: #00f5a0; }
+.up-preset-btn.active { background: rgba(0, 245, 160, 0.15); border-color: #00f5a0; color: #00f5a0; }
+
+.up-wheel-outer { cursor: grab; user-select: none; touch-action: none; }
+.up-wheel-outer:active { cursor: grabbing; }
+
 /* Selector TRÁI / PHẢI */
 .up-direction-selector { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-bottom: 12px; width: 100%; }
 .up-dir-label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }

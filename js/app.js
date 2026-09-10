@@ -989,6 +989,16 @@ function renderUpgrade() {
 
   updateWheelArc(winRate);
 
+  // Đồng bộ thanh kéo slider và presets
+  const slider = $('#up-rate-slider');
+  if (slider && document.activeElement !== slider && !isDraggingWheel) {
+    slider.value = winRate > 0 ? winRate.toFixed(1) : 50;
+    $('#up-slider-val-display').textContent = (winRate > 0 ? winRate.toFixed(1) : '0.0') + '%';
+  }
+  $$('#up-slider-presets .up-preset-btn').forEach((b) => {
+    b.classList.toggle('active', Math.abs(Number(b.dataset.pct) - winRate) < 1.5);
+  });
+
   // Selector Trái / Phải
   $('#up-dir-left').classList.toggle('active', up.side === 'left');
   $('#up-dir-right').classList.toggle('active', up.side === 'right');
@@ -1004,10 +1014,92 @@ function renderUpgrade() {
   if (up.wager.size === 0) {
     $('#up-status-msg').textContent = 'Chọn ít nhất 1 món từ kho bên trái (hoặc bấm Chọn tất cả).';
   } else if (!up.target) {
-    $('#up-status-msg').textContent = 'Chọn 1 món đồ mong muốn từ danh sách bên phải.';
+    $('#up-status-msg').textContent = 'Chọn 1 món đồ mong muốn từ danh sách bên phải hoặc kéo thanh chọn tỷ lệ.';
   } else {
     $('#up-status-msg').textContent = `Sẵn sàng! Tỷ lệ trúng: ${winRate.toFixed(2)}% (Vùng ${up.side === 'left' ? 'TRÁI' : 'PHẢI'}). Bấm Nâng cấp để quay!`;
   }
+}
+
+// Áp dụng tỷ lệ khi kéo slider hoặc kéo xoay vòng tròn
+function applyRate(rate, { syncTarget = true, syncSlider = true } = {}) {
+  rate = Math.min(95, Math.max(1, rate));
+  const wagerVal = sum([...up.wager], (i) => i.price || 0);
+
+  $('#up-rate-num').textContent = rate.toFixed(2) + '%';
+  $('#up-slider-val-display').textContent = rate.toFixed(1) + '%';
+  if (syncSlider) {
+    const slider = $('#up-rate-slider');
+    if (slider) slider.value = rate.toFixed(1);
+  }
+
+  $$('#up-slider-presets .up-preset-btn').forEach((b) => {
+    b.classList.toggle('active', Math.abs(Number(b.dataset.pct) - rate) < 1.5);
+  });
+
+  updateWheelArc(rate);
+
+  const mult = 100 / rate;
+  $('#up-target-multiplier').textContent = mult >= 1 ? `${mult.toFixed(2)}x` : `0.${Math.round(mult * 100)}x`;
+
+  if (syncTarget && wagerVal > 0) {
+    const idealPrice = wagerVal / (rate / 100);
+    const targetSearch = ($('#up-target-search')?.value || '').trim().toLowerCase();
+    const targetRarity = $('#up-target-rarity')?.value || 'all';
+
+    let pool = BOT_STOCK.filter((item) => {
+      if (targetRarity !== 'all' && item.r !== Number(targetRarity)) return false;
+      if (targetSearch && !item.n.toLowerCase().includes(targetSearch)) return false;
+      return true;
+    });
+    if (!pool.length) pool = BOT_STOCK;
+
+    let best = pool[0], bestDiff = Math.abs(pool[0].price - idealPrice);
+    for (let i = 1; i < pool.length; i++) {
+      const diff = Math.abs(pool[i].price - idealPrice);
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        best = pool[i];
+      }
+    }
+    if (best && up.target !== best) {
+      up.target = best;
+      $('#up-compare-target-val').textContent = fmtUSD(best.price);
+      $('#up-compare-target-name').textContent = best.n;
+      $('#up-compare-target-name').title = best.n;
+    }
+  }
+
+  const canRoll = !up.rolling && up.wager.size > 0 && up.target != null;
+  $('#up-roll-btn').disabled = !canRoll;
+  if (!up.rolling) {
+    $('#up-roll-text').textContent = `NÂNG CẤP (${rate.toFixed(2)}%)`;
+  }
+}
+
+// Xử lý kéo xoay tròn trực tiếp trên vòng xoay
+let isDraggingWheel = false;
+function handleWheelPointer(e) {
+  if (up.rolling) return;
+  const wheel = $('#up-wheel-outer');
+  if (!wheel) return;
+  const rect = wheel.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const clientX = e.clientX ?? e.touches?.[0]?.clientX;
+  const clientY = e.clientY ?? e.touches?.[0]?.clientY;
+  if (clientX == null || clientY == null) return;
+
+  let angle = Math.atan2(clientY - cy, clientX - cx) * (180 / Math.PI) + 90;
+  if (angle < 0) angle += 360;
+
+  let rate = 0;
+  if (up.side === 'right') {
+    rate = (angle / 360) * 100;
+  } else {
+    rate = ((360 - angle) / 360) * 100;
+  }
+  rate = Math.min(95, Math.max(1, rate));
+  applyRate(rate, { syncTarget: true, syncSlider: true });
 }
 
 function selectAllWager() {
@@ -1479,6 +1571,56 @@ $('#up-mult-chips').onclick = (e) => {
   up.botShown = 60;
   renderUpgrade();
 };
+
+const wheelOuter = $('#up-wheel-outer');
+if (wheelOuter) {
+  wheelOuter.addEventListener('mousedown', (e) => {
+    isDraggingWheel = true;
+    handleWheelPointer(e);
+  });
+  wheelOuter.addEventListener('touchstart', (e) => {
+    isDraggingWheel = true;
+    handleWheelPointer(e);
+  }, { passive: true });
+}
+window.addEventListener('mousemove', (e) => {
+  if (isDraggingWheel) handleWheelPointer(e);
+});
+window.addEventListener('touchmove', (e) => {
+  if (isDraggingWheel) handleWheelPointer(e);
+}, { passive: true });
+window.addEventListener('mouseup', () => {
+  if (isDraggingWheel) {
+    isDraggingWheel = false;
+    renderUpgrade();
+  }
+});
+window.addEventListener('touchend', () => {
+  if (isDraggingWheel) {
+    isDraggingWheel = false;
+    renderUpgrade();
+  }
+});
+
+const rateSlider = $('#up-rate-slider');
+if (rateSlider) {
+  rateSlider.oninput = (e) => {
+    applyRate(Number(e.target.value), { syncTarget: true, syncSlider: false });
+  };
+  rateSlider.onchange = () => {
+    renderUpgrade();
+  };
+}
+
+const presets = $('#up-slider-presets');
+if (presets) {
+  presets.onclick = (e) => {
+    const btn = e.target.closest('[data-pct]');
+    if (!btn || up.rolling) return;
+    applyRate(Number(btn.dataset.pct), { syncTarget: true, syncSlider: true });
+    renderUpgrade();
+  };
+}
 
 $('#trade-open').onclick = openTrade;
 const navTrade = $('#nav-trade');
