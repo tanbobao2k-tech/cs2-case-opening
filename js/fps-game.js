@@ -215,27 +215,121 @@
     }, 1100);
   }
 
-  // --- THREE.JS SCENE SETUP ---
-  let scene, camera, renderer;
-  let viewmodelRig, weaponMesh, skinMaterials = [], muzzleFlashLight, muzzleSprite;
-  let targets = [];
-  const textureLoader = new THREE.TextureLoader();
+  function playJumpSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(140, now);
+    osc.frequency.exponentialRampToValueAtTime(80, now + 0.12);
+    gain.gain.setValueAtTime(0.22, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.14);
+  }
 
-  // Player movement
+  function playLandSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(120, now);
+    osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.18);
+  }
+
+  function playFootstepSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(160 + Math.random() * 40, now);
+    osc.frequency.exponentialRampToValueAtTime(60, now + 0.05);
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.06);
+  }
+
+  // --- CS2 / SOURCE ENGINE EXACT PHYSICS CONSTANTS ---
+  const CS_PHYSICS = {
+    GRAVITY: 24.0,           // Tương đương sv_gravity 800
+    MAX_SPEED: 7.2,          // sv_maxspeed (250 units/s)
+    WALK_SPEED: 3.8,         // Shift walk (130 units/s)
+    CROUCH_SPEED: 2.5,       // Crouch walk (85 units/s)
+    ACCELERATION: 5.5,       // sv_accelerate
+    AIR_ACCELERATION: 12.0,  // sv_airaccelerate (Air strafe & Bunny hop)
+    FRICTION: 5.2,           // sv_friction (Ground deceleration)
+    STOP_SPEED: 1.8,         // sv_stopspeed (Counter-strafe instant stop)
+    JUMP_IMPULSE: 8.0,       // Jump height
+    STAND_HEIGHT: 1.7,       // Chiều cao đứng
+    CROUCH_HEIGHT: 1.15      // Chiều cao ngồi
+  };
+
+  // Player movement state
   const player = {
     pos: new THREE.Vector3(0, 1.7, 8),
-    vel: new THREE.Vector3(),
+    vel: new THREE.Vector3(0, 0, 0),
     pitch: 0,
     yaw: 0,
-    speed: 7.5,
+    eyeHeight: 1.7,
+    targetEyeHeight: 1.7,
     isGrounded: true,
     moveForward: false,
     moveBackward: false,
     moveLeft: false,
     moveRight: false,
+    isWalking: false,
+    isCrouching: false,
     swayX: 0,
-    swayY: 0
+    swayY: 0,
+    stepTimer: 0
   };
+
+  // Valve Source PM_Friction
+  function applyFriction(dt) {
+    if (!player.isGrounded) return;
+    const speed = Math.hypot(player.vel.x, player.vel.z);
+    if (speed < 0.0001) {
+      player.vel.x = 0;
+      player.vel.z = 0;
+      return;
+    }
+    const control = Math.max(speed, CS_PHYSICS.STOP_SPEED);
+    const drop = control * CS_PHYSICS.FRICTION * dt;
+    let newSpeed = Math.max(0, speed - drop);
+    newSpeed /= speed;
+    player.vel.x *= newSpeed;
+    player.vel.z *= newSpeed;
+  }
+
+  // Valve Source PM_Accelerate & PM_AirAccelerate
+  function accelerate(wishDir, wishSpeed, accel, dt) {
+    const currentSpeed = player.vel.x * wishDir.x + player.vel.z * wishDir.z;
+    const addSpeed = wishSpeed - currentSpeed;
+    if (addSpeed <= 0) return;
+    const accelSpeed = Math.min(accel * dt * wishSpeed, addSpeed);
+    player.vel.x += accelSpeed * wishDir.x;
+    player.vel.z += accelSpeed * wishDir.z;
+  }
+
+  // --- THREE.JS SCENE SETUP ---
+  let scene, camera, renderer;
+  let viewmodelRig, weaponMesh, skinMaterials = [], muzzleFlashLight, muzzleSprite;
+  let targets = [];
+  const textureLoader = new THREE.TextureLoader();
 
   // Recoil / viewmodel animation state
   let recoilOffset = new THREE.Vector3();
@@ -1125,6 +1219,25 @@
       if (e.code === 'KeyA') player.moveLeft = true;
       if (e.code === 'KeyD') player.moveRight = true;
 
+      // Shift walk
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+        player.isWalking = true;
+      }
+
+      // Ctrl / C crouch
+      if (e.code === 'ControlLeft' || e.code === 'ControlRight' || e.code === 'KeyC') {
+        player.isCrouching = true;
+      }
+
+      // CS2 Jump (Space)
+      if (e.code === 'Space' && isPointerLocked) {
+        if (player.isGrounded) {
+          player.vel.y = CS_PHYSICS.JUMP_IMPULSE;
+          player.isGrounded = false;
+          playJumpSound();
+        }
+      }
+
       if (e.code === 'KeyR' && isPointerLocked) {
         reload();
       }
@@ -1149,6 +1262,14 @@
       if (e.code === 'KeyS') player.moveBackward = false;
       if (e.code === 'KeyA') player.moveLeft = false;
       if (e.code === 'KeyD') player.moveRight = false;
+
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+        player.isWalking = false;
+      }
+
+      if (e.code === 'ControlLeft' || e.code === 'ControlRight' || e.code === 'KeyC') {
+        player.isCrouching = false;
+      }
     });
   }
 
@@ -1161,53 +1282,104 @@
     renderer.setSize(width, height);
   }
 
-  // --- GAME LOOP & PHYSICS ---
+  // --- GAME LOOP & SOURCE ENGINE PHYSICS ---
   let lastTime = performance.now();
 
   function animate() {
     requestAnimationFrame(animate);
 
     const now = performance.now();
-    const dt = Math.min((now - lastTime) / 1000, 0.1);
+    const dt = Math.min((now - lastTime) / 1000, 0.05);
     lastTime = now;
 
-    // Player position & movement
+    // CS2 Player Physics
     if (isPointerLocked) {
-      const moveDir = new THREE.Vector3();
-      if (player.moveForward) moveDir.z -= 1;
-      if (player.moveBackward) moveDir.z += 1;
-      if (player.moveLeft) moveDir.x -= 1;
-      if (player.moveRight) moveDir.x += 1;
-      moveDir.normalize();
+      // 1. Calculate wishdir from user inputs in camera yaw space
+      const wishDir = new THREE.Vector3();
+      if (player.moveForward) wishDir.z -= 1;
+      if (player.moveBackward) wishDir.z += 1;
+      if (player.moveLeft) wishDir.x -= 1;
+      if (player.moveRight) wishDir.x += 1;
 
-      const cosYaw = Math.cos(player.yaw);
-      const sinYaw = Math.sin(player.yaw);
+      const hasMoveInput = wishDir.lengthSq() > 0;
+      if (hasMoveInput) {
+        wishDir.normalize();
+        const cosYaw = Math.cos(player.yaw);
+        const sinYaw = Math.sin(player.yaw);
+        const wx = wishDir.x * cosYaw - wishDir.z * sinYaw;
+        const wz = wishDir.x * sinYaw + wishDir.z * cosYaw;
+        wishDir.set(wx, 0, wz);
+      }
 
-      const worldX = moveDir.x * cosYaw - moveDir.z * sinYaw;
-      const worldZ = moveDir.x * sinYaw + moveDir.z * cosYaw;
+      // 2. Wish speed based on stance (Run / Walk / Crouch)
+      let wishSpeed = CS_PHYSICS.MAX_SPEED;
+      if (player.isCrouching) {
+        wishSpeed = CS_PHYSICS.CROUCH_SPEED;
+      } else if (player.isWalking) {
+        wishSpeed = CS_PHYSICS.WALK_SPEED;
+      }
+      if (!hasMoveInput) wishSpeed = 0;
 
-      player.vel.x = THREE.MathUtils.lerp(player.vel.x, worldX * player.speed, dt * 10);
-      player.vel.z = THREE.MathUtils.lerp(player.vel.z, worldZ * player.speed, dt * 10);
+      // 3. Ground vs Air acceleration & friction
+      if (player.isGrounded) {
+        applyFriction(dt);
+        if (hasMoveInput) {
+          accelerate(wishDir, wishSpeed, CS_PHYSICS.ACCELERATION, dt);
+        }
+      } else {
+        // Air strafe & bunny hop physics (sv_airaccelerate)
+        accelerate(wishDir, wishSpeed, CS_PHYSICS.AIR_ACCELERATION, dt);
+        player.vel.y -= CS_PHYSICS.GRAVITY * dt;
+      }
 
+      // 4. Position update
       player.pos.x += player.vel.x * dt;
       player.pos.z += player.vel.z * dt;
+      player.pos.y += player.vel.y * dt;
 
-      // Arena boundary limits
-      player.pos.x = Math.max(-23, Math.min(23, player.pos.x));
-      player.pos.z = Math.max(-23, Math.min(23, player.pos.z));
+      // 5. Crouch eye-height smoothing
+      player.targetEyeHeight = player.isCrouching ? CS_PHYSICS.CROUCH_HEIGHT : CS_PHYSICS.STAND_HEIGHT;
+      player.eyeHeight = THREE.MathUtils.lerp(player.eyeHeight, player.targetEyeHeight, dt * 14);
 
-      // Head bobbing when walking
-      const speedMag = Math.hypot(player.vel.x, player.vel.z);
-      if (speedMag > 0.5) {
-        bobTimer += dt * 12;
+      // 6. Ground collision & landing
+      if (player.pos.y <= player.eyeHeight) {
+        if (!player.isGrounded && player.vel.y < -3.0) {
+          playLandSound();
+        }
+        player.pos.y = player.eyeHeight;
+        player.vel.y = 0;
+        player.isGrounded = true;
+      }
+
+      // 7. Arena boundaries
+      player.pos.x = Math.max(-23.5, Math.min(23.5, player.pos.x));
+      player.pos.z = Math.max(-23.5, Math.min(23.5, player.pos.z));
+
+      // 8. Footsteps sound & view bobbing
+      const horizontalSpeed = Math.hypot(player.vel.x, player.vel.z);
+      if (player.isGrounded && horizontalSpeed > 1.2) {
+        const bobRate = player.isWalking ? 7 : (player.isCrouching ? 5 : 12);
+        bobTimer += dt * bobRate;
+
+        // Footsteps when running
+        if (!player.isWalking && !player.isCrouching) {
+          player.stepTimer += dt * horizontalSpeed;
+          if (player.stepTimer > 2.6) {
+            player.stepTimer = 0;
+            playFootstepSound();
+          }
+        }
       } else {
-        bobTimer = THREE.MathUtils.lerp(bobTimer, 0, dt * 5);
+        bobTimer = THREE.MathUtils.lerp(bobTimer, 0, dt * 6);
       }
     }
 
     // Camera transform
-    camera.position.copy(player.pos);
-    camera.position.y = 1.7 + Math.sin(bobTimer) * 0.04;
+    camera.position.set(
+      player.pos.x,
+      player.pos.y + Math.sin(bobTimer) * (player.isGrounded ? 0.035 : 0),
+      player.pos.z
+    );
     camera.rotation.set(player.pitch, player.yaw, 0);
 
     // Viewmodel Recoil & Inspect Animation
