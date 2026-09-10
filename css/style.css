@@ -150,7 +150,15 @@ main { max-width: 1240px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px) 80px
 /* Roulette */
 .modal-open { max-width: 900px; padding: 24px 0 28px; overflow: hidden; }
 .open-title { text-align: center; margin: 0 0 16px; font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; }
-.roulette { position: relative; height: 150px; overflow: hidden; background: var(--bg); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.roulette {
+  position: relative;
+  height: 150px;
+  overflow: hidden;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  contain: paint layout;
+}
 .roulette::before, .roulette::after { content: ""; position: absolute; top: 0; bottom: 0; width: 80px; z-index: 2; pointer-events: none; }
 .roulette::before { left: 0; background: linear-gradient(90deg, var(--bg-2), transparent); }
 .roulette::after { right: 0; background: linear-gradient(-90deg, var(--bg-2), transparent); }
@@ -158,9 +166,39 @@ main { max-width: 1240px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px) 80px
 .roulette-marker::before, .roulette-marker::after { content: ""; position: absolute; left: 50%; border: 7px solid transparent; transform: translateX(-50%); }
 .roulette-marker::before { top: 0; border-top-color: var(--accent); }
 .roulette-marker::after { bottom: 0; border-bottom-color: var(--accent); }
-.roulette-strip { display: flex; gap: 6px; height: 100%; padding: 6px 0; will-change: transform; }
-.tile { flex: 0 0 var(--tile, 150px); width: var(--tile, 150px); height: 100%; background: var(--bg-3); border-radius: 8px; border-bottom: 4px solid var(--rc); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px; }
-.tile img { width: 100%; height: 80%; object-fit: contain; }
+.roulette-strip {
+  display: flex;
+  gap: 6px;
+  height: 100%;
+  padding: 6px 0;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.tile {
+  flex: 0 0 var(--tile, 150px);
+  width: var(--tile, 150px);
+  height: 100%;
+  background: var(--bg-3);
+  border-radius: 8px;
+  border-bottom: 4px solid var(--rc);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  contain: layout paint;
+  user-select: none;
+  pointer-events: none;
+}
+.tile img {
+  width: 100%;
+  height: 80%;
+  object-fit: contain;
+  pointer-events: none;
+  transform: translateZ(0);
+}
 .tile .name { font-size: 10px; color: var(--muted); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
 
 /* Result */
@@ -296,9 +334,38 @@ main { max-width: 1240px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px) 80px
 .bt-reel::before { top: 0; background: linear-gradient(var(--bg-2), transparent); }
 .bt-reel::after { bottom: 0; background: linear-gradient(transparent, var(--bg-2)); }
 .bt-marker { position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: var(--accent); z-index: 3; box-shadow: 0 0 10px var(--accent); }
-.bt-strip { display: flex; flex-direction: column; gap: 6px; padding: 0 10px; will-change: transform; }
-.bt-tile { flex: 0 0 var(--th, 90px); height: var(--th, 90px); background: var(--bg-3); border-radius: 8px; border-left: 4px solid var(--rc); display: flex; align-items: center; gap: 8px; padding: 6px 8px; }
-.bt-tile img { height: 100%; width: 45%; object-fit: contain; flex-shrink: 0; }
+.bt-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 10px;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.bt-tile {
+  flex: 0 0 var(--th, 90px);
+  height: var(--th, 90px);
+  background: var(--bg-3);
+  border-radius: 8px;
+  border-left: 4px solid var(--rc);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  contain: layout paint;
+  user-select: none;
+  pointer-events: none;
+}
+.bt-tile img {
+  height: 100%;
+  width: 45%;
+  object-fit: contain;
+  flex-shrink: 0;
+  pointer-events: none;
+  transform: translateZ(0);
+}
 .bt-tile .n { font-size: 11px; line-height: 1.3; color: var(--muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .bt-tile .p { font-size: 12px; font-weight: 600; color: #7ee2a8; }
 .bt-drops { display: flex; flex-direction: column; gap: 6px; padding: 10px; min-height: 60px; }
