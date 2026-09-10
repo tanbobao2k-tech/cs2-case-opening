@@ -124,8 +124,22 @@ const CUSTOM = CUSTOM_DEFS.map((d) => {
   pool.forEach((x) => { x.pct = x.w / W; });
   pool.sort((a, b) => b.v - a.v);
   const ev = sum(pool, (x) => x.pct * x.v);
-  return { ...d, custom: true, pool, price: Math.round((ev / CUSTOM_RTP) * 100) / 100, image: pool[Math.min(pool.length - 1, Math.floor(pool.length * 0.04))].base.img };
+  const feat = pool[Math.min(pool.length - 1, Math.floor(pool.length * 0.04))].base.img;
+  // Thùng hòm thật của Valve: nhóm dao/găng/VIP dùng thùng đen, còn lại thùng cam xoay màu sang màu chủ đề
+  const premium = ['Dao', 'Găng', 'VIP'].includes(d.tag);
+  const crateName = premium ? (d.tag === 'Găng' ? 'Glove Case' : 'Shadow Case') : ['Fever Case', 'Kilowatt Case', 'Gallery Case'][CUSTOM_DEFS.indexOf(d) % 3];
+  const crate = OFFICIAL.find((c) => c.name === crateName) || OFFICIAL[0];
+  const hue = premium ? 0 : Math.round(hexHue(d.color) - 28);
+  return { ...d, custom: true, pool, price: Math.round((ev / CUSTOM_RTP) * 100) / 100, image: crate.image, feat, hue };
 }).filter((c) => c.pool.length >= 5);
+function hexHue(hex) {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+  if (!d) return 0;
+  const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return (h * 60 + 360) % 360;
+}
+const caseIcon = (c, cls = '') => `<img class="${cls} ${c.custom ? 'cc-mini' : ''}" src="${c.image}" alt="" style="${c.custom ? `--hue:${c.hue}deg` : ''}" loading="lazy" />`;
 const CASES = [...OFFICIAL, ...CUSTOM];
 const caseById = (id) => CASES.find((c) => c.id === id);
 
@@ -141,7 +155,7 @@ const freshStats = () => ({
 let inventory = load(STORE_INV, []);
 let stats = { ...freshStats(), ...load(STORE_STATS, {}) };
 if (stats.balance == null) { stats.balance = TOPUP; stats.topup = TOPUP; }
-stats.byCase ??= {}; stats.battles ??= { played: 0, won: 0 }; stats.sold ??= 0; stats.trades ??= 0; stats.tradeups ??= 0;
+stats.byCase ??= {}; stats.battles ??= { played: 0, won: 0 }; stats.sold ??= 0; stats.trades ??= 0; stats.tradeups ??= 0; stats.equipped ??= {};
 
 function addToInventory(items) {
   inventory.unshift(...items);
@@ -150,8 +164,25 @@ function addToInventory(items) {
 }
 function removeFromInventory(items) {
   const set = new Set(items);
+  items.forEach((i) => { if (isEquipped(i)) delete stats.equipped[slotOf(i)]; });
   inventory = inventory.filter((i) => !set.has(i));
   save(STORE_INV, inventory);
+}
+const slotOf = (item) => baseOf(item)?.w || item.n.split(' | ')[0];
+const isEquipped = (item) => !!item.uid && stats.equipped[slotOf(item)] === item.uid;
+function toggleEquip(item) {
+  if (!inventory.includes(item)) return;
+  const slot = slotOf(item);
+  if (isEquipped(item)) { delete stats.equipped[slot]; toast(`Đã tháo ${item.n}`); }
+  else {
+    item.uid ||= Date.now() + Math.random();
+    stats.equipped[slot] = item.uid;
+    save(STORE_INV, inventory);
+    toast(`Đã trang bị ${item.n} (slot ${slot})`);
+    playInspect(true);
+  }
+  persistAndRender();
+  updateEquipBtn(item);
 }
 function countDrop(item, c) {
   stats.opened++;
@@ -189,6 +220,7 @@ function itemCard(item, { showFrom = false, sell = false, odds } = {}) {
     : item.p ? `<span class="price">từ ${fmtUSD(Math.min(...item.p))}</span>` : '';
   el.innerHTML = `
     ${item.st ? '<span class="st">StatTrak™</span>' : ''}
+    ${isEquipped(item) ? `<span class="eq ${item.st ? 'shift' : ''}">Đang dùng</span>` : ''}
     ${showFrom && item.caseName ? `<span class="from">${shortCase(item.caseName)}</span>` : ''}
     <img src="${item.img}" alt="" loading="lazy" />
     <div class="name">${item.n}${item.ph ? ` <span class="muted">(${item.ph})</span>` : ''}</div>
@@ -211,9 +243,12 @@ function caseCard(c) {
   const meta = c.custom
     ? `<div class="desc">${c.desc}</div><div class="year">${c.pool.length} món</div>`
     : `<div class="year">${c.date ? c.date.slice(0, 4) : ''} · ${c.items.length} skin · ${new Set(c.rare.map((i) => ITEMS[i].n)).size} dao/găng</div>`;
+  const art = c.custom
+    ? `<div class="cc-art" style="--hue:${c.hue}deg"><img class="crate" src="${c.image}" alt="" loading="lazy" /><img class="feat" src="${c.feat}" alt="" loading="lazy" /></div>`
+    : `<img src="${c.image}" alt="${c.name}" loading="lazy" />`;
   el.innerHTML = `
     ${c.custom ? `<span class="tag">${c.tag}</span>` : ''}
-    <img src="${c.image}" alt="${c.name}" loading="lazy" />
+    ${art}
     <h3>${c.name}</h3>
     ${meta}
     <div class="cost">Giá mở <b>${fmtUSD(caseCost(c))}</b> <span class="price-vnd">≈ ${fmtVND(caseCost(c))}</span></div>
@@ -235,7 +270,7 @@ function renderCases(filter = $('#case-search').value) {
 
 // ---------- Case detail ----------
 function showCaseDetail(c) {
-  $('#cd-image').src = c.image;
+  $('#cd-image').src = c.custom ? c.feat : c.image;
   $('#cd-name').textContent = c.name;
   $('#cd-meta').textContent = c.custom
     ? `${c.desc} · ${c.pool.length} món · giá mở ${fmtUSD(c.price)} · hoàn trả ~${Math.round(CUSTOM_RTP * 100)}%`
@@ -427,11 +462,65 @@ function setZoom(s, cx, cy) {
   }
   zoom.scale = next;
   if (next === 1) { zoom.x = 0; zoom.y = 0; }
+  if (next > 1) $('#zoom-wrap').style.transform = '';
   applyZoom();
 }
+let zoomItem = null;
+function updateEquipBtn(item) {
+  const b = $('#zoom-equip');
+  b.hidden = !inventory.includes(item);
+  b.textContent = isEquipped(item) ? '✓ Đang dùng — Tháo' : 'Trang bị';
+}
+function whoosh() {
+  try {
+    audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
+    const t = audioCtx.currentTime;
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    const f = audioCtx.createBiquadFilter();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(180, t);
+    o.frequency.exponentialRampToValueAtTime(900, t + 0.35);
+    o.frequency.exponentialRampToValueAtTime(220, t + 0.9);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.04, t + 0.08);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+    f.type = 'lowpass'; f.frequency.value = 1200;
+    o.connect(f).connect(g).connect(audioCtx.destination);
+    o.start(t); o.stop(t + 0.95);
+  } catch {}
+}
+function playInspect(short = false) {
+  const wrap = $('#zoom-wrap'), shine = $('#zoom-shine');
+  setZoom(1);
+  wrap.style.transform = '';
+  wrap.classList.remove('inspecting', 'idle');
+  shine.classList.remove('run');
+  void wrap.offsetWidth;
+  wrap.classList.add('inspecting');
+  setTimeout(() => shine.classList.add('run'), short ? 100 : 500);
+  whoosh();
+  wrap.addEventListener('animationend', () => { wrap.classList.remove('inspecting'); wrap.classList.add('idle'); shine.classList.remove('run'); }, { once: true });
+}
+function tiltTo(nx, ny) {
+  const wrap = $('#zoom-wrap');
+  if (wrap.classList.contains('inspecting') || zoom.scale > 1) return;
+  wrap.style.transform = `rotateY(${(nx * 18).toFixed(1)}deg) rotateX(${(-ny * 14).toFixed(1)}deg)`;
+}
 function openZoom(item) {
+  zoomItem = item;
   zoom.scale = 1; zoom.x = 0; zoom.y = 0;
   applyZoom();
+  const wrap = $('#zoom-wrap'), shine = $('#zoom-shine');
+  wrap.style.transform = '';
+  wrap.classList.remove('inspecting', 'idle');
+  void wrap.offsetWidth;
+  wrap.classList.add('idle');
+  shine.classList.remove('run');
+  shine.style.setProperty('--mask', `url("${item.img}")`);
+  $('#zoom-glow').style.setProperty('--rc', RARITY[item.r]?.color || '#ffd700');
+  updateEquipBtn(item);
+  setTimeout(() => { if (zoomItem === item && !$('#modal-zoom').hidden) { shine.classList.add('run'); shine.addEventListener('animationend', () => shine.classList.remove('run'), { once: true }); } }, 450);
   $('#zoom-img').src = item.img;
   $('#zoom-name').innerHTML = nameHTML(item);
   const bits = [];
@@ -456,6 +545,11 @@ function openZoom(item) {
     stage.classList.add('dragging');
   });
   stage.addEventListener('pointermove', (e) => {
+    if (!zoom.pointers.size && e.pointerType === 'mouse') {
+      const r = stage.getBoundingClientRect();
+      tiltTo((e.clientX - r.left) / r.width * 2 - 1, (e.clientY - r.top) / r.height * 2 - 1);
+      return;
+    }
     if (!zoom.pointers.has(e.pointerId)) return;
     const prev = zoom.pointers.get(e.pointerId);
     zoom.pointers.set(e.pointerId, [e.clientX, e.clientY]);
@@ -476,7 +570,15 @@ function openZoom(item) {
   const up = (e) => { zoom.pointers.delete(e.pointerId); zoom.lastDist = 0; if (!zoom.pointers.size) stage.classList.remove('dragging'); };
   stage.addEventListener('pointerup', up);
   stage.addEventListener('pointercancel', up);
+  stage.addEventListener('pointerleave', () => { const w = $('#zoom-wrap'); if (!w.classList.contains('inspecting')) w.style.transform = ''; });
   stage.addEventListener('dblclick', (e) => { const [cx, cy] = rel(e); setZoom(zoom.scale > 1 ? 1 : 2.5, cx, cy); });
+  $('#zoom-inspect').onclick = () => playInspect();
+  $('#zoom-equip').onclick = () => zoomItem && toggleEquip(zoomItem);
+  // Điện thoại: nghiêng theo cảm biến nếu có
+  window.addEventListener('deviceorientation', (e) => {
+    if ($('#modal-zoom').hidden || e.gamma == null) return;
+    tiltTo(Math.max(-1, Math.min(1, e.gamma / 30)), Math.max(-1, Math.min(1, (e.beta - 45) / 30)));
+  });
   $$('[data-zoom]').forEach((b) => { b.onclick = () => { const d = Number(b.dataset.zoom); setZoom(d === 0 ? 1 : zoom.scale * (d > 0 ? 1.4 : 1 / 1.4)); }; });
 })();
 
@@ -500,7 +602,7 @@ function renderBattleSetup() {
     const c = caseById(id);
     const chip = document.createElement('div');
     chip.className = 'bs-chip';
-    chip.innerHTML = `<img src="${c.image}" alt="" /><span>${shortCase(c.name)}</span>
+    chip.innerHTML = `${caseIcon(c)}<span>${shortCase(c.name)}</span>
       <span class="qty"><button data-dec="${id}">−</button><b>${qty}</b><button data-inc="${id}">+</button></span>`;
     sel.appendChild(chip);
   });
@@ -518,7 +620,7 @@ function renderBattleCases(filter = '') {
     const b = document.createElement('button');
     b.className = 'bs-case';
     b.dataset.add = c.id;
-    b.innerHTML = `<img src="${c.image}" alt="" loading="lazy" /><span class="n">${c.name}</span><span class="c">${fmtUSD(caseCost(c))}</span>`;
+    b.innerHTML = `${caseIcon(c)}<span class="n">${c.name}</span><span class="c">${fmtUSD(caseCost(c))}</span>`;
     wrap.appendChild(b);
   });
 }
@@ -545,7 +647,7 @@ async function startBattle() {
   battle = current;
 
   $('#bt-title').textContent = `Case Battle · ${players.length} người · ${bs.mode === 'crazy' ? 'Đảo ngược' : 'Thường'} · ${fmtUSD(cost)}`;
-  $('#bt-rounds').innerHTML = rounds.map((c) => `<img src="${c.image}" alt="" title="${c.name}" />`).join('');
+  $('#bt-rounds').innerHTML = rounds.map((c) => caseIcon(c)).join('');
   $('#bt-final').hidden = true;
   const wrap = $('#bt-players');
   wrap.style.setProperty('--n', players.length);
@@ -827,7 +929,7 @@ function invPageSize() {
 }
 function invFiltered() {
   const f = $('#inv-filter').value;
-  let list = inventory.filter((i) => f === 'all' || (f === 'st' ? i.st : i.r === Number(f)));
+  let list = inventory.filter((i) => f === 'all' || (f === 'st' ? i.st : f === 'eq' ? isEquipped(i) : i.r === Number(f)));
   if ($('#inv-sort').value === 'price') list = [...list].sort((a, b) => (b.price || 0) - (a.price || 0));
   return list;
 }
@@ -917,7 +1019,7 @@ function renderStats() {
   rows.forEach((x) => {
     const el = document.createElement('div');
     el.className = 'sc-row';
-    el.innerHTML = `<img src="${x.c.image}" alt="" loading="lazy" /><span class="n">${x.c.name}</span><span class="s">chi ${fmtUSD(x.spent)} · nhận ${fmtUSD(x.got)}</span><span class="c">×${x.n}</span>`;
+    el.innerHTML = `${caseIcon(x.c)}<span class="n">${x.c.name}</span><span class="s">chi ${fmtUSD(x.spent)} · nhận ${fmtUSD(x.got)}</span><span class="c">×${x.n}</span>`;
     sc.appendChild(el);
   });
   $('#stats-cases-empty').hidden = rows.length > 0;

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=4" />
+  <link rel="stylesheet" href="css/style.css?v=5" />
 </head>
 <body>
   <header class="topbar">
@@ -113,6 +113,7 @@
             <option value="2">Restricted</option>
             <option value="1">Mil-Spec</option>
             <option value="st">StatTrak™</option>
+            <option value="eq">Đang dùng</option>
           </select>
           <button id="inv-sell-all" class="btn">Bán tất cả (đang lọc)</button>
           <button id="inv-clear" class="btn btn-ghost">Xoá kho</button>
@@ -235,7 +236,11 @@
   <div id="modal-zoom" class="modal modal-dark" hidden>
     <button class="modal-close zoom-close" data-close>&times;</button>
     <div class="zoom-stage" id="zoom-stage">
-      <img id="zoom-img" alt="" draggable="false" />
+      <div class="zoom-glow" id="zoom-glow"></div>
+      <div class="zoom-wrap" id="zoom-wrap">
+        <img id="zoom-img" alt="" draggable="false" />
+        <div class="zoom-shine" id="zoom-shine"></div>
+      </div>
     </div>
     <div class="zoom-bar">
       <div class="zoom-info">
@@ -243,12 +248,14 @@
         <span id="zoom-sub" class="muted"></span>
       </div>
       <div class="zoom-ctrl">
+        <button class="btn btn-primary" id="zoom-inspect">▶ Inspect</button>
+        <button class="btn" id="zoom-equip" hidden>Trang bị</button>
         <button class="btn" data-zoom="-1">−</button>
         <span id="zoom-level">100%</span>
         <button class="btn" data-zoom="1">+</button>
         <button class="btn btn-ghost" data-zoom="0">Đặt lại</button>
       </div>
-      <p class="zoom-tip muted">Lăn chuột / véo hai ngón để zoom, kéo để di chuyển</p>
+      <p class="zoom-tip muted">Di chuột để nghiêng skin · lăn chuột / véo hai ngón để zoom · kéo để di chuyển · Inspect để xoay 360°</p>
     </div>
   </div>
 
@@ -411,7 +418,7 @@
     </div>
   </div>
 
-  <script src="data/cases.js?v=4"></script>
-  <script src="js/app.js?v=4"></script>
+  <script src="data/cases.js?v=5"></script>
+  <script src="js/app.js?v=5"></script>
 </body>
 </html>
