@@ -42,7 +42,7 @@
         damageHead: 100,
         fireRate: 105, // ms (approx 600 RPM)
         price: 12500.00,
-        img: 'https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV08y5nb-GkvP9Jrafw2lU6ccp07qWpdyj2wPl-Us4am-icYGLelc4Z1vV-FO3k-q-1p6878vOnXZhuyFwsHbewUvg1B9Eafsv26I41v2zLg/360fx360f'
+        img: 'assets/ak47_wild_lotus.png'
       },
       2: {
         type: 'secondary',
@@ -59,7 +59,7 @@
         damageHead: 140,
         fireRate: 260,
         price: 120.00,
-        img: 'https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposr-kLAtl7PDdTjlH_86hkpiGkuP1PtfVk2lu5Mx2gv2PoNmk3w21qEA5N2-idteWcQBtNw7SqVG4lOa608S8upvAnXdjpGB8siu3Pz7E/360fx360f'
+        img: 'assets/deagle_printstream.png'
       },
       3: {
         type: 'melee',
@@ -76,7 +76,7 @@
         damageHead: 120,
         fireRate: 400,
         price: 4500.00,
-        img: 'https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf1f_BYQJD4eOxlY2GlsjwPKvBmm5D19V5i_rEpLP5gVO8v11rMTjyd9CTclU8N1_W-VG_w7y9gpO475zNwXti7yYntHvfzAv330_Z8D4P1A/360fx360f'
+        img: 'assets/karambit_doppler.png'
       }
     },
     inventory: [],
@@ -95,7 +95,7 @@
       rarity: 'covert',
       rarityColor: '#eb4b4b',
       price: 12500.00,
-      img: 'https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV08y5nb-GkvP9Jrafw2lU6ccp07qWpdyj2wPl-Us4am-icYGLelc4Z1vV-FO3k-q-1p6878vOnXZhuyFwsHbewUvg1B9Eafsv26I41v2zLg/360fx360f'
+      img: 'assets/ak47_wild_lotus.png'
     },
     {
       id: 'ak-asiimov',
@@ -106,7 +106,7 @@
       rarity: 'covert',
       rarityColor: '#eb4b4b',
       price: 185.00,
-      img: 'https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV08y5nb-GkvP9Jrafw2lU6ccp07qWpdyj2wPl-Us4am-icYGLelc4Z1vV-FO3k-q-1p6878vOnXZhuyFwsHbewUvg1B9Eafsv26I41v2zLg/360fx360f'
+      img: 'assets/ak47_asiimov.png'
     },
     {
       id: 'awp-dragonlore',
@@ -117,7 +117,7 @@
       rarity: 'covert',
       rarityColor: '#ffd700',
       price: 8500.00,
-      img: 'https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FABz7PLfYQJS5NO0m5O0m_7zO6-fzj9V7Pp8j-3I4IG72ADk-xBsZ2v7LYfAdAU8NwvU_1W_wuvn15e-6ZnInCRr7nNw537UnAv330-d3G786A/360fx360f'
+      img: 'assets/awp_dragon_lore.png'
     },
     {
       id: 'm4a4-howl',
@@ -128,7 +128,7 @@
       rarity: 'contraband',
       rarityColor: '#e4ae39',
       price: 5200.00,
-      img: 'https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIITfn2xZ_Pp5i_vG8Inw3wDnqRFrMmzyd9SWdARrYFnQ_1bvwunmhpS_tJrPzHYy6CBwt3jcnAv330-JgLrh9A/360fx360f'
+      img: 'assets/m4a4_howl.png'
     },
 
     // Súng Ngắn (Slot 2)
@@ -141,7 +141,7 @@
       rarity: 'covert',
       rarityColor: '#eb4b4b',
       price: 120.00,
-      img: 'https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposr-kLAtl7PDdTjlH_86hkpiGkuP1PtfVk2lu5Mx2gv2PoNmk3w21qEA5N2-idteWcQBtNw7SqVG4lOa608S8upvAnXdjpGB8siu3Pz7E/360fx360f'
+      img: 'assets/deagle_printstream.png'
     },
     {
       id: 'deagle-blaze',
@@ -152,7 +152,7 @@
       rarity: 'restricted',
       rarityColor: '#8847ff',
       price: 680.00,
-      img: 'https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposr-kLAtl7PDdTjlH_86hkpiGkuP1PtfVk2lu5Mx2gv2PoNmk3w21qEA5N2-idteWcQBtNw7SqVG4lOa608S8upvAnXdjpGB8siu3Pz7E/360fx360f'
+      img: 'assets/deagle_printstream.png'
     },
 
     // Dao (Slot 3)
@@ -165,7 +165,7 @@
       rarity: 'special',
       rarityColor: '#ffd700',
       price: 4500.00,
-      img: 'https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf1f_BYQJD4eOxlY2GlsjwPKvBmm5D19V5i_rEpLP5gVO8v11rMTjyd9CTclU8N1_W-VG_w7y9gpO475zNwXti7yYntHvfzAv330_Z8D4P1A/360fx360f'
+      img: 'assets/karambit_doppler.png'
     },
     {
       id: 'knife-butterfly-fade',
@@ -176,7 +176,7 @@
       rarity: 'special',
       rarityColor: '#ffd700',
       price: 3200.00,
-      img: 'https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJfxPrMfipP7dezhr-Kmsj1P7bUgm5W5ctOxL3H9NWt0Vfm8kVoa2vydoeQdFQ4N16F-VG-xey815C_up7NzyEy7yYq4nrbzAv330_6Z1vBmg/360fx360f'
+      img: 'assets/karambit_doppler.png'
     }
   ];
 
@@ -564,6 +564,7 @@
   let viewmodelRig, weaponMesh;
   let rifleGroup, pistolGroup, knifeGroup;
   let rifleMaterials = [], pistolMaterials = [], knifeMaterials = [];
+  let rifleSideDecalMat, pistolSideDecalMat, knifeSideDecalMat;
   let muzzleFlashLight, muzzleSprite;
   let targets = [];
 
@@ -586,6 +587,14 @@
 
     camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 100);
     camera.rotation.order = 'YXZ';
+
+    // Dedicated crisp lighting attached to camera for weapon viewmodel & skin brilliance
+    const vmDirLight = new THREE.DirectionalLight(0xffffff, 0.95);
+    vmDirLight.position.set(1.5, 2.2, 1.2);
+    camera.add(vmDirLight);
+
+    const vmAmbientLight = new THREE.AmbientLight(0xffffff, 0.65);
+    camera.add(vmAmbientLight);
 
     renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     renderer.setSize(width, height);
@@ -717,254 +726,332 @@
   }
 
   // --- TEXTURE ENGINE (HIGH-RES PROCEDURAL CS2 SKINS) ---
+  // --- TEXTURE ENGINE (ULTRA-HD 1024 PROCEDURAL & STEAM DECAL COMPOSITOR) ---
   const skinCanvasCache = {};
+  const texLoader = new THREE.TextureLoader();
 
   function generateSkinTexture(skin) {
     const key = (skin.id || (skin.weapon + '_' + skin.name)) + (skin.img ? '_img' : '');
     if (skinCanvasCache[key]) return skinCanvasCache[key];
 
     const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
+    canvas.width = 1024;
+    canvas.height = 1024;
     const ctx = canvas.getContext('2d');
 
     const nameLower = ((skin.weapon || '') + ' ' + (skin.name || '')).toLowerCase();
 
+    // Side Decal Texture (From local PNG or Steam CDN image)
+    let decalTexture = null;
+    if (skin.img) {
+      decalTexture = texLoader.load(skin.img);
+      decalTexture.generateMipmaps = true;
+      decalTexture.minFilter = THREE.LinearMipmapLinearFilter;
+      decalTexture.magFilter = THREE.LinearFilter;
+    }
+
     const drawPattern = (imgElement) => {
-      ctx.clearRect(0, 0, 512, 512);
+      ctx.clearRect(0, 0, 1024, 1024);
 
       if (nameLower.includes('wild lotus') || nameLower.includes('lotus')) {
-        // --- AK-47 WILD LOTUS (AUTHENTIC CS2 INFERNO ARTWORK) ---
-        // Rich Emerald Green Vine Background
-        const grad = ctx.createLinearGradient(0, 0, 512, 512);
-        grad.addColorStop(0, '#1b5e20');
-        grad.addColorStop(0.5, '#2e7d32');
-        grad.addColorStop(1, '#0f3813');
+        // --- AK-47 WILD LOTUS (CS2 MASTERPIECE FLORAL ARTWORK) ---
+        // 1. Deep Emerald Green & Forest Shading Gradient
+        const grad = ctx.createLinearGradient(0, 0, 1024, 1024);
+        grad.addColorStop(0, '#0f3818');
+        grad.addColorStop(0.35, '#1e7239');
+        grad.addColorStop(0.7, '#2ba854');
+        grad.addColorStop(1, '#0c2e14');
         ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 512, 512);
+        ctx.fillRect(0, 0, 1024, 1024);
 
-        // Tan / Teak Wood Accent Edges
+        // 2. Teak Wood Accent Framing Borders (Top & Bottom Rails)
         ctx.fillStyle = '#d7b377';
-        ctx.fillRect(0, 0, 512, 28);
-        ctx.fillRect(0, 484, 512, 28);
+        ctx.fillRect(0, 0, 1024, 52);
+        ctx.fillRect(0, 972, 1024, 52);
+        ctx.fillStyle = '#b88a50';
+        ctx.fillRect(0, 52, 1024, 10);
+        ctx.fillRect(0, 962, 1024, 10);
 
-        // Curling Green Vines & Leaves
-        ctx.strokeStyle = '#4caf50';
-        ctx.lineWidth = 6;
-        for (let i = 0; i < 4; i++) {
+        // 3. Thick Swirling Vine Curves with Shading
+        ctx.lineWidth = 16;
+        ctx.strokeStyle = '#2e7d32';
+        ctx.beginPath();
+        ctx.moveTo(0, 320);
+        ctx.bezierCurveTo(280, 180, 600, 480, 1024, 260);
+        ctx.stroke();
+
+        ctx.lineWidth = 9;
+        ctx.strokeStyle = '#81c784';
+        ctx.beginPath();
+        ctx.moveTo(0, 318);
+        ctx.bezierCurveTo(280, 178, 600, 478, 1024, 258);
+        ctx.stroke();
+
+        ctx.lineWidth = 14;
+        ctx.strokeStyle = '#1b5e20';
+        ctx.beginPath();
+        ctx.moveTo(0, 680);
+        ctx.bezierCurveTo(340, 850, 720, 520, 1024, 760);
+        ctx.stroke();
+
+        // 4. Detailed Leaves along Vines
+        const drawLeaf = (lx, ly, rot, scale) => {
+          ctx.save();
+          ctx.translate(lx, ly);
+          ctx.rotate(rot);
+          ctx.scale(scale, scale);
+          ctx.fillStyle = '#4caf50';
           ctx.beginPath();
-          ctx.moveTo(0, 100 + i * 90);
-          ctx.bezierCurveTo(150, 60 + i * 110, 320, 160 + i * 70, 512, 120 + i * 90);
+          ctx.moveTo(0, 0);
+          ctx.quadraticCurveTo(30, -25, 60, 0);
+          ctx.quadraticCurveTo(30, 25, 0, 0);
+          ctx.fill();
+          ctx.strokeStyle = '#2e7d32';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(55, 0);
           ctx.stroke();
-        }
+          ctx.restore();
+        };
 
-        // Blooming Magenta Lotus Flower (Right side)
-        const drawFlower = (cx, cy, radius, primaryColor, centerColor) => {
-          ctx.fillStyle = primaryColor;
-          for (let p = 0; p < 8; p++) {
-            const angle = (p / 8) * Math.PI * 2;
+        drawLeaf(200, 250, 0.4, 1.2);
+        drawLeaf(380, 360, -0.6, 1.4);
+        drawLeaf(580, 410, 0.8, 1.3);
+        drawLeaf(750, 300, -0.3, 1.1);
+        drawLeaf(280, 750, 0.5, 1.3);
+        drawLeaf(520, 670, -0.7, 1.4);
+
+        // 5. Large Blooming Wild Lotus Flower (Central Receiver)
+        const drawLotusFlower = (cx, cy, radius, mainCol, innerCol, coreCol) => {
+          ctx.fillStyle = 'rgba(10, 40, 15, 0.5)';
+          ctx.beginPath();
+          ctx.arc(cx, cy, radius * 1.1, 0, Math.PI * 2);
+          ctx.fill();
+
+          const petals = 12;
+          for (let p = 0; p < petals; p++) {
+            const angle = (p / petals) * Math.PI * 2;
             const px = cx + Math.cos(angle) * (radius * 0.7);
             const py = cy + Math.sin(angle) * (radius * 0.7);
+            ctx.save();
+            ctx.translate(px, py);
+            ctx.rotate(angle);
+            ctx.fillStyle = mainCol;
             ctx.beginPath();
-            ctx.arc(px, py, radius * 0.45, 0, Math.PI * 2);
+            ctx.ellipse(0, 0, radius * 0.35, radius * 0.6, 0, 0, Math.PI * 2);
             ctx.fill();
+            ctx.restore();
           }
-          ctx.fillStyle = centerColor;
+
+          for (let p = 0; p < 8; p++) {
+            const angle = (p / 8) * Math.PI * 2 + 0.25;
+            const px = cx + Math.cos(angle) * (radius * 0.45);
+            const py = cy + Math.sin(angle) * (radius * 0.45);
+            ctx.save();
+            ctx.translate(px, py);
+            ctx.rotate(angle);
+            ctx.fillStyle = innerCol;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, radius * 0.28, radius * 0.45, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          }
+
+          ctx.fillStyle = coreCol;
           ctx.beginPath();
           ctx.arc(cx, cy, radius * 0.35, 0, Math.PI * 2);
           ctx.fill();
+
+          ctx.fillStyle = '#ff8f00';
+          for (let s = 0; s < 16; s++) {
+            const sang = (s / 16) * Math.PI * 2;
+            const sx = cx + Math.cos(sang) * (radius * 0.24);
+            const sy = cy + Math.sin(sang) * (radius * 0.24);
+            ctx.beginPath();
+            ctx.arc(sx, sy, 5, 0, Math.PI * 2);
+            ctx.fill();
+          }
         };
 
-        // Big Blooming Red/Orange Lotus
-        drawFlower(340, 260, 75, '#e64a19', '#ffeb3b');
-        // Purple / Pink Lotus buds
-        drawFlower(180, 180, 50, '#d81b60', '#ffd54f');
-        drawFlower(100, 340, 40, '#ad1457', '#ffca28');
-        drawFlower(440, 380, 45, '#c2185b', '#ffe082');
+        // Center blooming lotus (Orange-Red)
+        drawLotusFlower(560, 480, 140, '#d32f2f', '#ff5722', '#ffc107');
+        // Pink / Magenta Lily on the stock
+        drawLotusFlower(220, 360, 95, '#c2185b', '#e91e63', '#ffd54f');
+        // Secondary buds
+        drawLotusFlower(850, 680, 80, '#e64a19', '#ff7043', '#ffe082');
+        drawLotusFlower(820, 280, 75, '#ad1457', '#d81b60', '#ffca28');
 
-        // Gold Lotus Stamen Dots
-        ctx.fillStyle = '#ffb300';
-        for (let b = 0; b < 25; b++) {
+        // Gold Stamen Specks
+        ctx.fillStyle = '#ffca28';
+        for (let b = 0; b < 60; b++) {
           ctx.beginPath();
-          ctx.arc((b * 67) % 512, (b * 93) % 512, 6, 0, Math.PI * 2);
+          ctx.arc((b * 137) % 1024, (b * 193) % 1024, 4 + (b % 4), 0, Math.PI * 2);
           ctx.fill();
         }
-
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 30px Georgia, serif';
-        ctx.fillText('WILD LOTUS', 40, 80);
 
       } else if (nameLower.includes('asiimov')) {
         // --- ASIIMOV ---
         ctx.fillStyle = '#f8fafc';
-        ctx.fillRect(0, 0, 512, 512);
+        ctx.fillRect(0, 0, 1024, 1024);
 
         ctx.fillStyle = '#ff5500';
         ctx.beginPath();
-        ctx.moveTo(0, 60); ctx.lineTo(260, 0); ctx.lineTo(340, 0); ctx.lineTo(80, 260); ctx.closePath();
+        ctx.moveTo(0, 120); ctx.lineTo(520, 0); ctx.lineTo(680, 0); ctx.lineTo(160, 520); ctx.closePath();
         ctx.fill();
 
         ctx.beginPath();
-        ctx.moveTo(120, 512); ctx.lineTo(380, 252); ctx.lineTo(460, 252); ctx.lineTo(200, 512); ctx.closePath();
+        ctx.moveTo(240, 1024); ctx.lineTo(760, 504); ctx.lineTo(920, 504); ctx.lineTo(400, 1024); ctx.closePath();
         ctx.fill();
 
         ctx.fillStyle = '#15171e';
         ctx.beginPath();
-        ctx.moveTo(280, 0); ctx.lineTo(512, 0); ctx.lineTo(512, 180); ctx.lineTo(380, 180); ctx.closePath();
+        ctx.moveTo(560, 0); ctx.lineTo(1024, 0); ctx.lineTo(1024, 360); ctx.lineTo(760, 360); ctx.closePath();
         ctx.fill();
-        ctx.fillRect(0, 360, 512, 45);
+        ctx.fillRect(0, 720, 1024, 90);
 
         ctx.fillStyle = '#15171e';
-        ctx.font = '900 38px monospace';
-        ctx.fillText('ASIIMOV // 01', 40, 320);
+        ctx.font = '900 76px monospace';
+        ctx.fillText('ASIIMOV // 01', 80, 640);
         ctx.fillStyle = '#ff5500';
-        ctx.font = 'bold 18px monospace';
-        ctx.fillText('HIGH VOLTAGE // SPEC-A', 40, 350);
+        ctx.font = 'bold 36px monospace';
+        ctx.fillText('HIGH VOLTAGE // SPEC-A', 80, 700);
 
       } else if (nameLower.includes('dragon lore') || nameLower.includes('lore')) {
         // --- DRAGON LORE ---
-        const grad = ctx.createLinearGradient(0, 0, 512, 512);
-        grad.addColorStop(0, '#d4af37'); grad.addColorStop(0.5, '#aa8c2c'); grad.addColorStop(1, '#5c4813');
+        const grad = ctx.createLinearGradient(0, 0, 1024, 1024);
+        grad.addColorStop(0, '#e5c158'); grad.addColorStop(0.5, '#bfa038'); grad.addColorStop(1, '#5c4813');
         ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 512, 512);
+        ctx.fillRect(0, 0, 1024, 1024);
 
-        ctx.strokeStyle = 'rgba(255, 235, 170, 0.45)';
-        ctx.lineWidth = 4;
-        for (let y = 40; y < 512; y += 45) {
-          ctx.beginPath(); ctx.arc(256, y, 65, 0, Math.PI); ctx.stroke();
+        ctx.strokeStyle = 'rgba(255, 240, 180, 0.45)';
+        ctx.lineWidth = 8;
+        for (let y = 80; y < 1024; y += 90) {
+          ctx.beginPath(); ctx.arc(512, y, 130, 0, Math.PI); ctx.stroke();
         }
 
         ctx.fillStyle = '#b71c1c';
         ctx.beginPath();
-        ctx.moveTo(60, 400); ctx.bezierCurveTo(150, 180, 320, 220, 440, 120);
-        ctx.bezierCurveTo(360, 260, 300, 380, 160, 440); ctx.closePath();
+        ctx.moveTo(120, 800); ctx.bezierCurveTo(300, 360, 640, 440, 880, 240);
+        ctx.bezierCurveTo(720, 520, 600, 760, 320, 880); ctx.closePath();
         ctx.fill();
 
         ctx.fillStyle = '#ff9800';
-        ctx.beginPath(); ctx.arc(440, 120, 32, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(880, 240, 64, 0, Math.PI * 2); ctx.fill();
 
         ctx.fillStyle = '#fff';
-        ctx.font = 'bold 32px Georgia, serif';
-        ctx.fillText('DRAGON LORE', 60, 90);
+        ctx.font = 'bold 64px Georgia, serif';
+        ctx.fillText('DRAGON LORE', 120, 180);
 
       } else if (nameLower.includes('howl')) {
         // --- HOWL ---
-        const grad = ctx.createRadialGradient(256, 256, 40, 256, 256, 360);
+        const grad = ctx.createRadialGradient(512, 512, 80, 512, 512, 720);
         grad.addColorStop(0, '#e53935'); grad.addColorStop(0.55, '#8e0000'); grad.addColorStop(1, '#110202');
         ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 512, 512);
+        ctx.fillRect(0, 0, 1024, 1024);
 
         ctx.fillStyle = '#ff7961';
         ctx.beginPath();
-        ctx.moveTo(256, 110); ctx.lineTo(350, 280); ctx.lineTo(256, 390); ctx.lineTo(162, 280); ctx.closePath();
+        ctx.moveTo(512, 220); ctx.lineTo(700, 560); ctx.lineTo(512, 780); ctx.lineTo(324, 560); ctx.closePath();
         ctx.fill();
 
-        ctx.fillStyle = '#ffeb3b';
-        ctx.beginPath(); ctx.arc(215, 230, 16, 0, Math.PI * 2); ctx.arc(297, 230, 16, 0, Math.PI * 2); ctx.fill();
-
         ctx.fillStyle = '#fff';
-        ctx.font = '900 42px Impact, sans-serif';
-        ctx.fillText('THE HOWL', 160, 470);
+        ctx.font = '900 84px Impact, sans-serif';
+        ctx.fillText('THE HOWL', 320, 940);
 
       } else if (nameLower.includes('printstream')) {
         // --- PRINTSTREAM ---
         ctx.fillStyle = '#f8fafc';
-        ctx.fillRect(0, 0, 512, 512);
+        ctx.fillRect(0, 0, 1024, 1024);
 
-        const holo = ctx.createLinearGradient(0, 0, 512, 512);
+        const holo = ctx.createLinearGradient(0, 0, 1024, 1024);
         holo.addColorStop(0, 'rgba(0, 255, 230, 0.25)');
         holo.addColorStop(0.5, 'rgba(255, 0, 180, 0.25)');
         holo.addColorStop(1, 'rgba(255, 255, 0, 0.25)');
         ctx.fillStyle = holo;
-        ctx.fillRect(0, 0, 512, 512);
+        ctx.fillRect(0, 0, 1024, 1024);
 
         ctx.fillStyle = '#0f172a';
-        ctx.fillRect(40, 80, 432, 14);
+        ctx.fillRect(80, 160, 864, 28);
 
-        ctx.font = '900 68px sans-serif';
-        ctx.fillText('X X', 80, 230);
+        ctx.font = '900 136px sans-serif';
+        ctx.fillText('X X', 160, 460);
 
-        ctx.font = 'bold 24px monospace';
-        ctx.fillText('PROJECT: PRINTSTREAM', 80, 290);
-        ctx.fillText('STAT: VER 2.0.4 ACTIVE', 80, 324);
-
-        for (let b = 80; b < 420; b += 14) {
-          ctx.fillRect(b, 370, (b % 4 === 0 ? 6 : 2), 55);
-        }
+        ctx.font = 'bold 48px monospace';
+        ctx.fillText('PROJECT: PRINTSTREAM', 160, 580);
+        ctx.fillText('STAT: VER 2.0.4 ACTIVE', 160, 648);
 
       } else if (nameLower.includes('doppler') || nameLower.includes('sapphire')) {
         // --- DOPPLER SAPPHIRE ---
-        const grad = ctx.createLinearGradient(0, 0, 512, 512);
+        const grad = ctx.createLinearGradient(0, 0, 1024, 1024);
         grad.addColorStop(0, '#0d47a1'); grad.addColorStop(0.5, '#2979ff'); grad.addColorStop(1, '#651fff');
         ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 512, 512);
+        ctx.fillRect(0, 0, 1024, 1024);
 
-        for (let s = 0; s < 40; s++) {
+        for (let s = 0; s < 50; s++) {
           ctx.fillStyle = 'rgba(0, 229, 255, 0.75)';
           ctx.beginPath();
-          ctx.arc((s * 97) % 512, (s * 61) % 512, 12 + (s * 3) % 28, 0, Math.PI * 2);
+          ctx.arc((s * 197) % 1024, (s * 121) % 1024, 24 + (s * 5) % 56, 0, Math.PI * 2);
           ctx.fill();
         }
 
         ctx.fillStyle = '#fff';
-        ctx.font = 'bold 36px sans-serif';
-        ctx.fillText('DOPPLER SAPPHIRE', 60, 450);
+        ctx.font = 'bold 72px sans-serif';
+        ctx.fillText('DOPPLER SAPPHIRE', 120, 900);
 
       } else {
         // --- GENERAL CUSTOM SKIN ---
         const rarityCol = skin.rarityColor || '#de9b35';
         ctx.fillStyle = '#131720';
-        ctx.fillRect(0, 0, 512, 512);
-
-        ctx.fillStyle = '#1c2230';
-        for (let x = 0; x < 512; x += 16) {
-          for (let y = 0; y < 512; y += 16) {
-            if ((x + y) % 32 === 0) ctx.fillRect(x, y, 16, 16);
-          }
-        }
+        ctx.fillRect(0, 0, 1024, 1024);
 
         ctx.fillStyle = rarityCol;
-        ctx.fillRect(0, 90, 512, 26);
-        ctx.fillRect(0, 370, 512, 14);
+        ctx.fillRect(0, 180, 1024, 52);
+        ctx.fillRect(0, 740, 1024, 28);
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = '900 40px sans-serif';
-        ctx.fillText((skin.weapon || 'CS2').toUpperCase(), 40, 210);
+        ctx.font = '900 80px sans-serif';
+        ctx.fillText((skin.weapon || 'CS2').toUpperCase(), 80, 420);
 
         ctx.fillStyle = rarityCol;
-        ctx.font = 'bold 32px sans-serif';
-        ctx.fillText((skin.name || 'CUSTOM SKIN').toUpperCase(), 40, 260);
-
-        ctx.fillStyle = '#ff9100';
-        ctx.font = 'bold 24px monospace';
-        ctx.fillText('STATTRAK™  001337', 40, 320);
+        ctx.font = 'bold 64px sans-serif';
+        ctx.fillText((skin.name || 'CUSTOM SKIN').toUpperCase(), 80, 520);
       }
 
+      // If Steam image element is provided, composite it
       if (imgElement) {
         try {
-          ctx.drawImage(imgElement, 180, 50, 320, 320);
+          ctx.save();
+          ctx.globalAlpha = 0.95;
+          ctx.drawImage(imgElement, 120, 240, 784, 544);
+          ctx.restore();
         } catch (e) {}
       }
     };
 
     drawPattern(null);
 
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    skinCanvasCache[key] = texture;
+    const canvasTexture = new THREE.CanvasTexture(canvas);
+    canvasTexture.wrapS = THREE.RepeatWrapping;
+    canvasTexture.wrapT = THREE.RepeatWrapping;
 
     if (skin.img) {
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.onload = () => {
         drawPattern(img);
-        texture.needsUpdate = true;
+        canvasTexture.needsUpdate = true;
       };
       img.src = skin.img;
     }
 
-    return texture;
+    const result = {
+      canvasTex: canvasTexture,
+      decalTex: decalTexture || canvasTexture
+    };
+
+    skinCanvasCache[key] = result;
+    return result;
   }
 
   // --- 3D VIEWMODEL WITH DETAILED AK-47 & GLOVED ARMS ---
@@ -998,7 +1085,7 @@
     rifleGroup = new THREE.Group();
     weaponMesh.add(rifleGroup);
 
-    const rifleSkinMat = new THREE.MeshStandardMaterial({ roughness: 0.3, metalness: 0.5, side: THREE.DoubleSide });
+    const rifleSkinMat = new THREE.MeshStandardMaterial({ roughness: 0.3, metalness: 0.45, side: THREE.DoubleSide });
     rifleMaterials.push(rifleSkinMat);
 
     // Stamped Receiver Body
@@ -1006,30 +1093,24 @@
     rReceiver.position.set(0, 0, 0);
     rifleGroup.add(rReceiver);
 
-    // High-Res Side Decal Plate (Facing player camera)
-    const rDecal = new THREE.Mesh(new THREE.PlaneGeometry(0.44, 0.11), rifleSkinMat);
-    rDecal.rotation.y = Math.PI / 2;
-    rDecal.position.set(-0.039, 0, 0);
-    rifleGroup.add(rDecal);
-
     // Top Dust Cover Plate
     const rTopDecal = new THREE.Mesh(new THREE.PlaneGeometry(0.072, 0.46), rifleSkinMat);
     rTopDecal.rotation.x = -Math.PI / 2;
     rTopDecal.position.set(0, 0.056, 0);
     rifleGroup.add(rTopDecal);
 
-    // Upper Gas Tube & Handguard (Wooden / Patterned)
+    // Upper Gas Tube & Handguard (Patterned with skin)
     const rUpperHandguard = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.24, 12), rifleSkinMat);
     rUpperHandguard.rotation.x = Math.PI / 2;
     rUpperHandguard.position.set(0, 0.038, -0.32);
     rifleGroup.add(rUpperHandguard);
 
-    // Lower Wooden Handguard
+    // Lower Wooden Handguard (Patterned with skin)
     const rLowerHandguard = new THREE.Mesh(new THREE.BoxGeometry(0.068, 0.07, 0.24), rifleSkinMat);
     rLowerHandguard.position.set(0, -0.015, -0.32);
     rifleGroup.add(rLowerHandguard);
 
-    // Barrel (Steel)
+    // Barrel (Gunmetal steel)
     const rBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.52, 12), darkMetalMat);
     rBarrel.rotation.x = Math.PI / 2;
     rBarrel.position.set(0, 0.015, -0.48);
@@ -1056,16 +1137,19 @@
     rRod.position.set(0, -0.018, -0.46);
     rifleGroup.add(rRod);
 
-    // Authentic Curved AK Banana Magazine (3 curved segments)
+    // Authentic Curved AK Banana Magazine (3 segments with skin texture)
+    const magSkinMat = new THREE.MeshStandardMaterial({ roughness: 0.35, metalness: 0.35, side: THREE.DoubleSide });
+    rifleMaterials.push(magSkinMat);
+
     const magGroup = new THREE.Group();
     magGroup.position.set(0, -0.06, -0.06);
-    const m1 = new THREE.Mesh(new THREE.BoxGeometry(0.046, 0.1, 0.09), darkMetalMat);
+    const m1 = new THREE.Mesh(new THREE.BoxGeometry(0.046, 0.1, 0.09), magSkinMat);
     m1.rotation.x = -0.15;
     m1.position.set(0, -0.04, 0);
-    const m2 = new THREE.Mesh(new THREE.BoxGeometry(0.044, 0.1, 0.085), darkMetalMat);
+    const m2 = new THREE.Mesh(new THREE.BoxGeometry(0.044, 0.1, 0.085), magSkinMat);
     m2.rotation.x = -0.32;
     m2.position.set(0, -0.12, 0.02);
-    const m3 = new THREE.Mesh(new THREE.BoxGeometry(0.042, 0.08, 0.08), darkMetalMat);
+    const m3 = new THREE.Mesh(new THREE.BoxGeometry(0.042, 0.08, 0.08), magSkinMat);
     m3.rotation.x = -0.48;
     m3.position.set(0, -0.19, 0.055);
     magGroup.add(m1, m2, m3);
@@ -1086,6 +1170,31 @@
     const rButtpad = new THREE.Mesh(new THREE.BoxGeometry(0.058, 0.14, 0.03), darkMetalMat);
     rButtpad.position.set(0, -0.045, 0.58);
     rifleGroup.add(rButtpad);
+
+    // FULL-LENGTH HIGH-RES SIDE DECALS (FACING BOTH SIDES FOR INSPECT)
+    rifleSideDecalMat = new THREE.MeshStandardMaterial({
+      transparent: true,
+      alphaTest: 0.05,
+      roughness: 0.32,
+      metalness: 0.25,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+      side: THREE.DoubleSide
+    });
+
+    // Left Decal: Faces player camera in 1st person
+    const rSideDecalLeft = new THREE.Mesh(new THREE.PlaneGeometry(1.24, 0.36), rifleSideDecalMat);
+    rSideDecalLeft.rotation.y = -Math.PI / 2;
+    rSideDecalLeft.position.set(-0.0388, -0.06, -0.08);
+    rifleGroup.add(rSideDecalLeft);
+
+    // Right Decal: Faces outward for inspect turnaround
+    const rSideDecalRight = new THREE.Mesh(new THREE.PlaneGeometry(1.24, 0.36), rifleSideDecalMat);
+    rSideDecalRight.rotation.y = Math.PI / 2;
+    rSideDecalRight.scale.x = -1;
+    rSideDecalRight.position.set(0.0388, -0.06, -0.08);
+    rifleGroup.add(rSideDecalRight);
 
     // ==========================================
     // 2. GLOVED ARMS & SLEEVES (CS2 AUTHENTIC)
@@ -1130,11 +1239,6 @@
     pSlide.position.set(0, 0.04, -0.08);
     pistolGroup.add(pSlide);
 
-    const pDecal = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.07), pistolSkinMat);
-    pDecal.rotation.y = Math.PI / 2;
-    pDecal.position.set(-0.033, 0.04, -0.08);
-    pistolGroup.add(pDecal);
-
     const pTopDecal = new THREE.Mesh(new THREE.PlaneGeometry(0.062, 0.32), pistolSkinMat);
     pTopDecal.rotation.x = -Math.PI / 2;
     pTopDecal.position.set(0, 0.078, -0.08);
@@ -1154,6 +1258,27 @@
     pGrip.position.set(0, -0.09, 0.02);
     pistolGroup.add(pGrip);
 
+    pistolSideDecalMat = new THREE.MeshStandardMaterial({
+      transparent: true,
+      alphaTest: 0.05,
+      roughness: 0.28,
+      metalness: 0.35,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+      side: THREE.DoubleSide
+    });
+    const pSideDecalLeft = new THREE.Mesh(new THREE.PlaneGeometry(0.38, 0.22), pistolSideDecalMat);
+    pSideDecalLeft.rotation.y = -Math.PI / 2;
+    pSideDecalLeft.position.set(-0.034, 0.0, -0.06);
+    pistolGroup.add(pSideDecalLeft);
+
+    const pSideDecalRight = new THREE.Mesh(new THREE.PlaneGeometry(0.38, 0.22), pistolSideDecalMat);
+    pSideDecalRight.rotation.y = Math.PI / 2;
+    pSideDecalRight.scale.x = -1;
+    pSideDecalRight.position.set(0.034, 0.0, -0.06);
+    pistolGroup.add(pSideDecalRight);
+
     // ==========================================
     // 4. SLOT 3: KNIFE (KARAMBIT)
     // ==========================================
@@ -1171,10 +1296,20 @@
     kBlade.position.set(0, 0.06, -0.16);
     knifeGroup.add(kBlade);
 
-    const kDecal = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.075), knifeSkinMat);
-    kDecal.rotation.y = Math.PI / 2;
-    kDecal.position.set(-0.009, 0.06, -0.16);
-    knifeGroup.add(kDecal);
+    knifeSideDecalMat = new THREE.MeshStandardMaterial({
+      transparent: true,
+      alphaTest: 0.05,
+      roughness: 0.15,
+      metalness: 0.85,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+      side: THREE.DoubleSide
+    });
+    const kSideDecalLeft = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.16), knifeSideDecalMat);
+    kSideDecalLeft.rotation.set(0.45, -Math.PI / 2, -0.15);
+    kSideDecalLeft.position.set(-0.012, 0.06, -0.16);
+    knifeGroup.add(kSideDecalLeft);
 
     const kHandle = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.07, 0.16), darkMetalMat);
     kHandle.rotation.x = -0.3;
@@ -1197,14 +1332,26 @@
     STATE.slots[slotNum].price = skin.price || STATE.slots[slotNum].price;
     STATE.slots[slotNum].img = skin.img || STATE.slots[slotNum].img;
 
-    const texture = generateSkinTexture(skin);
+    const res = generateSkinTexture(skin);
 
     if (slotNum === 1) {
-      rifleMaterials.forEach(m => { m.map = texture; m.color.setHex(0xffffff); m.needsUpdate = true; });
+      rifleMaterials.forEach(m => { m.map = res.canvasTex; m.color.setHex(0xffffff); m.needsUpdate = true; });
+      if (rifleSideDecalMat) {
+        rifleSideDecalMat.map = res.decalTex;
+        rifleSideDecalMat.needsUpdate = true;
+      }
     } else if (slotNum === 2) {
-      pistolMaterials.forEach(m => { m.map = texture; m.color.setHex(0xffffff); m.needsUpdate = true; });
+      pistolMaterials.forEach(m => { m.map = res.canvasTex; m.color.setHex(0xffffff); m.needsUpdate = true; });
+      if (pistolSideDecalMat) {
+        pistolSideDecalMat.map = res.decalTex;
+        pistolSideDecalMat.needsUpdate = true;
+      }
     } else if (slotNum === 3) {
-      knifeMaterials.forEach(m => { m.map = texture; m.color.setHex(0xffffff); m.needsUpdate = true; });
+      knifeMaterials.forEach(m => { m.map = res.canvasTex; m.color.setHex(0xffffff); m.needsUpdate = true; });
+      if (knifeSideDecalMat) {
+        knifeSideDecalMat.map = res.decalTex;
+        knifeSideDecalMat.needsUpdate = true;
+      }
     }
 
     if (STATE.currentSlot === slotNum) {
