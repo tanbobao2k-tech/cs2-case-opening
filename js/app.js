@@ -196,8 +196,8 @@ const freshStats = () => ({
   battles: { played: 0, won: 0 }, trades: 0, tradeups: 0,
 });
 
-let inventory = load(STORE_INV, []);
-let stats = { ...freshStats(), ...load(STORE_STATS, {}) };
+let inventory = (profile && token()) ? load(STORE_INV, []) : [];
+let stats = (profile && token()) ? { ...freshStats(), ...load(STORE_STATS, {}) } : freshStats();
 if (stats.balance == null) { stats.balance = TOPUP; stats.topup = TOPUP; }
 stats.byCase ??= {}; stats.battles ??= { played: 0, won: 0 }; stats.sold ??= 0; stats.trades ??= 0; stats.tradeups ??= 0; stats.equipped ??= {};
 
@@ -2567,17 +2567,19 @@ async function loadFromServer() {
   if (!profile || !token()) return;
   try {
     const { data } = await api('/state');
-    if (data && Array.isArray(data.inv)) {
+    if (data && Array.isArray(data.inv) && typeof data.stats === 'object') {
       inventory = data.inv;
       stats = { ...freshStats(), ...data.stats };
       stats.byCase ??= {}; stats.battles ??= { played: 0, won: 0 }; stats.equipped ??= {};
       try { localStorage.setItem(STORE_INV, JSON.stringify(inventory)); localStorage.setItem(STORE_STATS, JSON.stringify(stats)); } catch { }
       setSync('');
-    } else if (inventory.length || stats.opened) {
-      // Máy chủ chưa có gì nhưng máy này có dữ liệu cũ → đẩy lên
-      dirty = true; await flushSync();
     } else {
+      // Tài khoản mới: bắt đầu kho đồ trống hoàn toàn và ví $1.000, không lấy dữ liệu bất kỳ đâu
+      inventory = [];
+      stats = freshStats();
+      try { localStorage.setItem(STORE_INV, JSON.stringify(inventory)); localStorage.setItem(STORE_STATS, JSON.stringify(stats)); } catch { }
       dirty = true; await flushSync();
+      setSync('');
     }
   } catch (e) {
     if (e.status === 401) { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(CURRENT_KEY); location.reload(); return; }
@@ -2635,15 +2637,11 @@ function renderAccountList() {
 }
 function enterAccount(name, tok) {
   try {
+    localStorage.removeItem('cs2-inv');
+    localStorage.removeItem('cs2-stats');
     localStorage.setItem(TOKEN_KEY, tok);
     lsSet(CURRENT_KEY, name);
     rememberName(name);
-    // Dữ liệu chơi từ bản cũ (chưa có tài khoản) chuyển cho tài khoản đầu tiên trên máy này
-    if (localStorage.getItem('cs2-inv') && !localStorage.getItem(`cs2-inv:${name}`)) {
-      localStorage.setItem(`cs2-inv:${name}`, localStorage.getItem('cs2-inv'));
-      if (localStorage.getItem('cs2-stats')) localStorage.setItem(`cs2-stats:${name}`, localStorage.getItem('cs2-stats'));
-      localStorage.removeItem('cs2-inv'); localStorage.removeItem('cs2-stats');
-    }
   } catch (err) {
     console.warn('Storage warning:', err);
   }
@@ -2679,6 +2677,7 @@ async function logout() {
   clearTimeout(syncTimer); await flushSync();
   try { await api('/logout', { method: 'POST' }); } catch { }
   localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(CURRENT_KEY);
+  localStorage.removeItem('cs2-inv'); localStorage.removeItem('cs2-stats');
   location.reload();
 }
 async function changePassword(e) {
