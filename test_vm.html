@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Viewmodel Test</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #1a1a24; }
+    #info { position: absolute; top: 10px; left: 10px; color: #fff; font-family: sans-serif; z-index: 100; font-size: 14px; background: rgba(0,0,0,0.7); padding: 8px 12px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div id="info">CS Viewmodel Loading...</div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="js/GLTFLoader.js"></script>
+  <script>
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x222630);
+
+    const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.01, 100);
+    camera.position.set(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+    document.body.appendChild(renderer.domElement);
+
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x444455, 1.2);
+    scene.add(hemi);
+
+    const dir = new THREE.DirectionalLight(0xffffff, 1.5);
+    dir.position.set(2, 4, 3);
+    scene.add(dir);
+
+    const camLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    camLight.position.set(0.5, 1, -1);
+    camera.add(camLight);
+    scene.add(camera);
+
+    const loader = new THREE.GLTFLoader();
+    const texLoader = new THREE.TextureLoader();
+    const lotusTex = texLoader.load('assets/ak47_wild_lotus_baked_uv.png');
+    lotusTex.wrapS = THREE.RepeatWrapping;
+    lotusTex.wrapT = THREE.RepeatWrapping;
+    lotusTex.flipY = false;
+    lotusTex.encoding = THREE.sRGBEncoding;
+
+    let mixer = null;
+
+    loader.load('assets/ak47_viewmodel.glb', (gltf) => {
+      document.getElementById('info').innerHTML = '<b>AK-47 Wild Lotus Real 3D Model Loaded!</b><br>Authentic mesh, rigged arms, animations: ' + gltf.animations.map(a => a.name).join(', ');
+      
+      const model = gltf.scene;
+      model.scale.set(0.05, 0.05, 0.05);
+      model.position.set(0.04, -0.02, 0.0);
+      model.setRotationFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(5), THREE.MathUtils.degToRad(185), 0));
+
+      model.traverse((child) => {
+        if (child.isMesh || child.isSkinnedMesh) {
+          if (child.material) {
+            const mats = Array.isArray(child.material) ? child.material : [child.material];
+            mats.forEach(m => {
+              if (m.name === 'Material.002') {
+                m.map = lotusTex;
+                m.roughness = 0.35;
+                m.metalness = 0.25;
+                m.needsUpdate = true;
+              }
+            });
+          }
+        }
+      });
+
+      camera.add(model);
+
+      if (gltf.animations && gltf.animations.length > 0) {
+        mixer = new THREE.AnimationMixer(model);
+        const idleClip = gltf.animations.find(a => a.name === 'idle') || gltf.animations[1];
+        if (idleClip) {
+          const action = mixer.clipAction(idleClip);
+          action.play();
+        }
+      }
+
+      window.gltfModel = gltf;
+    }, undefined, (err) => {
+      document.getElementById('info').innerHTML = '<b style="color:red">Error loading GLB: ' + err.message + '</b>';
+      console.error(err);
+    });
+
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+      if (mixer) mixer.update(delta);
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>

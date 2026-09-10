@@ -563,6 +563,11 @@
   let scene, camera, renderer;
   let viewmodelRig, weaponMesh;
   let rifleGroup, pistolGroup, knifeGroup;
+  let akRealGroup = null;
+  let akRealMixer = null;
+  let akRealActions = {};
+  let akRealMaterial = null;
+  let akBakedLotusTexture = null;
   let rifleMaterials = [], pistolMaterials = [], knifeMaterials = [];
   let rifleSideDecalMat, pistolSideDecalMat, knifeSideDecalMat;
   let muzzleFlashLight, muzzleSprite;
@@ -1319,8 +1324,74 @@
     const gloveMat = new THREE.MeshStandardMaterial({ color: 0x242830, roughness: 0.8 }); // CS2 Tactical Gloves
     const leatherSleeveMat = new THREE.MeshStandardMaterial({ color: 0x543d2b, roughness: 0.75 }); // Brown Leather Jacket Sleeve
 
+    // --- LOAD REAL AUTHENTIC CS2 AK-47 3D VIEWMODEL WITH SKELETAL ARMS ---
+    const texLoader = new THREE.TextureLoader();
+    akBakedLotusTexture = texLoader.load('assets/ak47_wild_lotus_baked_uv.png');
+    akBakedLotusTexture.wrapS = THREE.RepeatWrapping;
+    akBakedLotusTexture.wrapT = THREE.RepeatWrapping;
+    akBakedLotusTexture.flipY = false;
+    akBakedLotusTexture.encoding = THREE.sRGBEncoding;
+
+    if (typeof THREE.GLTFLoader !== 'undefined') {
+      const gltfLoader = new THREE.GLTFLoader();
+      gltfLoader.load('assets/ak47_viewmodel.glb', (gltf) => {
+        akRealGroup = gltf.scene;
+        akRealGroup.scale.set(0.05, 0.05, 0.05);
+        akRealGroup.position.set(0.04, -0.02, 0.0);
+        akRealGroup.setRotationFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(5), THREE.MathUtils.degToRad(185), 0));
+
+        akRealGroup.traverse((child) => {
+          if (child.isMesh || child.isSkinnedMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            if (child.material) {
+              const mats = Array.isArray(child.material) ? child.material : [child.material];
+              mats.forEach(m => {
+                if (m.name === 'Material.002') {
+                  akRealMaterial = m;
+                  m.map = akBakedLotusTexture;
+                  m.roughness = 0.35;
+                  m.metalness = 0.28;
+                  m.needsUpdate = true;
+                }
+              });
+            }
+          }
+        });
+
+        viewmodelRig.add(akRealGroup);
+
+        // Hide procedural primitives since real CS model is active!
+        if (rifleGroup) rifleGroup.visible = false;
+
+        // Setup real CS skeletal animations
+        if (gltf.animations && gltf.animations.length > 0) {
+          akRealMixer = new THREE.AnimationMixer(akRealGroup);
+          gltf.animations.forEach(anim => {
+            const action = akRealMixer.clipAction(anim);
+            if (anim.name === 'idle') {
+              action.setLoop(THREE.LoopRepeat);
+              action.play();
+            } else {
+              action.setLoop(THREE.LoopOnce);
+              action.clampWhenFinished = false;
+            }
+            akRealActions[anim.name] = action;
+          });
+          if (!akRealActions['fire'] && gltf.animations[0]) {
+            akRealActions['fire'] = akRealMixer.clipAction(gltf.animations[0]);
+          }
+          if (!akRealActions['reload_empty'] && gltf.animations[2]) {
+            akRealActions['reload_empty'] = akRealMixer.clipAction(gltf.animations[2]);
+          }
+        }
+      }, undefined, (err) => {
+        console.warn('GLTFLoader fallback to procedural mesh:', err);
+      });
+    }
+
     // ==========================================
-    // 1. SLOT 1: HIGH-POLYGON REALISTIC AK-47
+    // 1. SLOT 1: PROCEDURAL FALLBACK AK-47
     // ==========================================
     rifleGroup = new THREE.Group();
     weaponMesh.add(rifleGroup);
@@ -1623,6 +1694,14 @@
         rifleSideDecalMat.map = res.decalTex;
         rifleSideDecalMat.needsUpdate = true;
       }
+      if (akRealMaterial) {
+        if (skin.id === 'ak-wildlotus' || (skin.name && skin.name.toLowerCase().includes('lotus'))) {
+          akRealMaterial.map = akBakedLotusTexture;
+        } else {
+          akRealMaterial.map = res.canvasTex;
+        }
+        akRealMaterial.needsUpdate = true;
+      }
     } else if (slotNum === 2) {
       pistolMaterials.forEach(m => { m.map = res.canvasTex; m.color.setHex(0xffffff); m.needsUpdate = true; });
       if (pistolSideDecalMat) {
@@ -1659,7 +1738,12 @@
 
     playDeploySound(slotNum);
 
-    if (rifleGroup) rifleGroup.visible = (slotNum === 1);
+    if (akRealGroup) {
+      akRealGroup.visible = (slotNum === 1);
+      if (rifleGroup) rifleGroup.visible = false;
+    } else {
+      if (rifleGroup) rifleGroup.visible = (slotNum === 1);
+    }
     if (pistolGroup) pistolGroup.visible = (slotNum === 2);
     if (knifeGroup) knifeGroup.visible = (slotNum === 3);
 
@@ -1803,6 +1887,11 @@
     if (STATE.currentSlot === 1) {
       playRifleShotSound();
 
+      if (akRealActions['fire']) {
+        akRealActions['fire'].stop();
+        akRealActions['fire'].play();
+      }
+
       // CS2 AK Spray Recoil Progression
       const sprayY = Math.min(0.06, 0.02 + (STATE.sprayCount * 0.003));
       const sprayX = (Math.sin(STATE.sprayCount * 0.8) * 0.02);
@@ -1903,6 +1992,14 @@
     STATE.isReloading = true;
     STATE.sprayCount = 0;
     playReloadSound();
+
+    if (STATE.currentSlot === 1) {
+      const relAction = akRealActions['reload_empty'] || akRealActions['reload'];
+      if (relAction) {
+        relAction.stop();
+        relAction.play();
+      }
+    }
 
     recoilOffset.y = -0.2;
     recoilRot.z = -0.3;
@@ -2332,6 +2429,26 @@
     player.swayY = THREE.MathUtils.lerp(player.swayY, 0, dt * 8);
 
     inspectProgress = THREE.MathUtils.lerp(inspectProgress, inspectTarget, dt * 4);
+
+    if (akRealMixer) {
+      akRealMixer.update(dt);
+    }
+
+    if (akRealGroup && akRealGroup.visible) {
+      const bobX = Math.cos(bobTimer * 0.5) * 0.012;
+      const bobY = Math.sin(bobTimer) * 0.012;
+
+      let posX = 0.04 + recoilOffset.x + player.swayX + bobX - (inspectProgress * 0.28);
+      let posY = -0.02 + recoilOffset.y + player.swayY + bobY + (inspectProgress * 0.16) - switchOffset - (STATE.isScoped ? 0.4 : 0);
+      let posZ = 0.0 + recoilOffset.z + (inspectProgress * 0.10);
+
+      let rotX = THREE.MathUtils.degToRad(5) + recoilRot.x - (inspectProgress * 0.15);
+      let rotY = THREE.MathUtils.degToRad(185) + recoilRot.y + (inspectProgress * 0.95);
+      let rotZ = recoilRot.z - (inspectProgress * 0.55);
+
+      akRealGroup.position.set(posX, posY, posZ);
+      akRealGroup.rotation.set(rotX, rotY, rotZ);
+    }
 
     if (weaponMesh) {
       const bobX = Math.cos(bobTimer * 0.5) * 0.015;
