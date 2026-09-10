@@ -77,13 +77,38 @@ function instanceOf(base, float, st, extra = {}) {
 }
 const baseOf = (item) => (item.iid != null ? ITEMS[item.iid] : ITEMS.find((b) => b.n === item.n && b.ph === item.ph));
 
+let officialPity = 0;
+
 function rollItem(c, forcedRarity) {
   let base, st;
   if (c.custom) {
+    // Nếu là Hòm Tất Cả, cũng kích hoạt 30% rớt dao/găng để mở cực đã
+    if (c.id === 'cc-all' && Math.random() < 0.30) {
+      const rareItems = c.pool.filter((x) => x.base.r === 5);
+      if (rareItems.length) {
+        base = rand(rareItems).base;
+        st = base.st !== 0 && Math.random() < STATTRAK_P;
+        return instanceOf(base, rollFloat(base.f), st, { caseId: c.id, caseName: c.name });
+      }
+    }
     base = weightedPick(c.pool, (x) => x.w).base;
     st = false;
   } else {
-    const r = forcedRarity || rollRarity();
+    let r;
+    if (forcedRarity) {
+      r = forcedRarity;
+    } else {
+      // Bảo hiểm nổ vàng (Pity System): tỷ lệ gốc 30%, nếu xui quá 3 lần trượt thì lần 4 chắc chắn 100% nổ dao/găng
+      officialPity++;
+      if (officialPity >= 4) {
+        r = 5;
+        officialPity = 0;
+      } else {
+        r = rollRarity();
+        if (r === 5) officialPity = 0;
+      }
+    }
+
     if (r === 5) {
       const names = [...new Set(c.rare.map((i) => ITEMS[i].n))];
       const name = rand(names);
