@@ -1447,7 +1447,10 @@ $('#up-mult-chips').onclick = (e) => {
   renderUpgrade();
 };
 
-$('#tradeup-open').onclick = openTradeUp;
+$('#trade-open').onclick = openTrade;
+const navTrade = $('#nav-trade');
+if (navTrade) navTrade.onclick = (e) => { e.preventDefault(); openTrade(); };
+$('#tradeup-open').onclick = openTrade;
 $('#tu-tabs').onclick = (e) => { const b = e.target.closest('[data-tier]'); if (b) { tu.tier = Number(b.dataset.tier); tu.picked = []; renderTradeUp(); } };
 $('#tu-auto').onclick = tuAutoPick;
 $('#tu-clear').onclick = () => { tu.picked = []; renderTradeUp(); };
