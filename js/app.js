@@ -109,6 +109,7 @@ const CUSTOM_DEFS = [
   { id: 'cc-doppler', name: 'Hòm Doppler', desc: 'Doppler & Gamma Doppler mọi phase, có Ruby/Sapphire/Black Pearl/Emerald', tag: 'Dao', color: '#e94b8a', f: (i) => /Doppler/.test(i.n) },
   { id: 'cc-fade', name: 'Hòm Fade', desc: 'Fade, Marble Fade, Amber Fade, Ultraviolet…', tag: 'Theme', color: '#c77dff', f: (i) => /\| .*Fade/.test(i.n) },
   { id: 'cc-legend', name: 'Hòm Huyền Thoại', desc: 'Chỉ đồ trên $1.000: Dragon Lore, Howl, Gungnir, dao xịn…', tag: 'VIP', color: '#ff5f5f', f: (i) => typicalPrice(i) >= 1000 },
+  { id: 'cc-awp-lord', name: 'Hòm AWP Lord', desc: 'Chúa tể bắn tỉa: Gungnir, Dragon Lore, Medusa, The Prince, Desert Hydra, Fade, Oni Taiji…', tag: 'VIP', color: '#ffd700', f: (i) => i.w === 'AWP' && typicalPrice(i) >= 5 },
   { id: 'cc-ak', name: 'Hòm AK-47', desc: 'Toàn bộ skin AK-47', tag: 'Súng', color: '#eb4b4b', f: (i) => i.w === 'AK-47' },
   { id: 'cc-awp', name: 'Hòm AWP', desc: 'Toàn bộ skin AWP', tag: 'Súng', color: '#eb4b4b', f: (i) => i.w === 'AWP' },
   { id: 'cc-m4a4', name: 'Hòm M4A4', desc: 'Toàn bộ skin M4A4', tag: 'Súng', color: '#eb4b4b', f: (i) => i.w === 'M4A4' },
