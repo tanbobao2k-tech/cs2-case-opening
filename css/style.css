@@ -409,12 +409,12 @@ main { max-width: 1240px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px) 80px
 /* Container Vòng xoay */
 .up-wheel-container { position: relative; width: 270px; height: 270px; margin: 6px auto 14px; display: grid; place-items: center; }
 .up-wheel-outer { position: relative; width: 260px; height: 260px; border-radius: 50%; box-shadow: 0 0 35px rgba(0, 245, 160, 0.1), inset 0 0 25px rgba(0,0,0,0.8); }
-.up-wheel-svg { width: 100%; height: 100%; transform: rotate(-90deg); filter: drop-shadow(0 0 10px rgba(0, 245, 160, 0.25)); }
+.up-wheel-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 10px rgba(0, 245, 160, 0.25)); }
 .up-wheel-track { fill: none; stroke: rgba(255, 255, 255, 0.08); stroke-width: 16; }
 .up-wheel-arc { fill: none; stroke: url(#winGrad); stroke-width: 16; stroke-linecap: round; transition: stroke-dashoffset .25s ease, stroke-dasharray .25s ease; }
 
 /* Kim quay */
-.up-needle-wrap { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+.up-needle-wrap { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; transform-origin: 50% 50%; }
 .up-needle { position: absolute; top: 50%; left: 50%; width: 4px; height: 116px; margin-left: -2px; margin-top: -116px; transform-origin: 50% 100%; will-change: transform; }
 .up-needle::before { content: ''; position: absolute; bottom: 0; left: -8px; width: 20px; height: 20px; border-radius: 50%; background: #ffd700; box-shadow: 0 0 12px rgba(255, 215, 0, 0.8); }
 .up-needle-tip { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 9px solid transparent; border-right: 9px solid transparent; border-bottom: 24px solid #ffd700; filter: drop-shadow(0 0 8px #ffd700); }

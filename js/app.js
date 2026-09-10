@@ -1630,7 +1630,10 @@ function openTrade() {
   const resPanel = $('#up-result-panel');
   if (resPanel) resPanel.hidden = true;
   const needle = $('#up-needle-wrap');
-  if (needle) needle.style.transform = `rotate(${up.rotation % 360}deg)`;
+  if (needle) {
+    needle.style.transform = `rotate(${up.rotation % 360}deg)`;
+    needle.style.filter = '';
+  }
   renderUpgrade();
   openModal('#modal-trade');
 }
@@ -1645,13 +1648,13 @@ function polarToCartesian(cx, cy, r, angleInDegrees) {
 }
 
 function describeArc(cx, cy, r, startAngle, endAngle) {
-  const start = polarToCartesian(cx, cy, r, endAngle);
-  const end = polarToCartesian(cx, cy, r, startAngle);
+  const pStart = polarToCartesian(cx, cy, r, startAngle);
+  const pEnd = polarToCartesian(cx, cy, r, endAngle);
   const diff = (endAngle - startAngle + 360) % 360;
   const largeArcFlag = diff > 180 ? '1' : '0';
   return [
-    'M', start.x, start.y,
-    'A', r, r, 0, largeArcFlag, 0, end.x, end.y,
+    'M', pStart.x, pStart.y,
+    'A', r, r, 0, largeArcFlag, 1, pEnd.x, pEnd.y,
   ].join(' ');
 }
 
@@ -1665,11 +1668,11 @@ function updateWheelArc(rate) {
   const angle = Math.min(359.99, (rate / 100) * 360);
   let d = '';
   if (up.side === 'right') {
-    // Từ 12h (0°) thuận chiều kim đồng hồ đến angle
+    // Từ 12h (0°) thuận chiều kim đồng hồ sang PHẢI đến angle
     d = describeArc(140, 140, 110, 0, angle);
   } else {
-    // Từ 12h (0°) ngược chiều kim đồng hồ (từ 360 - angle đến 360)
-    d = describeArc(140, 140, 110, 360 - angle, 360);
+    // Vùng TRÁI: Từ (360 - angle) thuận chiều kim đồng hồ đến 12h (359.99°)
+    d = describeArc(140, 140, 110, 360 - angle, 359.99);
   }
   path.setAttribute('d', d);
 }
@@ -1943,6 +1946,7 @@ async function startUpgrade() {
   const totalTargetDeg = up.rotation + fullSpins + deltaToStop;
 
   const needle = $('#up-needle-wrap');
+  if (needle) needle.style.filter = '';
   const duration = 3800;
   const start = performance.now();
   const startDeg = up.rotation;
@@ -1983,6 +1987,7 @@ async function startUpgrade() {
 
   if (isWin) {
     // Thắng!
+    if (needle) needle.style.filter = 'drop-shadow(0 0 16px #00f5a0)';
     playWinSound();
     const itemToAdd = { ...wonItem, t: Date.now(), caseName: 'Nâng cấp' };
     addToInventory([itemToAdd]);
@@ -2008,6 +2013,7 @@ async function startUpgrade() {
     up.target = null;
   } else {
     // Thua
+    if (needle) needle.style.filter = 'drop-shadow(0 0 12px #ff4d4d)';
     playLoseSound();
     stats.trades++;
     persistAndRender();
@@ -2350,8 +2356,17 @@ $('#up-target-more').onclick = () => { up.botShown += 60; renderUpgrade(); };
 $('#up-dir-left').onclick = () => { if (!up.rolling) { up.side = 'left'; renderUpgrade(); } };
 $('#up-dir-right').onclick = () => { if (!up.rolling) { up.side = 'right'; renderUpgrade(); } };
 $('#up-roll-btn').onclick = startUpgrade;
-$('#up-res-again').onclick = () => { $('#up-result-panel').hidden = true; };
-$('#up-res-close').onclick = () => { $('#up-result-panel').hidden = true; closeModal('#modal-trade'); };
+$('#up-res-again').onclick = () => {
+  $('#up-result-panel').hidden = true;
+  const needle = $('#up-needle-wrap');
+  if (needle) needle.style.filter = '';
+};
+$('#up-res-close').onclick = () => {
+  $('#up-result-panel').hidden = true;
+  const needle = $('#up-needle-wrap');
+  if (needle) needle.style.filter = '';
+  closeModal('#modal-trade');
+};
 $('#up-mult-chips').onclick = (e) => {
   const chip = e.target.closest('[data-mult]');
   if (!chip || up.rolling) return;
