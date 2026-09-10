@@ -582,8 +582,8 @@
     const height = window.innerHeight;
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xdce7f3);
-    scene.fog = new THREE.FogExp2(0xdce7f3, 0.015);
+    scene.background = new THREE.Color(0x6eb7f0); // Mediterranean sky blue
+    scene.fog = new THREE.FogExp2(0x94c8f5, 0.006);
 
     camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 100);
     camera.rotation.order = 'YXZ';
@@ -601,17 +601,22 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.12;
+    renderer.outputEncoding = THREE.sRGBEncoding;
     container.appendChild(renderer.domElement);
 
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xb0c0d0, 0.75);
+    const hemiLight = new THREE.HemisphereLight(0xfff7e8, 0x8298a8, 0.85);
     hemiLight.position.set(0, 50, 0);
     scene.add(hemiLight);
 
-    const dirLight = new THREE.DirectionalLight(0xfffaed, 0.95);
-    dirLight.position.set(20, 40, 20);
+    // Warm Mediterranean Sun Light (Direct shadows matching CS2 Inferno)
+    const dirLight = new THREE.DirectionalLight(0xfffaec, 1.45);
+    dirLight.position.set(24, 44, 20);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 2048;
     dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.bias = -0.0001;
     scene.add(dirLight);
 
     buildArena();
@@ -621,19 +626,153 @@
     window.addEventListener('resize', onWindowResize);
   }
 
+  // --- REALISTIC INFERNO ENVIRONMENT TEXTURE GENERATORS ---
+  function createCobblestoneTexture() {
+    const c = document.createElement('canvas');
+    c.width = 1024; c.height = 1024;
+    const ctx = c.getContext('2d');
+
+    // Mortar base
+    ctx.fillStyle = '#9e8c74';
+    ctx.fillRect(0, 0, 1024, 1024);
+
+    const stoneColors = ['#b8aa94', '#a6977e', '#8f8069', '#bfb39d', '#998a75', '#c7bcab', '#80725c'];
+    const rows = 16, cols = 16;
+    const w = 1024 / cols, h = 1024 / rows;
+
+    for (let r = 0; r < rows; r++) {
+      const offsetX = (r % 2) * (w / 2);
+      for (let col = -1; col < cols + 1; col++) {
+        const x = col * w + offsetX + (Math.sin(r * 3 + col * 7) * 3);
+        const y = r * h + (Math.cos(r * 5 + col * 4) * 3);
+        const sw = w - 6;
+        const sh = h - 6;
+
+        ctx.fillStyle = stoneColors[(r * 7 + col * 13) % stoneColors.length];
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(x, y, sw, sh, 6);
+        else ctx.rect(x, y, sw, sh);
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Dry grass / weed tufts in crevices
+        if ((r + col * 3) % 8 === 0) {
+          ctx.fillStyle = '#4a5d23';
+          ctx.beginPath();
+          ctx.arc(x + sw - 2, y + sh - 2, 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(12, 12);
+    return tex;
+  }
+
+  function createInfernoWallTexture() {
+    const c = document.createElement('canvas');
+    c.width = 1024; c.height = 1024;
+    const ctx = c.getContext('2d');
+
+    // Upper warm terracotta stucco plaster
+    const grad = ctx.createLinearGradient(0, 0, 0, 1024);
+    grad.addColorStop(0, '#e59b58');
+    grad.addColorStop(0.48, '#c97f3d');
+    grad.addColorStop(0.52, '#a59784');
+    grad.addColorStop(1, '#867b6d');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 1024, 1024);
+
+    // Weathered plaster noise
+    for (let i = 0; i < 600; i++) {
+      ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+      ctx.fillRect(Math.random() * 1024, Math.random() * 500, 10, 10);
+    }
+
+    // Lower ancient stone brick layers
+    const brickRows = 8;
+    const bH = 500 / brickRows;
+    const bColors = ['#cdc6b8', '#b5aca0', '#9e9587', '#dcd5c8', '#8f8577'];
+
+    for (let r = 0; r < brickRows; r++) {
+      const y = 524 + r * bH;
+      const bW = 128;
+      const off = (r % 2) * (bW / 2);
+      for (let b = -1; b < 9; b++) {
+        const x = b * bW + off;
+        ctx.fillStyle = bColors[(r * 5 + b * 3) % bColors.length];
+        ctx.fillRect(x + 3, y + 3, bW - 6, bH - 6);
+
+        ctx.fillStyle = 'rgba(50, 40, 30, 0.35)';
+        ctx.fillRect(x, y + bH - 2, bW, 2);
+        ctx.fillRect(x + bW - 2, y, 2, bH);
+      }
+    }
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(6, 2);
+    return tex;
+  }
+
+  function createWoodDoorTexture() {
+    const c = document.createElement('canvas');
+    c.width = 512; c.height = 512;
+    const ctx = c.getContext('2d');
+
+    ctx.fillStyle = '#6d4c35';
+    ctx.fillRect(0, 0, 512, 512);
+
+    for (let p = 0; p < 8; p++) {
+      const x = p * 64;
+      ctx.fillStyle = p % 2 === 0 ? '#5e3f2a' : '#745138';
+      ctx.fillRect(x + 2, 0, 60, 512);
+      ctx.fillStyle = '#3a2416';
+      ctx.fillRect(x, 0, 2, 512);
+    }
+
+    // Diagonal brace
+    ctx.fillStyle = '#4e3321';
+    ctx.beginPath();
+    ctx.moveTo(0, 0); ctx.lineTo(80, 0); ctx.lineTo(512, 432); ctx.lineTo(512, 512); ctx.lineTo(432, 512); ctx.lineTo(0, 80); ctx.closePath();
+    ctx.fill();
+
+    // Iron studs
+    ctx.fillStyle = '#1e1e1e';
+    for (let s = 0; s < 12; s++) {
+      ctx.beginPath();
+      ctx.arc(40 + (s % 4) * 140, 40 + Math.floor(s / 4) * 200, 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    return new THREE.CanvasTexture(c);
+  }
+
   function buildArena() {
+    // 1. Realistic Italian Cobblestone Floor (Inferno Courtyard)
     const floorGeo = new THREE.PlaneGeometry(50, 50);
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0x9a8362, roughness: 0.85 });
+    const floorMat = new THREE.MeshStandardMaterial({
+      map: createCobblestoneTexture(),
+      roughness: 0.85,
+      metalness: 0.05
+    });
     const floor = new THREE.Mesh(floorGeo, floorMat);
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     scene.add(floor);
 
-    const grid = new THREE.GridHelper(50, 25, 0x5a4832, 0xb8a280);
-    grid.position.y = 0.01;
-    scene.add(grid);
+    // 2. Ancient Stone & Terracotta Plaster Walls
+    const wallMat = new THREE.MeshStandardMaterial({
+      map: createInfernoWallTexture(),
+      roughness: 0.9,
+      metalness: 0.02
+    });
 
-    const wallMat = new THREE.MeshStandardMaterial({ color: 0xc4b59d, roughness: 0.9 });
     const createWall = (w, h, d, x, y, z) => {
       const geo = new THREE.BoxGeometry(w, h, d);
       const mesh = new THREE.Mesh(geo, wallMat);
@@ -643,13 +782,114 @@
       scene.add(mesh);
     };
 
-    const arenaH = 7;
+    const arenaH = 7.5;
     createWall(50, arenaH, 1, 0, arenaH / 2, -25);
     createWall(50, arenaH, 1, 0, arenaH / 2, 25);
     createWall(1, arenaH, 50, -25, arenaH / 2, 0);
     createWall(1, arenaH, 50, 25, arenaH / 2, 0);
 
-    const crateMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.7 });
+    // 3. Iconic Inferno Wooden Barn Doors (North Wall)
+    const doorMat = new THREE.MeshStandardMaterial({
+      map: createWoodDoorTexture(),
+      roughness: 0.8
+    });
+    const doorL = new THREE.Mesh(new THREE.BoxGeometry(3.5, 5.2, 0.2), doorMat);
+    doorL.position.set(-1.8, 2.6, -24.4);
+    doorL.castShadow = true;
+    scene.add(doorL);
+
+    const doorR = new THREE.Mesh(new THREE.BoxGeometry(3.5, 5.2, 0.2), doorMat);
+    doorR.position.set(1.8, 2.6, -24.4);
+    doorR.scale.x = -1;
+    doorR.castShadow = true;
+    scene.add(doorR);
+
+    // Stone Archway Frame around Doors
+    const archMat = new THREE.MeshStandardMaterial({ color: 0xb5aa99, roughness: 0.85 });
+    const archTop = new THREE.Mesh(new THREE.BoxGeometry(7.6, 0.6, 0.4), archMat);
+    archTop.position.set(0, 5.5, -24.3);
+    archTop.castShadow = true;
+    scene.add(archTop);
+
+    // 4. Mediterranean Cypress Trees (Behind Walls)
+    const createCypress = (x, z) => {
+      const tree = new THREE.Group();
+      tree.position.set(x, 0, z);
+
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.25, 2, 8), new THREE.MeshStandardMaterial({ color: 0x4a3728, roughness: 0.9 }));
+      trunk.position.y = 1;
+      tree.add(trunk);
+
+      const foliageMat = new THREE.MeshStandardMaterial({ color: 0x1f4222, roughness: 0.9 });
+      const foliage1 = new THREE.Mesh(new THREE.ConeGeometry(1.2, 7, 8), foliageMat);
+      foliage1.position.y = 5.5;
+      tree.add(foliage1);
+
+      const foliage2 = new THREE.Mesh(new THREE.ConeGeometry(0.9, 5, 8), foliageMat);
+      foliage2.position.y = 8;
+      tree.add(foliage2);
+
+      scene.add(tree);
+    };
+
+    createCypress(-12, -26);
+    createCypress(-6, -26);
+    createCypress(6, -26);
+    createCypress(14, -26);
+    createCypress(-26, -10);
+    createCypress(-26, 8);
+
+    // 5. Terracotta Flower Pots on Wall Steps (Matching Screenshot)
+    const potMat = new THREE.MeshStandardMaterial({ color: 0xc86432, roughness: 0.75 });
+    const flowerMat = new THREE.MeshStandardMaterial({ color: 0xe65100, roughness: 0.6 });
+    const leafMat = new THREE.MeshStandardMaterial({ color: 0x2e7d32, roughness: 0.8 });
+
+    const createFlowerPot = (x, y, z) => {
+      const potGroup = new THREE.Group();
+      potGroup.position.set(x, y, z);
+
+      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.25, 0.6, 12), potMat);
+      pot.castShadow = true;
+      potGroup.add(pot);
+
+      const leaves = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), leafMat);
+      leaves.position.y = 0.35;
+      potGroup.add(leaves);
+
+      const flower = new THREE.Mesh(new THREE.SphereGeometry(0.15, 6, 6), flowerMat);
+      flower.position.y = 0.5;
+      potGroup.add(flower);
+
+      scene.add(potGroup);
+    };
+
+    createFlowerPot(7, 3.8, -24.3);
+    createFlowerPot(-7, 3.8, -24.3);
+    createFlowerPot(12, 1.8, -24.3);
+
+    // 6. European "No Entry" Round Street Sign on Post (Inferno Signature)
+    const signGroup = new THREE.Group();
+    signGroup.position.set(-8, 0, -22);
+
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.6, 8), new THREE.MeshStandardMaterial({ color: 0x777777, metalness: 0.6 }));
+    post.position.y = 1.3;
+    post.castShadow = true;
+    signGroup.add(post);
+
+    const signBoard = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.04, 24), new THREE.MeshStandardMaterial({ color: 0xd32f2f, roughness: 0.3 }));
+    signBoard.rotation.x = Math.PI / 2;
+    signBoard.position.y = 2.4;
+    signBoard.castShadow = true;
+    signGroup.add(signBoard);
+
+    const signBar = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.12, 0.05), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 }));
+    signBar.position.set(0, 2.4, 0.01);
+    signGroup.add(signBar);
+
+    scene.add(signGroup);
+
+    // 7. Tactical Crates & Cover
+    const crateMat = new THREE.MeshStandardMaterial({ color: 0x7c5332, roughness: 0.8 });
     const createCrate = (size, x, z) => {
       const geo = new THREE.BoxGeometry(size, size, size);
       const crate = new THREE.Mesh(geo, crateMat);
@@ -1171,6 +1411,37 @@
     rButtpad.position.set(0, -0.045, 0.58);
     rifleGroup.add(rButtpad);
 
+    // Rear Tangent Sight Base & Adjustable Leaf
+    const rSightBase = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.045, 0.09), darkMetalMat);
+    rSightBase.position.set(0, 0.055, -0.22);
+    rifleGroup.add(rSightBase);
+
+    const rSightLeaf = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.015, 0.08), darkMetalMat);
+    rSightLeaf.rotation.x = -0.12;
+    rSightLeaf.position.set(0, 0.075, -0.22);
+    rifleGroup.add(rSightLeaf);
+
+    // Steel Bolt Carrier & Curved Charging Handle (Right side)
+    const rBolt = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.035, 0.09), new THREE.MeshStandardMaterial({ color: 0x8a9299, metalness: 0.9, roughness: 0.2 }));
+    rBolt.position.set(0.038, 0.015, -0.05);
+    rifleGroup.add(rBolt);
+
+    const rHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.012, 0.045, 8), darkMetalMat);
+    rHandle.rotation.z = Math.PI / 2;
+    rHandle.position.set(0.062, 0.018, -0.04);
+    rifleGroup.add(rHandle);
+
+    // Steel Trigger Guard & Curved Trigger
+    const rTriggerGuard = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.005, 6, 12, Math.PI), darkMetalMat);
+    rTriggerGuard.rotation.x = Math.PI;
+    rTriggerGuard.position.set(0, -0.055, 0.08);
+    rifleGroup.add(rTriggerGuard);
+
+    const rTrigger = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.03, 0.01), darkMetalMat);
+    rTrigger.rotation.x = -0.3;
+    rTrigger.position.set(0, -0.045, 0.08);
+    rifleGroup.add(rTrigger);
+
     // FULL-LENGTH HIGH-RES SIDE DECALS (FACING BOTH SIDES FOR INSPECT)
     rifleSideDecalMat = new THREE.MeshStandardMaterial({
       transparent: true,
@@ -1202,6 +1473,12 @@
     const armsGroup = new THREE.Group();
     rifleGroup.add(armsGroup);
 
+    // Tactical Knuckle Protective Armor Plates on Gloves
+    const rKnuckles = new THREE.Mesh(new THREE.BoxGeometry(0.082, 0.025, 0.04), new THREE.MeshStandardMaterial({ color: 0x15181e, roughness: 0.5, metalness: 0.4 }));
+    rKnuckles.position.set(0.04, -0.08, 0.16);
+    rKnuckles.rotation.set(0.3, 0.1, -0.2);
+    armsGroup.add(rKnuckles);
+
     // Right Hand (Holding Pistol Grip & Trigger)
     const rHand = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.1, 0.12), gloveMat);
     rHand.rotation.set(0.3, 0.1, -0.2);
@@ -1212,6 +1489,12 @@
     rForearm.rotation.set(0.8, -0.2, 0.5);
     rForearm.position.set(0.18, -0.28, 0.35);
     armsGroup.add(rForearm);
+
+    // Tactical Knuckle Plate Left Hand
+    const lKnuckles = new THREE.Mesh(new THREE.BoxGeometry(0.087, 0.025, 0.04), new THREE.MeshStandardMaterial({ color: 0x15181e, roughness: 0.5, metalness: 0.4 }));
+    lKnuckles.position.set(-0.06, -0.015, -0.3);
+    lKnuckles.rotation.set(-0.1, -0.3, 0.4);
+    armsGroup.add(lKnuckles);
 
     // Left Hand (Cradling Lower Wooden Handguard)
     const lHand = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.08, 0.14), gloveMat);
