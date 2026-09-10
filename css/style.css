@@ -1204,3 +1204,24 @@ main { max-width: 1240px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px) 80px
   padding-top: 12px;
 }
 
+/* Nav FPS 3D Button */
+.nav-fps-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: linear-gradient(135deg, #00b0ff, #0081cb) !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+  padding: 4px 12px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 0 12px rgba(0, 176, 255, 0.4) !important;
+  transition: all 0.2s ease !important;
+  text-decoration: none !important;
+}
+.nav-fps-btn:hover {
+  transform: translateY(-1px) scale(1.02) !important;
+  box-shadow: 0 0 18px rgba(0, 176, 255, 0.7) !important;
+  color: #fff !important;
+}
+
+

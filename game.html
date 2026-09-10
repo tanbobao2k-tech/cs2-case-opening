@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CS2 Aim Arena 3D — Thử Skin & Bắn Bia</title>
+  <meta name="description" content="Mini game bắn súng 3D góc nhìn thứ nhất (FPS) phong cách CS2. Đăng nhập bằng tài khoản quay hòm, rút và trang bị skin 3D vào súng để bắn bia tập luyện." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/game.css?v=1" />
+</head>
+<body>
+  <!-- 3D WebGL Canvas Container -->
+  <div id="canvas-container"></div>
+
+  <!-- Center Crosshair & Hitmarker -->
+  <div id="crosshair"></div>
+  <div id="hit-indicator">HEADSHOT!</div>
+
+  <!-- HUD: Top Bar -->
+  <div class="hud hud-top">
+    <div class="hud-user-info">
+      <span>👤 <b id="hud-user-name">Khách</b></span>
+      <button id="btn-open-drawer" class="btn-interactive">🎒 Kho đồ Skin (Phím B)</button>
+    </div>
+
+    <div class="stats-card">
+      <div class="stat-item">
+        <span class="stat-label">Điểm số</span>
+        <span id="hud-score-val" class="stat-val">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Độ chính xác</span>
+        <span id="hud-acc-val" class="stat-val">100%</span>
+      </div>
+    </div>
+
+    <a href="index.html" class="btn-interactive">⬅ Quay lại Mở Hòm</a>
+  </div>
+
+  <!-- HUD: Bottom Left (Health) -->
+  <div class="hud hud-bottom-left">
+    <div class="health-box">
+      <span id="hud-health-val" class="health-val">100</span>
+      <span class="health-lbl">+ Máu</span>
+    </div>
+  </div>
+
+  <!-- HUD: Bottom Center (Key Hints) -->
+  <div class="hud hud-hints">
+    <span><span class="hint-key">WASD</span>Di chuyển</span>
+    <span><span class="hint-key">Chuột Trái</span>Bắn</span>
+    <span><span class="hint-key">R</span>Nạp đạn</span>
+    <span><span class="hint-key">F</span>Soi Skin (Inspect)</span>
+    <span><span class="hint-key">B</span>Đổi Skin</span>
+    <span><span class="hint-key">ESC</span>Menu</span>
+  </div>
+
+  <!-- HUD: Bottom Right (Weapon & Ammo) -->
+  <div class="hud hud-bottom-right">
+    <div id="hud-weapon-banner" class="weapon-banner">
+      <div id="hud-wpn-name" class="wpn-name">AK-47</div>
+      <div id="hud-skin-name" class="wpn-skin">Asiimov</div>
+    </div>
+    <div class="ammo-box">
+      <span id="hud-ammo-cur" class="ammo-cur">30</span>
+      <span class="ammo-slash">/</span>
+      <span id="hud-ammo-max" class="ammo-max">90</span>
+    </div>
+  </div>
+
+  <!-- Skin Drawer (Phím B) -->
+  <div id="skin-drawer">
+    <div class="drawer-header">
+      <h3 class="drawer-title">🎒 Kho Skin Đã Mở</h3>
+      <button id="btn-close-drawer" class="drawer-close" title="Đóng">&times;</button>
+    </div>
+    <div id="skin-drawer-list" class="drawer-body">
+      <!-- Generated dynamically -->
+    </div>
+  </div>
+
+  <!-- Start Screen Modal -->
+  <div id="start-screen" class="screen-overlay">
+    <div class="menu-card">
+      <h1 class="menu-title">CS2 AIM ARENA 3D</h1>
+      <p class="menu-desc">Mini-game bắn súng 3D góc nhìn thứ nhất độc lập. Tự động kết nối kho đồ skin từ tài khoản quay hòm của bạn!</p>
+      
+      <div class="controls-list">
+        <div class="ctrl-row"><span>🖱️ <b>Chuột trái</b>:</span> <span>Bắn súng</span></div>
+        <div class="ctrl-row"><span>⌨️ <b>W A S D</b>:</span> <span>Di chuyển</span></div>
+        <div class="ctrl-row"><span>🔍 <b>Phím F</b>:</span> <span>Soi súng (Inspect Skin)</span></div>
+        <div class="ctrl-row"><span>🔄 <b>Phím R</b>:</span> <span>Thay đạn</span></div>
+        <div class="ctrl-row"><span>🎒 <b>Phím B</b>:</span> <span>Chọn skin từ kho đồ</span></div>
+        <div class="ctrl-row"><span>⏸️ <b>Phím ESC</b>:</span> <span>Tạm dừng / Chuột</span></div>
+      </div>
+
+      <button id="btn-start-game" class="btn-primary">▶ BẮT ĐẦU CHƠI (CLICK ĐỂ VÀO)</button>
+    </div>
+  </div>
+
+  <!-- Pause Screen Modal -->
+  <div id="pause-screen" class="screen-overlay hidden">
+    <div class="menu-card">
+      <h2 class="menu-title">TẠM DỪNG</h2>
+      <p class="menu-desc">Nhấn tiếp tục để khóa chuột và quay lại chiến đấu.</p>
+      <button id="btn-resume-game" class="btn-primary" style="margin-bottom: 12px;">TIẾP TỤC BẮN</button>
+      <a href="index.html" class="btn-interactive" style="display: block; text-align: center;">⬅ Về trang Mở Hòm CS2</a>
+    </div>
+  </div>
+
+  <!-- Three.js Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Game Engine -->
+  <script src="js/fps-game.js?v=1"></script>
+</body>
+</html>
