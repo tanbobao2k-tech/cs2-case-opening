@@ -2324,6 +2324,7 @@ function renderStats() {
 // ---------- Modal ----------
 function openModal(sel) { $(sel).hidden = false; document.body.style.overflow = 'hidden'; }
 function closeModal(sel) {
+  if (sel === '#modal-profile' && (!profile || !token())) return;
   $(sel).hidden = true;
   if (sel === '#modal-zoom') {
     viewer3D?.stop();
@@ -2350,14 +2351,23 @@ document.addEventListener('click', (e) => {
   if (open) openCase(caseById(open.dataset.open));
   if (add) { if (bs.cases.length < MAX_ROUNDS) bs.cases.push(add.dataset.add || add.dataset.inc); renderBattleSetup(); }
   if (dec) { bs.cases.splice(bs.cases.lastIndexOf(dec.dataset.dec), 1); renderBattleSetup(); }
-  if (e.target.matches('[data-close]')) closeModal('#' + e.target.closest('.modal').id);
-  if (e.target.classList.contains('modal') && !spinning && e.target.id !== 'modal-battle') closeModal('#' + e.target.id);
+  if (e.target.matches('[data-close]')) {
+    const m = e.target.closest('.modal');
+    if (m && m.id === 'modal-profile' && (!profile || !token())) return;
+    if (m) closeModal('#' + m.id);
+  }
+  if (e.target.classList.contains('modal') && !spinning && e.target.id !== 'modal-battle') {
+    if (e.target.id === 'modal-profile' && (!profile || !token())) return;
+    closeModal('#' + e.target.id);
+  }
 });
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape' || spinning) return;
   if (!$('#modal-zoom').hidden) return closeModal('#modal-zoom');
   if (!$('#modal-battle').hidden) return closeBattle();
-  $$('.modal').forEach((m) => { if (!m.hidden) closeModal('#' + m.id); });
+  $$('.modal').forEach((m) => {
+    if (!m.hidden && !(m.id === 'modal-profile' && (!profile || !token()))) closeModal('#' + m.id);
+  });
 });
 $('#topup').onclick = () => openTopup(1000);
 const topupForm = $('#topup-form');
@@ -2692,7 +2702,7 @@ async function deleteAccount() {
   location.reload();
 }
 function openProfileModal(force = false) {
-  $('#profile-close').hidden = false;
+  $('#profile-close').hidden = !profile || !token();
   $('#auth-guest').hidden = !!profile;
   $('#auth-user').hidden = !profile;
   if (profile) {
@@ -2724,8 +2734,6 @@ async function renderLeaderboard() {
 }
 $('#auth-tabs').onclick = (e) => { const b = e.target.closest('[data-mode]'); if (b) setAuthMode(b.dataset.mode); };
 $('#auth-form').onsubmit = submitAuth;
-const guestBtn = $('#auth-guest-btn');
-if (guestBtn) guestBtn.onclick = () => closeModal('#modal-profile');
 $('#auth-logout').onclick = logout;
 $('#auth-changepw').onclick = () => { $('#pw-form').hidden = !$('#pw-form').hidden; showAuthErr('', '#pw-err'); $('#pw-old').value = $('#pw-new').value = $('#pw-new2').value = ''; };
 $('#pw-form').onsubmit = changePassword;
