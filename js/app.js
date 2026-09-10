@@ -26,8 +26,15 @@ const TOPUP = 1000;
 const TRADE_FEE = 0.05;
 const CUSTOM_RTP = 0.9;
 const CUSTOM_ALPHA = 0.9;
-const STORE_INV = 'cs2-inv';
-const STORE_STATS = 'cs2-stats';
+// ---------- Hồ sơ người chơi (theo tên, lưu riêng trên thiết bị) ----------
+const PROFILES_KEY = 'cs2-profiles';
+const CURRENT_KEY = 'cs2-current';
+const lsGet = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const profile = lsGet(CURRENT_KEY, null);
+const profiles = lsGet(PROFILES_KEY, []);
+const STORE_INV = profile ? `cs2-inv:${profile}` : 'cs2-inv';
+const STORE_STATS = profile ? `cs2-stats:${profile}` : 'cs2-stats';
 const INV_LIMIT = 2000;
 const BOT_NAMES = ['Bot Alpha', 'Bot Bravo', 'Bot Charlie'];
 const BOT_AVATARS = ['🤖', '👾', '🦾'];
@@ -639,7 +646,7 @@ async function startBattle() {
   persistAndRender();
 
   const players = [
-    { name: 'Bạn', me: true, av: '🧑', total: 0, items: [] },
+    { name: profile || 'Bạn', me: true, av: '🧑', total: 0, items: [] },
     ...Array.from({ length: bs.bots }, (_, i) => ({ name: BOT_NAMES[i], av: BOT_AVATARS[i], total: 0, items: [] })),
   ];
   const me = players[0];
@@ -1060,10 +1067,11 @@ document.addEventListener('click', (e) => {
   if (add) { if (bs.cases.length < MAX_ROUNDS) bs.cases.push(add.dataset.add || add.dataset.inc); renderBattleSetup(); }
   if (dec) { bs.cases.splice(bs.cases.lastIndexOf(dec.dataset.dec), 1); renderBattleSetup(); }
   if (e.target.matches('[data-close]')) closeModal('#' + e.target.closest('.modal').id);
-  if (e.target.classList.contains('modal') && !spinning && e.target.id !== 'modal-battle') closeModal('#' + e.target.id);
+  if (e.target.classList.contains('modal') && !spinning && e.target.id !== 'modal-battle' && !(e.target.id === 'modal-profile' && !profile)) closeModal('#' + e.target.id);
 });
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape' || spinning) return;
+  if (!$('#modal-profile').hidden && !profile) return;
   if (!$('#modal-zoom').hidden) return closeModal('#modal-zoom');
   if (!$('#modal-battle').hidden) return closeBattle();
   $$('.modal').forEach((m) => { if (!m.hidden) closeModal('#' + m.id); });
@@ -1119,6 +1127,63 @@ $('#tu-auto').onclick = tuAutoPick;
 $('#tu-clear').onclick = () => { tu.picked = []; renderTradeUp(); };
 $('#tu-confirm').onclick = confirmTradeUp;
 $('#tu-res-ok').onclick = () => { $('#tu-result').hidden = true; };
+
+// ---------- Profile UI ----------
+function profileSummary(name) {
+  const st = lsGet(`cs2-stats:${name}`, null);
+  const inv = lsGet(`cs2-inv:${name}`, []);
+  return st ? `${fmtUSDShort(st.balance || 0)} · ${inv.length} món · ${st.opened || 0} hòm` : 'mới';
+}
+function renderProfiles() {
+  const list = $('#pf-list');
+  list.innerHTML = '';
+  lsGet(PROFILES_KEY, []).forEach((name) => {
+    const el = document.createElement('div');
+    el.className = 'pf-item' + (name === profile ? ' current' : '');
+    el.innerHTML = `<span>👤 <b>${name}</b><div class="pf-meta">${profileSummary(name)}</div></span><button class="pf-del" title="Xoá hồ sơ" data-del="${name}">×</button>`;
+    el.onclick = (e) => {
+      if (e.target.closest('[data-del]')) {
+        if (!confirm(`Xoá hồ sơ "${name}" cùng toàn bộ kho đồ và ví của người này?`)) return;
+        localStorage.removeItem(`cs2-inv:${name}`); localStorage.removeItem(`cs2-stats:${name}`);
+        lsSet(PROFILES_KEY, lsGet(PROFILES_KEY, []).filter((n) => n !== name));
+        if (name === profile) { localStorage.removeItem(CURRENT_KEY); location.reload(); return; }
+        renderProfiles();
+        return;
+      }
+      switchProfile(name);
+    };
+    list.appendChild(el);
+  });
+}
+function switchProfile(name) {
+  name = name.trim().slice(0, 20);
+  if (!name) return;
+  const all = lsGet(PROFILES_KEY, []);
+  if (!all.includes(name)) {
+    all.push(name);
+    lsSet(PROFILES_KEY, all);
+    // Người đầu tiên trên máy này nhận lại dữ liệu chơi từ bản cũ (chưa có hồ sơ)
+    if (all.length === 1 && localStorage.getItem('cs2-inv') && !localStorage.getItem(`cs2-inv:${name}`)) {
+      localStorage.setItem(`cs2-inv:${name}`, localStorage.getItem('cs2-inv'));
+      if (localStorage.getItem('cs2-stats')) localStorage.setItem(`cs2-stats:${name}`, localStorage.getItem('cs2-stats'));
+      localStorage.removeItem('cs2-inv'); localStorage.removeItem('cs2-stats');
+    }
+  }
+  lsSet(CURRENT_KEY, name);
+  location.reload();
+}
+function openProfileModal(force = false) {
+  renderProfiles();
+  $('#profile-close').hidden = force;
+  $('#pf-name').value = '';
+  openModal('#modal-profile');
+  setTimeout(() => $('#pf-name').focus(), 50);
+}
+$('#pf-form').onsubmit = (e) => { e.preventDefault(); switchProfile($('#pf-name').value); };
+$('#profile-btn').onclick = () => openProfileModal(false);
+$('#profile-name').textContent = profile || 'Chọn tên';
+if (profile) $('#hero-title').innerHTML = `Chào ${profile}.<br />Mở hòm không tốn một xu.`;
+if (!profile) openProfileModal(true);
 
 $('#prices-date').textContent = window.CS2_PRICES_UPDATED || '';
 renderCases('');

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=5" />
+  <link rel="stylesheet" href="css/style.css?v=6" />
 </head>
 <body>
   <header class="topbar">
@@ -17,6 +17,7 @@
       <span>Mở Hòm <b>CS2</b></span>
       <span class="brand-tag">miễn phí</span>
     </a>
+    <button id="profile-btn" class="profile-chip" title="Đổi người chơi">👤 <b id="profile-name">—</b></button>
     <div class="wallet">
       <span class="wallet-label">Ví ảo</span>
       <b id="wallet">$0.00</b>
@@ -35,7 +36,7 @@
 
   <main>
     <section class="hero">
-      <h1>Mở hòm CS2.<br />Không tốn một xu.</h1>
+      <h1 id="hero-title">Mở hòm CS2.<br />Không tốn một xu.</h1>
       <p>Tỷ lệ rớt đồ theo CS2 thật (riêng dao/găng nâng lên 1% cho vui), ảnh và giá skin lấy từ Steam. Ví ảo nạp thoải mái: mở hòm chính thức hoặc hòm đặc biệt kiểu Skin Club, đấu Case Battle, trade, bán lại lấy tiền — tất cả lưu ngay trên trình duyệt của bạn.</p>
       <div class="hero-stats">
         <div><b id="stat-opened">0</b><span>hòm đã mở</span></div>
@@ -184,6 +185,24 @@
   <footer class="footer">
     <p>Dự án mô phỏng phi lợi nhuận. Counter-Strike 2 và mọi hình ảnh skin thuộc về Valve Corporation. Dữ liệu vật phẩm: <a href="https://github.com/ByMykel/CSGO-API" target="_blank" rel="noopener">ByMykel/CSGO-API</a> · Giá: <a href="https://csgotrader.app" target="_blank" rel="noopener">CSGO Trader</a>.</p>
   </footer>
+
+  <!-- Modal: chọn người chơi -->
+  <div id="modal-profile" class="modal modal-profile" hidden>
+    <div class="modal-box modal-profile-box">
+      <button class="modal-close" data-close id="profile-close">&times;</button>
+      <div class="pf-head">
+        <span class="brand-mark">▣</span>
+        <h2>Bạn là ai?</h2>
+        <p class="muted">Mỗi tên có ví, kho đồ và thống kê riêng, lưu ngay trên thiết bị này. Nhập tên mới hoặc chọn tên đã có để tiếp tục.</p>
+      </div>
+      <form id="pf-form" class="pf-form">
+        <input id="pf-name" type="text" maxlength="20" placeholder="Nhập tên của bạn…" autocomplete="off" />
+        <button type="submit" class="btn btn-primary btn-lg">Bắt đầu</button>
+      </form>
+      <div id="pf-list" class="pf-list"></div>
+      <p class="note">Không cần mật khẩu — chỉ để tách người chơi trên cùng máy. Xoá trình duyệt/cache sẽ mất dữ liệu.</p>
+    </div>
+  </div>
 
   <!-- Modal: chi tiết hòm -->
   <div id="modal-case" class="modal" hidden>
@@ -418,7 +437,7 @@
     </div>
   </div>
 
-  <script src="data/cases.js?v=5"></script>
-  <script src="js/app.js?v=5"></script>
+  <script src="data/cases.js?v=6"></script>
+  <script src="js/app.js?v=6"></script>
 </body>
 </html>
