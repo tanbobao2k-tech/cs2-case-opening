@@ -392,15 +392,26 @@ function animateSpin({ target, duration, onFrame, onTick, pitch }) {
 }
 
 // ---------- Ví ----------
-function topUp() {
-  stats.balance += TOPUP;
-  stats.topup += TOPUP;
+function openTopup(defaultAmt = 1000) {
+  $('#topup-cur-balance').textContent = fmtUSD(stats.balance);
+  const input = $('#topup-amount-input');
+  if (input) {
+    input.value = Math.max(1, Math.round(defaultAmt));
+  }
+  openModal('#modal-topup');
+  setTimeout(() => input?.select(), 100);
+}
+function topUp(amount) {
+  const val = Math.max(1, Number(amount) || TOPUP);
+  stats.balance += val;
+  stats.topup += val;
   persistAndRender();
-  toast(`Đã nạp ${fmtUSD(TOPUP)} vào ví ảo`);
+  toast(`Đã nạp +${fmtUSD(val)} vào ví ảo`);
 }
 function ensureBalance(amount) {
   if (stats.balance >= amount) return true;
-  if (confirm(`Ví còn ${fmtUSD(stats.balance)}, cần ${fmtUSD(amount)}. Nạp thêm ${fmtUSD(TOPUP)} (ảo, miễn phí)?`)) { topUp(); return ensureBalance(amount); }
+  const needed = Math.ceil(amount - stats.balance);
+  openTopup(needed);
   return false;
 }
 function sellItems(items, { silent = false } = {}) {
@@ -1386,7 +1397,28 @@ document.addEventListener('keydown', (e) => {
   if (!$('#modal-battle').hidden) return closeBattle();
   $$('.modal').forEach((m) => { if (!m.hidden) closeModal('#' + m.id); });
 });
-$('#topup').onclick = topUp;
+$('#topup').onclick = () => openTopup(1000);
+const topupForm = $('#topup-form');
+if (topupForm) {
+  topupForm.onsubmit = (e) => {
+    e.preventDefault();
+    const val = Number($('#topup-amount-input').value);
+    if (val > 0) {
+      topUp(val);
+      closeModal('#modal-topup');
+    }
+  };
+}
+const topupChips = $('#topup-chips');
+if (topupChips) {
+  topupChips.onclick = (e) => {
+    const btn = e.target.closest('[data-amt]');
+    if (btn) {
+      $('#topup-amount-input').value = btn.dataset.amt;
+      $('#topup-amount-input').focus();
+    }
+  };
+}
 $('#res-again').onclick = () => openCase(currentCase);
 $('#res-close').onclick = () => closeModal('#modal-open');
 $('#res-zoom').onclick = () => lastWon && openZoom(lastWon);
