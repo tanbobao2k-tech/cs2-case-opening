@@ -32,7 +32,7 @@ const PROFILES_KEY = 'cs2-profiles';
 const CURRENT_KEY = 'cs2-current';
 const TOKEN_KEY = 'cs2-token';
 const lsGet = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
-const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { } };
 const profile = lsGet(CURRENT_KEY, null);
 const profiles = lsGet(PROFILES_KEY, []);
 const STORE_INV = profile ? `cs2-inv:${profile}` : 'cs2-inv';
@@ -156,7 +156,7 @@ const caseById = (id) => CASES.find((c) => c.id === id);
 // ---------- Storage ----------
 const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
 const save = (k, v) => {
-  try { localStorage.setItem(k, JSON.stringify(v)); } catch {}
+  try { localStorage.setItem(k, JSON.stringify(v)); } catch { }
   if (k === STORE_INV || k === STORE_STATS) scheduleSync();
 };
 const freshStats = () => ({
@@ -337,7 +337,7 @@ function tick(freq = 900) {
     o.connect(g).connect(audioCtx.destination);
     o.start();
     o.stop(audioCtx.currentTime + 0.05);
-  } catch {}
+  } catch { }
 }
 function playWinSound() {
   try {
@@ -356,7 +356,7 @@ function playWinSound() {
       o.start(t);
       o.stop(t + 0.65);
     });
-  } catch {}
+  } catch { }
 }
 function playLoseSound() {
   try {
@@ -372,7 +372,7 @@ function playLoseSound() {
     o.connect(g).connect(audioCtx.destination);
     o.start(t);
     o.stop(t + 0.55);
-  } catch {}
+  } catch { }
 }
 function animateSpin({ target, duration, onFrame, onTick, pitch }) {
   return new Promise((resolve) => {
@@ -547,7 +547,7 @@ function whoosh() {
     f.type = 'lowpass'; f.frequency.value = 1200;
     o.connect(f).connect(g).connect(audioCtx.destination);
     o.start(t); o.stop(t + 0.95);
-  } catch {}
+  } catch { }
 }
 function playInspect(short = false) {
   const wrap = $('#zoom-wrap'), shine = $('#zoom-shine');
@@ -566,6 +566,741 @@ function tiltTo(nx, ny) {
   if (wrap.classList.contains('inspecting') || zoom.scale > 1) return;
   wrap.style.transform = `rotateY(${(nx * 18).toFixed(1)}deg) rotateX(${(-ny * 14).toFixed(1)}deg)`;
 }
+
+// ---------- CS2 3D Inspect Studio (Three.js WebGL Engine) ----------
+const viewer3D = (function () {
+  let inited = false;
+  let scene, camera, renderer, controls;
+  let currentGroup = null, meshObject = null;
+  let ambientLight, keyLight, fillLight, rimLight, mouseLight;
+  let sparkParticles = null;
+  let stageFloor = null, stageRings = [];
+  let isRunning = false;
+  let animFrameId = null;
+  let currentItem = null;
+  let currentFloat = 0.02;
+  let autoRotate = true;
+  let mode = '3d'; // '3d' | '2d'
+  let lightPreset = 'studio';
+  let inspectSeq = { active: false, start: 0, duration: 2000, initialRot: null, isKnife: false };
+  let canvasWrap, canvasEl;
+
+  // Marching Squares & RDP for contour extraction
+  function extractContour(canvas, step = 2, threshold = 25) {
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    let imgData;
+    try {
+      imgData = ctx.getImageData(0, 0, w, h).data;
+    } catch {
+      return null;
+    }
+    const gw = Math.floor(w / step), gh = Math.floor(h / step);
+    const grid = new Uint8Array(gw * gh);
+    for (let gy = 0; gy < gh; gy++) {
+      const sy = gy * step;
+      for (let gx = 0; gx < gw; gx++) {
+        const sx = gx * step;
+        grid[gy * gw + gx] = imgData[(sy * w + sx) * 4 + 3] > threshold ? 1 : 0;
+      }
+    }
+    const pw = gw + 2, ph = gh + 2;
+    const getVal = (x, y) => (x < 1 || x > gw || y < 1 || y > gh) ? 0 : grid[(y - 1) * gw + (x - 1)];
+    const segments = [];
+    for (let y = 0; y < ph - 1; y++) {
+      for (let x = 0; x < pw - 1; x++) {
+        const c = (getVal(x, y) << 3) | (getVal(x + 1, y) << 2) | (getVal(x + 1, y + 1) << 1) | getVal(x, y + 1);
+        if (c === 0 || c === 15) continue;
+        const rx = (x - 1) * step, ry = (y - 1) * step;
+        const top = [rx + step * 0.5, ry];
+        const right = [rx + step, ry + step * 0.5];
+        const bottom = [rx + step * 0.5, ry + step];
+        const left = [rx, ry + step * 0.5];
+        switch (c) {
+          case 1:  segments.push([left, bottom]); break;
+          case 2:  segments.push([bottom, right]); break;
+          case 3:  segments.push([left, right]); break;
+          case 4:  segments.push([top, right]); break;
+          case 5:  segments.push([left, top]); segments.push([bottom, right]); break;
+          case 6:  segments.push([top, bottom]); break;
+          case 7:  segments.push([left, top]); break;
+          case 8:  segments.push([top, left]); break;
+          case 9:  segments.push([top, bottom]); break;
+          case 10: segments.push([top, right]); segments.push([left, bottom]); break;
+          case 11: segments.push([top, right]); break;
+          case 12: segments.push([right, left]); break;
+          case 13: segments.push([bottom, right]); break;
+          case 14: segments.push([bottom, left]); break;
+        }
+      }
+    }
+    const chains = [];
+    const visited = new Uint8Array(segments.length);
+    for (let i = 0; i < segments.length; i++) {
+      if (visited[i]) continue;
+      visited[i] = 1;
+      const chain = [segments[i][0], segments[i][1]];
+      let growing = true;
+      while (growing) {
+        growing = false;
+        const tip = chain[chain.length - 1];
+        for (let j = 0; j < segments.length; j++) {
+          if (visited[j]) continue;
+          const [p1, p2] = segments[j];
+          if (Math.hypot(tip[0] - p1[0], tip[1] - p1[1]) <= step * 1.5) {
+            chain.push(p2); visited[j] = 1; growing = true; break;
+          } else if (Math.hypot(tip[0] - p2[0], tip[1] - p2[1]) <= step * 1.5) {
+            chain.push(p1); visited[j] = 1; growing = true; break;
+          }
+        }
+      }
+      if (chain.length > 8) chains.push(chain);
+    }
+    chains.sort((a, b) => b.length - a.length);
+    return chains.length ? chains : null;
+  }
+
+  function rdp(pts, eps) {
+    if (pts.length <= 2) return pts;
+    let maxD = 0, idx = 0;
+    const [x1, y1] = pts[0], [x2, y2] = pts[pts.length - 1];
+    const dx = x2 - x1, dy = y2 - y1, lenSq = dx * dx + dy * dy;
+    for (let i = 1; i < pts.length - 1; i++) {
+      const [x, y] = pts[i];
+      const d = lenSq === 0 ? Math.hypot(x - x1, y - y1) : Math.hypot(x - (x1 + Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / lenSq)) * dx), y - (y1 + Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / lenSq)) * dy));
+      if (d > maxD) { maxD = d; idx = i; }
+    }
+    if (maxD > eps) {
+      return rdp(pts.slice(0, idx + 1), eps).slice(0, -1).concat(rdp(pts.slice(idx), eps));
+    }
+    return [pts[0], pts[pts.length - 1]];
+  }
+
+  function simplifyClosedLoop(pts, eps) {
+    if (pts.length <= 4) return pts;
+    let maxD = 0, split = Math.floor(pts.length / 2);
+    const [x0, y0] = pts[0];
+    for (let i = 1; i < pts.length; i++) {
+      const d = Math.hypot(pts[i][0] - x0, pts[i][1] - y0);
+      if (d > maxD) { maxD = d; split = i; }
+    }
+    const c1 = rdp(pts.slice(0, split + 1), eps);
+    const c2 = rdp(pts.slice(split), eps);
+    return c1.slice(0, -1).concat(c2);
+  }
+
+  function init() {
+    if (inited || !window.THREE) return;
+    canvasWrap = $('#zoom-3d-wrap');
+    canvasEl = $('#zoom-3d-canvas');
+    if (!canvasWrap || !canvasEl) return;
+
+    scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x060910, 0.045);
+
+    const rect = canvasWrap.getBoundingClientRect();
+    const w = rect.width || window.innerWidth;
+    const h = rect.height || (window.innerHeight - 150);
+
+    camera = new THREE.PerspectiveCamera(38, w / h, 0.1, 100);
+    camera.position.set(0, 0.1, 5.4);
+
+    renderer = new THREE.WebGLRenderer({
+      canvas: canvasEl,
+      antialias: true,
+      alpha: true,
+      powerPreference: 'high-performance',
+      preserveDrawingBuffer: true,
+    });
+    renderer.setSize(w, h);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.25;
+
+    // Controls
+    if (window.THREE.OrbitControls) {
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+      controls.autoRotate = autoRotate;
+      controls.autoRotateSpeed = 1.3;
+      controls.minDistance = 2.0;
+      controls.maxDistance = 12.0;
+      controls.enablePan = true;
+      controls.target.set(0, 0, 0);
+    }
+
+    // Lights
+    ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
+    scene.add(ambientLight);
+
+    keyLight = new THREE.DirectionalLight(0xfff6ea, 2.2);
+    keyLight.position.set(4, 5, 5);
+    scene.add(keyLight);
+
+    fillLight = new THREE.DirectionalLight(0x769cd0, 0.8);
+    fillLight.position.set(-4, 2, -2);
+    scene.add(fillLight);
+
+    rimLight = new THREE.PointLight(0xffd700, 3.5, 20);
+    rimLight.position.set(0, 1.8, -4);
+    scene.add(rimLight);
+
+    mouseLight = new THREE.PointLight(0xffffff, 1.2, 14);
+    mouseLight.position.set(0, 0, 3.5);
+    scene.add(mouseLight);
+
+    // Floor and Rings
+    buildShowroomStage();
+
+    // Particles
+    buildParticles();
+
+    // Resize observer
+    const ro = new ResizeObserver(() => resize());
+    ro.observe(canvasWrap);
+
+    // Mouse light tracking
+    canvasWrap.addEventListener('pointermove', (e) => {
+      const r = canvasWrap.getBoundingClientRect();
+      const nx = (e.clientX - r.left) / r.width * 2 - 1;
+      const ny = -((e.clientY - r.top) / r.height * 2 - 1);
+      mouseLight.position.x = nx * 3.5;
+      mouseLight.position.y = ny * 2.5;
+      if (controls && controls.state !== -1) {
+        inspectSeq.active = false;
+      }
+    });
+
+    inited = true;
+  }
+
+  function buildShowroomStage() {
+    const floorGeo = new THREE.CircleGeometry(4.8, 64);
+    const floorMat = new THREE.MeshStandardMaterial({
+      color: 0x070b12,
+      roughness: 0.7,
+      metalness: 0.3,
+      side: THREE.DoubleSide,
+    });
+    stageFloor = new THREE.Mesh(floorGeo, floorMat);
+    stageFloor.rotation.x = -Math.PI / 2;
+    stageFloor.position.y = -1.65;
+    scene.add(stageFloor);
+
+    const ringRadii = [1.2, 2.4, 3.6];
+    stageRings = [];
+    ringRadii.forEach((r, idx) => {
+      const ringGeo = new THREE.RingGeometry(r, r + (idx === 1 ? 0.04 : 0.02), 64);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: 0xffd700,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: idx === 1 ? 0.45 : 0.22,
+      });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.y = -1.64;
+      scene.add(ring);
+      stageRings.push(ring);
+    });
+  }
+
+  function buildParticles() {
+    const count = 55;
+    const geom = new THREE.BufferGeometry();
+    const positions = new Float32Array(count * 3);
+    const speeds = new Float32Array(count);
+    for (let i = 0; i < count; i++) {
+      positions[i * 3] = (Math.random() - 0.5) * 8;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 4 - 0.5;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 8;
+      speeds[i] = 0.002 + Math.random() * 0.004;
+    }
+    geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const mat = new THREE.PointsMaterial({
+      color: 0xffd700,
+      size: 0.05,
+      transparent: true,
+      opacity: 0.65,
+      blending: THREE.AdditiveBlending,
+    });
+    sparkParticles = new THREE.Points(geom, mat);
+    sparkParticles.userData.speeds = speeds;
+    scene.add(sparkParticles);
+  }
+
+  function resize() {
+    if (!inited || !renderer || !camera || !canvasWrap) return;
+    const r = canvasWrap.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    camera.aspect = r.width / r.height;
+    camera.updateProjectionMatrix();
+    renderer.setSize(r.width, r.height);
+  }
+
+  function setLighting(preset) {
+    lightPreset = preset;
+    $$('#zoom-lights-bar button').forEach((b) => {
+      b.classList.toggle('active', b.dataset.light === preset);
+    });
+    if (!inited) return;
+    const rc = new THREE.Color(RARITY[currentItem?.r]?.color || '#ffd700');
+    switch (preset) {
+      case 'studio':
+        ambientLight.color.setHex(0xffffff); ambientLight.intensity = 0.55;
+        keyLight.color.setHex(0xfff6ea); keyLight.intensity = 2.2;
+        fillLight.color.setHex(0x769cd0); fillLight.intensity = 0.8;
+        rimLight.color.copy(rc); rimLight.intensity = 3.5;
+        break;
+      case 'cyber':
+        ambientLight.color.setHex(0x101b33); ambientLight.intensity = 0.4;
+        keyLight.color.setHex(0x00f0ff); keyLight.intensity = 2.6;
+        fillLight.color.setHex(0xff007f); fillLight.intensity = 1.3;
+        rimLight.color.setHex(0xa855f7); rimLight.intensity = 4.2;
+        break;
+      case 'gold':
+        ambientLight.color.setHex(0x2a1c06); ambientLight.intensity = 0.5;
+        keyLight.color.setHex(0xffbe3b); keyLight.intensity = 2.8;
+        fillLight.color.setHex(0xff7700); fillLight.intensity = 0.7;
+        rimLight.color.setHex(0xffd700); rimLight.intensity = 4.0;
+        break;
+      case 'dark':
+        ambientLight.color.setHex(0x111622); ambientLight.intensity = 0.25;
+        keyLight.color.setHex(0xd0d8e8); keyLight.intensity = 1.4;
+        fillLight.color.setHex(0x223355); fillLight.intensity = 0.4;
+        rimLight.color.setHex(0x40e0d0); rimLight.intensity = 5.0;
+        break;
+    }
+  }
+
+  function updateRarityColors(item) {
+    const hex = RARITY[item.r]?.color || '#ffd700';
+    const color = new THREE.Color(hex);
+    if (rimLight && lightPreset === 'studio') rimLight.color.copy(color);
+    if (sparkParticles) sparkParticles.material.color.copy(color);
+    stageRings.forEach((ring, idx) => {
+      ring.material.color.copy(color);
+      ring.material.opacity = idx === 1 ? 0.45 : 0.2;
+    });
+  }
+
+  function loadWeapon3D(item, wearVal) {
+    init();
+    if (!scene) return;
+    currentItem = item;
+    currentFloat = wearVal;
+    updateRarityColors(item);
+    setLighting(lightPreset);
+
+    if (currentGroup) {
+      scene.remove(currentGroup);
+      disposeHierarchy(currentGroup);
+      currentGroup = null;
+    }
+
+    const group = new THREE.Group();
+    scene.add(group);
+    currentGroup = group;
+
+    $('#zoom-3d-loading').hidden = false;
+
+    const isKnife = item.cat === 'Knives' || (item.w && item.w.includes('Knife')) || item.n.includes('★');
+    const isGlove = item.cat === 'Gloves' || item.w?.includes('Gloves') || item.w?.includes('Wraps');
+    const isSniper = item.w === 'AWP' || item.w === 'SSG 08' || item.w === 'SCAR-20' || item.w === 'G3SG1';
+    const isRifle = item.cat === 'Rifles' || item.cat === 'Sniper Rifles';
+    const isPistol = item.cat === 'Pistols';
+
+    inspectSeq.isKnife = isKnife;
+
+    const thickness = isKnife ? 0.13 : isGlove ? 0.28 : isRifle ? 0.23 : isPistol ? 0.19 : 0.18;
+    const bevel = isKnife ? 0.035 : isGlove ? 0.05 : 0.04;
+
+    const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(item.img)}&w=640&output=png`;
+    const loader = new THREE.TextureLoader();
+    loader.setCrossOrigin('anonymous');
+
+    const placeholder = createWeaponSlab(item, 5.0, 2.8, thickness);
+    group.add(placeholder);
+
+    loader.load(
+      proxyUrl,
+      (tex) => {
+        tex.anisotropy = renderer?.capabilities.getMaxAnisotropy() || 8;
+        const img = tex.image;
+        if (img && img.width && img.height) {
+          const offCanvas = document.createElement('canvas');
+          offCanvas.width = img.width;
+          offCanvas.height = img.height;
+          const ctx = offCanvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+
+          try {
+            const chains = extractContour(offCanvas, offCanvas.width > 300 ? 2 : 1, 20);
+            if (chains && chains.length) {
+              const mainLoop = simplifyClosedLoop(chains[0], 1.2);
+              if (mainLoop && mainLoop.length >= 8) {
+                const shape = new THREE.Shape();
+                const scale = 5.0 / offCanvas.width;
+                const ox = offCanvas.width * 0.5;
+                const oy = offCanvas.height * 0.5;
+
+                shape.moveTo((mainLoop[0][0] - ox) * scale, (oy - mainLoop[0][1]) * scale);
+                for (let i = 1; i < mainLoop.length; i++) {
+                  shape.lineTo((mainLoop[i][0] - ox) * scale, (oy - mainLoop[i][1]) * scale);
+                }
+                shape.closePath();
+
+                const extrudeGeom = new THREE.ExtrudeGeometry(shape, {
+                  depth: thickness,
+                  bevelEnabled: true,
+                  bevelThickness: bevel,
+                  bevelSize: bevel,
+                  bevelSegments: 3,
+                });
+
+                extrudeGeom.computeBoundingBox();
+                const bbox = extrudeGeom.boundingBox;
+                const uvAttr = extrudeGeom.attributes.uv;
+                const posAttr = extrudeGeom.attributes.position;
+                const normAttr = extrudeGeom.attributes.normal;
+                const spanX = bbox.max.x - bbox.min.x || 1;
+                const spanY = bbox.max.y - bbox.min.y || 1;
+
+                for (let i = 0; i < posAttr.count; i++) {
+                  const nz = normAttr.getZ(i);
+                  const px = posAttr.getX(i);
+                  const py = posAttr.getY(i);
+                  if (nz > 0.4) {
+                    uvAttr.setXY(i, (px - bbox.min.x) / spanX, (py - bbox.min.y) / spanY);
+                  } else if (nz < -0.4) {
+                    uvAttr.setXY(i, 1.0 - (px - bbox.min.x) / spanX, (py - bbox.min.y) / spanY);
+                  } else {
+                    uvAttr.setXY(i, 0.5, 0.5);
+                  }
+                }
+                extrudeGeom.uvsNeedUpdate = true;
+
+                const pbrMat = createPBRMaterial(item, tex, wearVal);
+                const extrudedMesh = new THREE.Mesh(extrudeGeom, pbrMat);
+
+                let pivotX = 0, pivotY = 0;
+                if (isKnife) {
+                  pivotX = bbox.min.x + spanX * 0.35;
+                  pivotY = bbox.min.y + spanY * 0.45;
+                } else if (isRifle) {
+                  pivotX = bbox.min.x + spanX * 0.48;
+                  pivotY = bbox.min.y + spanY * 0.5;
+                }
+                extrudeGeom.translate(-pivotX, -pivotY, -thickness * 0.5);
+
+                if (isSniper) {
+                  addSniperScope(group, bbox, pivotX, pivotY, thickness);
+                }
+
+                group.remove(placeholder);
+                disposeHierarchy(placeholder);
+                group.add(extrudedMesh);
+                meshObject = extrudedMesh;
+              }
+            }
+          } catch (err) {
+            console.warn('Contour trace fallback:', err);
+          }
+        }
+        $('#zoom-3d-loading').hidden = true;
+      },
+      undefined,
+      () => {
+        loader.load(item.img, (tex2) => {
+          updateSlabTexture(placeholder, tex2);
+          $('#zoom-3d-loading').hidden = true;
+        }, undefined, () => {
+          $('#zoom-3d-loading').hidden = true;
+        });
+      }
+    );
+
+    group.rotation.set(0.08, -0.25, 0.02);
+    if (controls) {
+      controls.target.set(0, 0, 0);
+      controls.update();
+    }
+  }
+
+  function createPBRMaterial(item, tex, wearVal) {
+    const f = Math.max(0, Math.min(1, wearVal ?? 0.02));
+    const isKnife = item.cat === 'Knives' || item.n.includes('★');
+    const baseMetal = isKnife ? 0.88 : (item.cat === 'Pistols' ? 0.65 : 0.42);
+    const baseRough = 0.16 + f * 0.58;
+    const baseClearcoat = Math.max(0, 0.75 - f * 1.1);
+
+    const isHolo = /doppler|fade|marble|ruby|sapphire|emerald|case hardened|printstream/i.test(item.n);
+
+    const mat = new THREE.MeshPhysicalMaterial({
+      map: tex,
+      metalness: baseMetal,
+      roughness: baseRough,
+      clearcoat: baseClearcoat,
+      clearcoatRoughness: 0.12 + f * 0.35,
+      reflectivity: 0.8,
+      envMapIntensity: 1.6,
+    });
+
+    if (isHolo) {
+      mat.onBeforeCompile = (shader) => {
+        shader.uniforms.uIridCol1 = { value: new THREE.Color(item.n.includes('Ruby') ? 0xff0044 : item.n.includes('Emerald') ? 0x00ff88 : 0x00e5ff) };
+        shader.uniforms.uIridCol2 = { value: new THREE.Color(item.n.includes('Sapphire') ? 0x0066ff : 0xff00aa) };
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <dithering_fragment>',
+          `
+          #include <dithering_fragment>
+          float vFresnel = pow(1.0 - max(0.0, dot(geometryNormal, geometryViewDir)), 2.6);
+          vec3 vIrid = mix(uIridCol1, uIridCol2, sin(vFresnel * 6.28 + vUv.x * 4.0) * 0.5 + 0.5);
+          gl_FragColor.rgb += vIrid * vFresnel * 0.55;
+          `
+        );
+      };
+    }
+    return mat;
+  }
+
+  function createWeaponSlab(item, w, h, thickness) {
+    const geo = new THREE.BoxGeometry(w, h, thickness);
+    const pbrMat = new THREE.MeshStandardMaterial({
+      color: 0x222630,
+      metalness: 0.7,
+      roughness: 0.3,
+    });
+    const mesh = new THREE.Mesh(geo, pbrMat);
+    meshObject = mesh;
+    return mesh;
+  }
+
+  function updateSlabTexture(slabMesh, tex) {
+    if (!slabMesh) return;
+    slabMesh.material.map = tex;
+    slabMesh.material.needsUpdate = true;
+  }
+
+  function addSniperScope(group, bbox, px, py, thickness) {
+    const scopeMat = new THREE.MeshStandardMaterial({
+      color: 0x181a20,
+      metalness: 0.85,
+      roughness: 0.25,
+    });
+    const scopeGeo = new THREE.CylinderGeometry(0.16, 0.16, 1.7, 24);
+    scopeGeo.rotateZ(Math.PI / 2);
+    const scopeMesh = new THREE.Mesh(scopeGeo, scopeMat);
+    scopeMesh.position.set(-px + (bbox.max.x - bbox.min.x) * 0.42, -py + (bbox.max.y - bbox.min.y) * 0.68, thickness * 0.5 + 0.05);
+    group.add(scopeMesh);
+
+    const lensMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.65 });
+    const lensGeo = new THREE.CircleGeometry(0.15, 20);
+    const lensFront = new THREE.Mesh(lensGeo, lensMat);
+    lensFront.position.set(scopeMesh.position.x + 0.86, scopeMesh.position.y, scopeMesh.position.z);
+    lensFront.rotateY(Math.PI / 2);
+    group.add(lensFront);
+  }
+
+  function updateFloat(f) {
+    currentFloat = f;
+    const badge = $('#zoom-wear-badge');
+    const valEl = $('#zoom-float-val');
+    if (valEl) valEl.textContent = f.toFixed(4);
+
+    let wearName = 'Factory New', badgeBg = 'rgba(0,230,150,0.2)', badgeCol = '#00e696';
+    if (f < 0.07) { wearName = 'Factory New'; badgeBg = 'rgba(0,230,150,0.2)'; badgeCol = '#00e696'; }
+    else if (f < 0.15) { wearName = 'Minimal Wear'; badgeBg = 'rgba(75,105,255,0.2)'; badgeCol = '#4b69ff'; }
+    else if (f < 0.38) { wearName = 'Field-Tested'; badgeBg = 'rgba(255,215,0,0.2)'; badgeCol = '#ffd700'; }
+    else if (f < 0.45) { wearName = 'Well-Worn'; badgeBg = 'rgba(255,140,0,0.2)'; badgeCol = '#ff8c00'; }
+    else { wearName = 'Battle-Scarred'; badgeBg = 'rgba(235,75,75,0.2)'; badgeCol = '#eb4b4b'; }
+
+    if (badge) {
+      badge.textContent = wearName;
+      badge.style.background = badgeBg;
+      badge.style.color = badgeCol;
+      badge.style.borderColor = badgeCol;
+    }
+
+    if (meshObject && meshObject.material) {
+      meshObject.material.roughness = 0.16 + f * 0.58;
+      if (meshObject.material.clearcoat !== undefined) {
+        meshObject.material.clearcoat = Math.max(0, 0.75 - f * 1.1);
+      }
+      meshObject.material.needsUpdate = true;
+    }
+  }
+
+  function playInspect3D() {
+    whoosh();
+    inspectSeq.active = true;
+    inspectSeq.start = performance.now();
+    inspectSeq.initialRot = currentGroup ? {
+      x: currentGroup.rotation.x,
+      y: currentGroup.rotation.y,
+      z: currentGroup.rotation.z,
+    } : { x: 0, y: 0, z: 0 };
+  }
+
+  function resetCamera() {
+    if (!camera || !controls) return;
+    camera.position.set(0, 0.1, 5.4);
+    controls.target.set(0, 0, 0);
+    controls.update();
+    if (currentGroup) {
+      currentGroup.rotation.set(0.08, -0.25, 0.02);
+    }
+  }
+
+  function toggleAutoRotate() {
+    autoRotate = !autoRotate;
+    if (controls) controls.autoRotate = autoRotate;
+    const btn = $('#zoom-autorotate');
+    if (btn) btn.textContent = autoRotate ? '⟳ Tự xoay: Bật' : '⟳ Tự xoay: Tắt';
+  }
+
+  function takeScreenshot() {
+    if (!renderer || !scene || !camera) return;
+    renderer.render(scene, camera);
+    const dataUrl = renderer.domElement.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    const cleanName = (currentItem?.n || 'cs2-skin').replace(/[^a-zA-Z0-9_-]/g, '_');
+    a.download = `${cleanName}_3D_Inspect.png`;
+    a.click();
+  }
+
+  function start() {
+    if (isRunning) return;
+    isRunning = true;
+    animate();
+  }
+
+  function stop() {
+    isRunning = false;
+    if (animFrameId) {
+      cancelAnimationFrame(animFrameId);
+      animFrameId = null;
+    }
+  }
+
+  function animate() {
+    if (!isRunning) return;
+    animFrameId = requestAnimationFrame(animate);
+    const now = performance.now();
+
+    if (sparkParticles) {
+      const pos = sparkParticles.geometry.attributes.position;
+      const speeds = sparkParticles.userData.speeds;
+      for (let i = 0; i < pos.count; i++) {
+        let py = pos.getY(i) + speeds[i];
+        if (py > 2.5) py = -1.5;
+        pos.setY(i, py);
+      }
+      pos.needsUpdate = true;
+      sparkParticles.rotation.y = now * 0.00015;
+    }
+
+    if (inspectSeq.active && currentGroup) {
+      const elapsed = now - inspectSeq.start;
+      const p = Math.min(1, elapsed / inspectSeq.duration);
+      if (inspectSeq.isKnife) {
+        if (p < 0.28) {
+          const u = p / 0.28;
+          currentGroup.rotation.z = u * Math.PI * 2;
+          currentGroup.rotation.x = Math.sin(u * Math.PI) * 0.8;
+        } else if (p < 0.65) {
+          const u = (p - 0.28) / 0.37;
+          currentGroup.rotation.y = -0.25 + Math.sin(u * Math.PI * 2) * 0.85;
+          currentGroup.rotation.x = 0.35 + Math.cos(u * Math.PI) * 0.2;
+        } else if (p < 0.88) {
+          const u = (p - 0.65) / 0.23;
+          currentGroup.rotation.y = Math.PI + Math.sin(u * Math.PI) * 0.4;
+        } else {
+          const u = (p - 0.88) / 0.12;
+          currentGroup.rotation.x = THREE.MathUtils.lerp(currentGroup.rotation.x, 0.08, u);
+          currentGroup.rotation.y = THREE.MathUtils.lerp(currentGroup.rotation.y, -0.25, u);
+          currentGroup.rotation.z = THREE.MathUtils.lerp(currentGroup.rotation.z, 0.02, u);
+        }
+      } else {
+        if (p < 0.35) {
+          const u = p / 0.35;
+          currentGroup.rotation.x = Math.sin(u * Math.PI) * 0.6;
+          currentGroup.rotation.y = -0.25 + Math.sin(u * Math.PI) * 0.9;
+        } else if (p < 0.7) {
+          const u = (p - 0.35) / 0.35;
+          currentGroup.rotation.y = 0.65 - u * 1.5;
+          currentGroup.rotation.z = Math.sin(u * Math.PI) * 0.25;
+        } else {
+          const u = (p - 0.7) / 0.3;
+          currentGroup.rotation.x = THREE.MathUtils.lerp(currentGroup.rotation.x, 0.08, u);
+          currentGroup.rotation.y = THREE.MathUtils.lerp(currentGroup.rotation.y, -0.25, u);
+          currentGroup.rotation.z = THREE.MathUtils.lerp(currentGroup.rotation.z, 0.02, u);
+        }
+      }
+      if (p >= 1) inspectSeq.active = false;
+    }
+
+    if (controls) controls.update();
+    if (renderer && scene && camera) renderer.render(scene, camera);
+  }
+
+  function disposeHierarchy(obj) {
+    obj.traverse((c) => {
+      if (c.geometry) c.geometry.dispose();
+      if (c.material) {
+        if (Array.isArray(c.material)) c.material.forEach((m) => m.dispose());
+        else c.material.dispose();
+      }
+    });
+  }
+
+  function setMode(newMode) {
+    mode = newMode;
+    const is3D = mode === '3d';
+    $('#zoom-mode-3d')?.classList.toggle('active', is3D);
+    $('#zoom-mode-2d')?.classList.toggle('active', !is3D);
+    const wrap3D = $('#zoom-3d-wrap');
+    const wrap2D = $('#zoom-wrap');
+    const glow2D = $('#zoom-glow');
+    const lightsBar = $('#zoom-lights-bar');
+    const tipText = $('#zoom-tip-text');
+
+    if (wrap3D) wrap3D.hidden = !is3D;
+    if (wrap2D) wrap2D.hidden = is3D;
+    if (glow2D) glow2D.hidden = is3D;
+    if (lightsBar) lightsBar.style.display = is3D ? 'inline-flex' : 'none';
+
+    if (is3D) {
+      if (tipText) tipText.innerHTML = '🎮 <b>Chế độ 3D:</b> Kéo chuột/vuốt để xoay 360° tự do · Lăn chuột để zoom cận cảnh · Chuột phải để di chuyển vị trí · Bấm Inspect để xoay lật ngắm vũ khí chuẩn CS2!';
+      start();
+      resize();
+    } else {
+      if (tipText) tipText.innerHTML = '🖼️ <b>Chế độ 2D:</b> Di chuột để nghiêng skin · lăn chuột / véo hai ngón để zoom · kéo để di chuyển · Inspect để xoay 360°';
+      stop();
+    }
+  }
+
+  return {
+    init,
+    showItem(item, wearVal) {
+      loadWeapon3D(item, wearVal);
+      if (mode === '3d') start();
+    },
+    stop,
+    start,
+    updateFloat,
+    playInspect: playInspect3D,
+    resetCamera,
+    toggleAutoRotate,
+    takeScreenshot,
+    setLighting,
+    setMode,
+    getMode() { return mode; },
+  };
+})();
+
 function openZoom(item) {
   zoomItem = item;
   zoom.scale = 1; zoom.x = 0; zoom.y = 0;
@@ -588,22 +1323,38 @@ function openZoom(item) {
   else if (item.p) bits.push(`từ ${fmtUSD(Math.min(...item.p))}`);
   if (item.caseName) bits.push(item.caseName);
   $('#zoom-sub').textContent = bits.join(' · ');
+
+  // Float setup
+  const initialFloat = item.float != null ? Number(item.float) : (item.wear === 'Factory New' ? 0.02 : item.wear === 'Minimal Wear' ? 0.09 : item.wear === 'Field-Tested' ? 0.22 : item.wear === 'Well-Worn' ? 0.40 : 0.65);
+  const floatSlider = $('#zoom-float-slider');
+  if (floatSlider) {
+    floatSlider.value = initialFloat;
+    viewer3D.updateFloat(initialFloat);
+  }
+
   openModal('#modal-zoom');
+
+  // Trigger 3D or 2D
+  viewer3D.setMode(viewer3D.getMode());
+  viewer3D.showItem(item, initialFloat);
 }
 (function bindZoom() {
   const stage = $('#zoom-stage');
   const rel = (e) => { const r = stage.getBoundingClientRect(); return [e.clientX - r.left - r.width / 2, e.clientY - r.top - r.height / 2]; };
   stage.addEventListener('wheel', (e) => {
+    if (viewer3D.getMode() === '3d') return; // Handled by OrbitControls in 3D mode
     e.preventDefault();
     const [cx, cy] = rel(e);
     setZoom(zoom.scale * (e.deltaY < 0 ? 1.15 : 1 / 1.15), cx, cy);
   }, { passive: false });
   stage.addEventListener('pointerdown', (e) => {
+    if (viewer3D.getMode() === '3d') return;
     stage.setPointerCapture(e.pointerId);
     zoom.pointers.set(e.pointerId, [e.clientX, e.clientY]);
     stage.classList.add('dragging');
   });
   stage.addEventListener('pointermove', (e) => {
+    if (viewer3D.getMode() === '3d') return;
     if (!zoom.pointers.size && e.pointerType === 'mouse') {
       const r = stage.getBoundingClientRect();
       tiltTo((e.clientX - r.left) / r.width * 2 - 1, (e.clientY - r.top) / r.height * 2 - 1);
@@ -630,12 +1381,48 @@ function openZoom(item) {
   stage.addEventListener('pointerup', up);
   stage.addEventListener('pointercancel', up);
   stage.addEventListener('pointerleave', () => { const w = $('#zoom-wrap'); if (!w.classList.contains('inspecting')) w.style.transform = ''; });
-  stage.addEventListener('dblclick', (e) => { const [cx, cy] = rel(e); setZoom(zoom.scale > 1 ? 1 : 2.5, cx, cy); });
-  $('#zoom-inspect').onclick = () => playInspect();
+  stage.addEventListener('dblclick', (e) => {
+    if (viewer3D.getMode() === '3d') {
+      viewer3D.resetCamera();
+      return;
+    }
+    const [cx, cy] = rel(e);
+    setZoom(zoom.scale > 1 ? 1 : 2.5, cx, cy);
+  });
+
+  // 3D Controls buttons
+  $('#zoom-inspect').onclick = () => {
+    if (viewer3D.getMode() === '3d') viewer3D.playInspect();
+    else playInspect();
+  };
   $('#zoom-equip').onclick = () => zoomItem && toggleEquip(zoomItem);
-  // Điện thoại: nghiêng theo cảm biến nếu có
+  $('#zoom-mode-3d').onclick = () => viewer3D.setMode('3d');
+  $('#zoom-mode-2d').onclick = () => viewer3D.setMode('2d');
+  $('#zoom-autorotate').onclick = () => viewer3D.toggleAutoRotate();
+  $('#zoom-screenshot').onclick = () => viewer3D.takeScreenshot();
+  $('#zoom-reset-cam').onclick = () => viewer3D.resetCamera();
+  $('#zoom-float-slider').oninput = (e) => viewer3D.updateFloat(Number(e.target.value));
+
+  const lightsBar = $('#zoom-lights-bar');
+  if (lightsBar) {
+    lightsBar.onclick = (e) => {
+      const btn = e.target.closest('[data-light]');
+      if (btn) viewer3D.setLighting(btn.dataset.light);
+    };
+  }
+
+  // Key F shortcut for CS2 Inspect
+  window.addEventListener('keydown', (e) => {
+    if ((e.key === 'f' || e.key === 'F') && !$('#modal-zoom').hidden && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
+      e.preventDefault();
+      if (viewer3D.getMode() === '3d') viewer3D.playInspect();
+      else playInspect();
+    }
+  });
+
+  // Device orientation tilt for phone
   window.addEventListener('deviceorientation', (e) => {
-    if ($('#modal-zoom').hidden || e.gamma == null) return;
+    if ($('#modal-zoom').hidden || e.gamma == null || viewer3D.getMode() === '3d') return;
     tiltTo(Math.max(-1, Math.min(1, e.gamma / 30)), Math.max(-1, Math.min(1, (e.beta - 45) / 30)));
   });
   $$('[data-zoom]').forEach((b) => { b.onclick = () => { const d = Number(b.dataset.zoom); setZoom(d === 0 ? 1 : zoom.scale * (d > 0 ? 1.4 : 1 / 1.4)); }; });
@@ -1462,6 +2249,7 @@ function renderStats() {
 function openModal(sel) { $(sel).hidden = false; document.body.style.overflow = 'hidden'; }
 function closeModal(sel) {
   $(sel).hidden = true;
+  if (sel === '#modal-zoom') viewer3D?.stop();
   if (!$$('.modal').some((m) => !m.hidden)) document.body.style.overflow = '';
 }
 function closeBattle() {
@@ -1515,6 +2303,8 @@ if (topupChips) {
 $('#res-again').onclick = () => openCase(currentCase);
 $('#res-close').onclick = () => closeModal('#modal-open');
 $('#res-zoom').onclick = () => lastWon && openZoom(lastWon);
+const res3dBtn = $('#res-view-3d');
+if (res3dBtn) res3dBtn.onclick = () => lastWon && openZoom(lastWon);
 $('#res-sell').onclick = () => {
   if (!lastWon || !inventory.includes(lastWon)) return;
   sellItems([lastWon]);
@@ -1681,7 +2471,7 @@ async function loadFromServer() {
       inventory = data.inv;
       stats = { ...freshStats(), ...data.stats };
       stats.byCase ??= {}; stats.battles ??= { played: 0, won: 0 }; stats.equipped ??= {};
-      try { localStorage.setItem(STORE_INV, JSON.stringify(inventory)); localStorage.setItem(STORE_STATS, JSON.stringify(stats)); } catch {}
+      try { localStorage.setItem(STORE_INV, JSON.stringify(inventory)); localStorage.setItem(STORE_STATS, JSON.stringify(stats)); } catch { }
       setSync('');
     } else if (inventory.length || stats.opened) {
       // Máy chủ chưa có gì nhưng máy này có dữ liệu cũ → đẩy lên
@@ -1761,7 +2551,7 @@ async function submitAuth(e) {
 }
 async function logout() {
   clearTimeout(syncTimer); await flushSync();
-  try { await api('/logout', { method: 'POST' }); } catch {}
+  try { await api('/logout', { method: 'POST' }); } catch { }
   localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(CURRENT_KEY);
   location.reload();
 }

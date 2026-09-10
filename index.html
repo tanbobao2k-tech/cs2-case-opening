@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=13" />
+  <link rel="stylesheet" href="css/style.css?v=14" />
 </head>
 <body>
   <header class="topbar">
@@ -302,16 +302,17 @@
       <div id="result" class="result" hidden>
         <div class="result-card">
           <span id="res-rarity" class="res-rarity"></span>
-          <button id="res-zoom" class="zoom-hint" title="Phóng to">
+          <button id="res-zoom" class="zoom-hint" title="Xem 3D Siêu thực">
             <img id="res-image" alt="" />
-            <span>🔍 Nhấn để soi kỹ</span>
+            <span>🎮 Bấm để Soi 3D Siêu thực</span>
           </button>
           <h3 id="res-name"></h3>
           <p id="res-wear" class="muted"></p>
           <p id="res-price" class="res-price"></p>
         </div>
         <div class="result-actions">
-          <button id="res-again" class="btn btn-primary btn-lg">Mở tiếp</button>
+          <button id="res-view-3d" class="btn btn-primary btn-lg res-btn-3d">🎮 Xem 3D Siêu thực</button>
+          <button id="res-again" class="btn btn-lg">Mở tiếp</button>
           <button id="res-sell" class="btn btn-lg">Bán ngay</button>
           <button id="res-close" class="btn btn-ghost btn-lg">Đóng</button>
         </div>
@@ -319,30 +320,70 @@
     </div>
   </div>
 
-  <!-- Modal: zoom -->
-  <div id="modal-zoom" class="modal modal-dark" hidden>
-    <button class="modal-close zoom-close" data-close>&times;</button>
+  <!-- Modal: 3D Inspect & Showcase -->
+  <div id="modal-zoom" class="modal modal-dark modal-3d-stage" hidden>
+    <button class="modal-close zoom-close" data-close title="Đóng">&times;</button>
+    
+    <div class="zoom-top-toolbar">
+      <div class="zoom-mode-toggle">
+        <button class="btn btn-sm active" id="zoom-mode-3d">🎮 3D Siêu thực</button>
+        <button class="btn btn-sm" id="zoom-mode-2d">🖼️ 2D Ảnh</button>
+      </div>
+      <div class="zoom-lights-bar" id="zoom-lights-bar">
+        <span class="zoom-bar-label">Ánh sáng:</span>
+        <button class="btn btn-xs active" data-light="studio">Studio</button>
+        <button class="btn btn-xs" data-light="cyber">Cyber</button>
+        <button class="btn btn-xs" data-light="gold">Golden</button>
+        <button class="btn btn-xs" data-light="dark">Hầm tối</button>
+      </div>
+      <div class="zoom-actions-quick">
+        <button class="btn btn-xs" id="zoom-autorotate" title="Bật/tắt tự động xoay">⟳ Tự xoay: Bật</button>
+        <button class="btn btn-xs" id="zoom-screenshot" title="Chụp ảnh HD">📸 Chụp HD</button>
+      </div>
+    </div>
+
     <div class="zoom-stage" id="zoom-stage">
-      <div class="zoom-glow" id="zoom-glow"></div>
-      <div class="zoom-wrap" id="zoom-wrap">
+      <!-- 3D WebGL Canvas Container -->
+      <div id="zoom-3d-wrap" class="zoom-3d-wrap">
+        <canvas id="zoom-3d-canvas"></canvas>
+        <div id="zoom-3d-loading" class="zoom-3d-loading" hidden>
+          <div class="spinner-sm"></div>
+          <span>Đang tạo mô hình 3D...</span>
+        </div>
+      </div>
+
+      <!-- 2D Fallback / Classic Stage -->
+      <div class="zoom-glow" id="zoom-glow" hidden></div>
+      <div class="zoom-wrap" id="zoom-wrap" hidden>
         <img id="zoom-img" alt="" draggable="false" />
         <div class="zoom-shine" id="zoom-shine"></div>
       </div>
     </div>
+
     <div class="zoom-bar">
       <div class="zoom-info">
         <b id="zoom-name"></b>
         <span id="zoom-sub" class="muted"></span>
+        <div class="zoom-float-display" id="zoom-float-box">
+          <span class="float-tag" id="zoom-wear-badge">Factory New</span>
+          <div class="float-slider-row">
+            <span class="muted text-xs">Float:</span>
+            <input type="range" id="zoom-float-slider" min="0" max="1" step="0.001" value="0.02" />
+            <b id="zoom-float-val" class="tabular">0.0200</b>
+          </div>
+        </div>
       </div>
       <div class="zoom-ctrl">
-        <button class="btn btn-primary" id="zoom-inspect">▶ Inspect</button>
+        <button class="btn btn-primary" id="zoom-inspect">▶ Inspect (F)</button>
         <button class="btn" id="zoom-equip" hidden>Trang bị</button>
+        <button class="btn" id="zoom-reset-cam" title="Đặt lại góc nhìn">⟲ Góc chuẩn</button>
         <button class="btn" data-zoom="-1">−</button>
         <span id="zoom-level">100%</span>
         <button class="btn" data-zoom="1">+</button>
-        <button class="btn btn-ghost" data-zoom="0">Đặt lại</button>
       </div>
-      <p class="zoom-tip muted">Di chuột để nghiêng skin · lăn chuột / véo hai ngón để zoom · kéo để di chuyển · Inspect để xoay 360°</p>
+      <p class="zoom-tip muted" id="zoom-tip-text">
+        🎮 <b>Chế độ 3D:</b> Kéo chuột/vuốt để xoay 360° tự do · Lăn chuột để zoom cận cảnh · Chuột phải để di chuyển vị trí · Bấm Inspect để xoay lật ngắm vũ khí chuẩn CS2!
+      </p>
     </div>
   </div>
 
@@ -649,7 +690,9 @@
     </div>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="data/cases.js?v=8"></script>
-  <script src="js/app.js?v=13"></script>
+  <script src="js/app.js?v=14"></script>
 </body>
 </html>
