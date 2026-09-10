@@ -49,11 +49,12 @@
 
   <!-- HUD: Bottom Center (Key Hints) -->
   <div class="hud hud-hints">
+    <span><span class="hint-key">1 2 3</span>Đổi súng/dao</span>
     <span><span class="hint-key">WASD</span>Di chuyển</span>
     <span><span class="hint-key">Space</span>Nhảy</span>
     <span><span class="hint-key">Shift</span>Đi bộ</span>
     <span><span class="hint-key">Ctrl</span>Ngồi</span>
-    <span><span class="hint-key">Chuột Trái</span>Bắn</span>
+    <span><span class="hint-key">Chuột Trái</span>Bắn/Chém</span>
     <span><span class="hint-key">R</span>Nạp đạn</span>
     <span><span class="hint-key">F</span>Soi Skin</span>
     <span><span class="hint-key">B</span>Đổi Skin</span>
@@ -61,11 +62,16 @@
 
   <!-- HUD: Bottom Right (Weapon & Ammo) -->
   <div class="hud hud-bottom-right">
+    <div class="weapon-slots-bar">
+      <div id="slot-item-1" class="slot-item active"><span class="slot-key">1</span> Súng Dài</div>
+      <div id="slot-item-2" class="slot-item"><span class="slot-key">2</span> Súng Ngắn</div>
+      <div id="slot-item-3" class="slot-item"><span class="slot-key">3</span> Dao</div>
+    </div>
     <div id="hud-weapon-banner" class="weapon-banner">
       <div id="hud-wpn-name" class="wpn-name">AK-47</div>
       <div id="hud-skin-name" class="wpn-skin">Asiimov</div>
     </div>
-    <div class="ammo-box">
+    <div id="hud-ammo-box" class="ammo-box">
       <span id="hud-ammo-cur" class="ammo-cur">30</span>
       <span class="ammo-slash">/</span>
       <span id="hud-ammo-max" class="ammo-max">90</span>
@@ -93,6 +99,12 @@
     <div class="drawer-header">
       <h3 class="drawer-title">🎒 Kho Skin Đã Mở</h3>
       <button id="btn-close-drawer" class="drawer-close" title="Đóng">&times;</button>
+    </div>
+    <div class="drawer-tabs">
+      <button class="tab-btn active" data-tab="all">Tất cả</button>
+      <button class="tab-btn" data-tab="1">Súng dài (1)</button>
+      <button class="tab-btn" data-tab="2">Súng ngắn (2)</button>
+      <button class="tab-btn" data-tab="3">Dao (3)</button>
     </div>
     <div id="skin-drawer-list" class="drawer-body">
       <!-- Generated dynamically -->
@@ -133,6 +145,6 @@
   <!-- Three.js Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <!-- Game Engine -->
-  <script src="js/fps-game.js?v=2"></script>
+  <script src="js/fps-game.js?v=3"></script>
 </body>
 </html>

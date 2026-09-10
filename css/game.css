@@ -223,6 +223,48 @@ body, html {
   gap: 10px;
 }
 
+/* Weapon Slots Bar (1, 2, 3) */
+.weapon-slots-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.slot-item {
+  background: rgba(15, 18, 24, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #8fa0b5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.slot-item.active {
+  background: rgba(222, 155, 53, 0.25);
+  border-color: var(--accent-gold);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 0 12px rgba(222, 155, 53, 0.35);
+}
+
+.slot-key {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+}
+
+.slot-item.active .slot-key {
+  background: var(--accent-gold);
+  color: #111;
+}
+
 .weapon-banner {
   background: rgba(15, 18, 24, 0.85);
   backdrop-filter: blur(10px);
@@ -406,11 +448,41 @@ body, html {
 }
 
 .drawer-header {
-  padding: 20px;
+  padding: 16px 20px 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.drawer-tabs {
+  display: flex;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.tab-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  color: #8fa0b5;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 10px 4px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.tab-btn:hover {
+  color: #fff;
+}
+
+.tab-btn.active {
+  color: var(--accent-gold);
+  border-bottom-color: var(--accent-gold);
 }
 
 .drawer-title {
