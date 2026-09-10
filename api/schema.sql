@@ -3,7 +3,9 @@ CREATE TABLE IF NOT EXISTS users (
   name TEXT NOT NULL UNIQUE COLLATE NOCASE,
   salt TEXT NOT NULL,
   hash TEXT NOT NULL,
-  created INTEGER NOT NULL
+  created INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  approve_token TEXT
 );
 CREATE TABLE IF NOT EXISTS sessions (
   token TEXT PRIMARY KEY,

@@ -2594,11 +2594,21 @@ function setAuthMode(mode) {
   authMode = mode;
   $$('#auth-tabs button').forEach((b) => b.classList.toggle('active', b.dataset.mode === mode));
   $('#auth-title').textContent = mode === 'login' ? 'Đăng nhập' : 'Tạo tài khoản';
-  $('#auth-submit').textContent = mode === 'login' ? 'Đăng nhập' : 'Tạo tài khoản & bắt đầu';
+  $('#auth-submit').textContent = mode === 'login' ? 'Đăng nhập' : 'Tạo tài khoản & gửi duyệt';
   $('#auth-pass2').hidden = mode === 'login';
   showAuthErr('');
+  showAuthMsg('');
 }
-function showAuthErr(msg, sel = '#auth-err') { const el = $(sel); el.textContent = msg; el.hidden = !msg; }
+function showAuthErr(msg, sel = '#auth-err') {
+  const el = $(sel);
+  if (el) { el.textContent = msg; el.hidden = !msg; }
+  if (msg && sel === '#auth-err') showAuthMsg('');
+}
+function showAuthMsg(msg, sel = '#auth-msg') {
+  const el = $(sel);
+  if (el) { el.textContent = msg; el.hidden = !msg; }
+  if (msg && sel === '#auth-msg') showAuthErr('');
+}
 function renderAccountList() {
   const list = $('#pf-list');
   list.innerHTML = '';
@@ -2640,6 +2650,15 @@ async function submitAuth(e) {
   btn.disabled = true; btn.textContent = 'Đang xử lý…';
   try {
     const r = await api(authMode === 'register' ? '/register' : '/login', { method: 'POST', body: { name, password: pass } });
+    if (r.pending) {
+      btn.disabled = false;
+      setAuthMode('login');
+      $('#auth-name').value = name;
+      $('#auth-pass').value = '';
+      $('#auth-pass2').value = '';
+      showAuthMsg(`🎉 Đăng ký thành công! Tài khoản "${name}" đã được gửi tới Quản trị viên để phê duyệt qua email. Bạn có thể đăng nhập sau khi Admin duyệt.`);
+      return;
+    }
     enterAccount(r.name, r.token);
   } catch (err) {
     showAuthErr(err.status ? err.message : 'Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.');

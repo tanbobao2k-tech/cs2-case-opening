@@ -4,6 +4,8 @@ compatibility_date = "2025-01-01"
 
 [vars]
 ALLOWED_ORIGINS = "*"
+ADMIN_EMAIL = "your_email@gmail.com"
+RESEND_FROM = "Mở Hòm CS2 <onboarding@resend.dev>"
 
 [[d1_databases]]
 binding = "DB"

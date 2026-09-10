@@ -677,6 +677,7 @@ main { max-width: 1240px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px) 80px
 .auth-form input { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 16px; }
 .auth-form input:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
 .auth-err { margin: 0; font-size: 13px; color: #ff7b7b; }
+.auth-msg { margin: 0; font-size: 13px; line-height: 1.5; color: #00f5a0; background: rgba(0, 245, 160, 0.12); border: 1px solid rgba(0, 245, 160, 0.3); border-radius: 8px; padding: 10px 14px; }
 .auth-hint { font-size: 12px; margin: 0 0 8px; }
 .pf-avatar { font-size: 44px; display: block; }
 .auth-actions { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }

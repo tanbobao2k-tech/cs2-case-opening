@@ -60,6 +60,183 @@ async function createSession(env, userId) {
   return token;
 }
 
+async function sendAdminNotification(env, { name, approveToken, reqUrl, ip }) {
+  const adminEmail = env.ADMIN_EMAIL;
+  const apiKey = env.RESEND_API_KEY;
+  if (!apiKey || !adminEmail || adminEmail === 'your_email@gmail.com') {
+    console.warn('[Email] Chưa cấu hình RESEND_API_KEY hoặc ADMIN_EMAIL hợp lệ; bỏ qua gửi mail.');
+    return false;
+  }
+  const origin = new URL(reqUrl).origin;
+  const approveUrl = `${origin}/approve?token=${approveToken}`;
+  const rejectUrl = `${origin}/reject?token=${approveToken}`;
+  const timeStr = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"></head>
+    <body style="margin: 0; padding: 24px; background-color: #0b0e13; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #d1d7df;">
+      <div style="max-width: 560px; margin: 0 auto; background: #151a23; border: 1px solid #262f3d; border-radius: 14px; padding: 32px; box-shadow: 0 12px 36px rgba(0,0,0,0.6);">
+        <div style="border-bottom: 1px solid #262f3d; padding-bottom: 18px; margin-bottom: 22px;">
+          <h2 style="margin: 0; font-size: 22px; color: #ffd700; display: flex; align-items: center; gap: 8px;">
+            ▣ Mở Hòm CS2 — Yêu Cầu Duyệt Tài Khoản
+          </h2>
+        </div>
+        <p style="font-size: 15px; line-height: 1.6; color: #cfd8dc; margin-bottom: 20px;">
+          Xin chào Quản trị viên, vừa có một tài khoản mới đăng ký và đang chờ bạn phê duyệt trước khi có thể đăng nhập:
+        </p>
+        <div style="background: #0d1117; border-radius: 10px; padding: 18px; margin-bottom: 26px; border-left: 4px solid #00f5a0;">
+          <p style="margin: 0 0 10px 0; font-size: 15px;"><strong>👤 Tên tài khoản:</strong> <span style="color: #00f5a0; font-size: 17px; font-weight: bold;">${name}</span></p>
+          <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>⏰ Thời gian đăng ký:</strong> ${timeStr}</p>
+          ${ip ? `<p style="margin: 0; font-size: 14px;"><strong>🌐 Địa chỉ IP:</strong> ${ip}</p>` : ''}
+        </div>
+        <p style="font-size: 14px; color: #90a4ae; margin-bottom: 24px;">
+          Vui lòng bấm vào nút bên dưới để chấp nhận hoặc từ chối tài khoản này:
+        </p>
+        <div style="display: flex; gap: 14px; margin: 28px 0; text-align: center;">
+          <a href="${approveUrl}" style="display: inline-block; background: #00f5a0; color: #081512; text-decoration: none; padding: 13px 30px; font-weight: 700; border-radius: 8px; font-size: 15px; box-shadow: 0 4px 18px rgba(0, 245, 160, 0.4); margin-right: 12px;">
+            ✔ PHÊ DUYỆT TÀI KHOẢN
+          </a>
+          <a href="${rejectUrl}" style="display: inline-block; background: #261e20; color: #ff5252; text-decoration: none; padding: 13px 22px; font-weight: 600; border-radius: 8px; font-size: 14px; border: 1px solid #5a2626;">
+            ✖ Từ chối
+          </a>
+        </div>
+        <div style="border-top: 1px solid #232b38; padding-top: 18px; font-size: 12px; color: #607182; line-height: 1.6;">
+          Nếu nút không bấm được, bạn có thể copy link này mở trên trình duyệt:<br>
+          <a href="${approveUrl}" style="color: #00f5a0; word-break: break-all;">${approveUrl}</a>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  try {
+    const fromSender = env.RESEND_FROM || 'Mở Hòm CS2 <onboarding@resend.dev>';
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: fromSender,
+        to: [adminEmail],
+        subject: `[CS2 Case] Yêu cầu duyệt tài khoản: ${name}`,
+        html,
+      }),
+    });
+    return res.ok;
+  } catch (err) {
+    console.error('[Resend Exception]', err);
+    return false;
+  }
+}
+
+function renderHtmlStatus({ title, isSuccess, message, userName }) {
+  const accentColor = isSuccess ? '#00f5a0' : '#ff5252';
+  const icon = isSuccess ? '✔' : '✖';
+  const html = `
+    <!DOCTYPE html>
+    <html lang="vi">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>${title} — Mở Hòm CS2</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+          background-color: #0b0e14;
+          color: #e0e6ed;
+          font-family: 'Inter', -apple-system, sans-serif;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+          padding: 20px;
+        }
+        .card {
+          background: #141923;
+          border: 1px solid #242e3d;
+          border-radius: 16px;
+          max-width: 480px;
+          width: 100%;
+          padding: 40px 32px;
+          text-align: center;
+          box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+        }
+        .icon-circle {
+          width: 72px;
+          height: 72px;
+          border-radius: 50%;
+          background: ${isSuccess ? 'rgba(0, 245, 160, 0.15)' : 'rgba(255, 82, 82, 0.15)'};
+          color: ${accentColor};
+          font-size: 36px;
+          font-weight: bold;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 24px;
+          border: 2px solid ${accentColor};
+        }
+        h1 {
+          font-size: 22px;
+          margin-bottom: 12px;
+          color: #fff;
+        }
+        .user-tag {
+          display: inline-block;
+          background: #1b2331;
+          color: #ffd700;
+          padding: 4px 14px;
+          border-radius: 999px;
+          font-weight: 700;
+          font-size: 15px;
+          margin: 10px 0 18px;
+          border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+        p {
+          color: #92a1b3;
+          line-height: 1.6;
+          font-size: 15px;
+          margin-bottom: 30px;
+        }
+        .btn {
+          display: inline-block;
+          background: ${accentColor};
+          color: ${isSuccess ? '#081411' : '#fff'};
+          text-decoration: none;
+          padding: 13px 28px;
+          font-weight: 700;
+          font-size: 15px;
+          border-radius: 8px;
+          transition: transform 0.15s ease;
+        }
+        .btn:hover {
+          transform: translateY(-2px);
+        }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <div class="icon-circle">${icon}</div>
+        <h1>${title}</h1>
+        ${userName ? `<div class="user-tag">👤 ${userName}</div>` : ''}
+        <p>${message}</p>
+        <a href="https://tanbobao2k-tech.github.io/cs2-case-opening/" class="btn">Về Trang Web Mở Hòm CS2</a>
+      </div>
+    </body>
+    </html>
+  `;
+  return new Response(html, {
+    status: 200,
+    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+  });
+}
+
 export default {
   async fetch(req, env) {
     const headers = cors(req, env);
@@ -71,6 +248,48 @@ export default {
     try {
       if (path === '/' ) return reply({ ok: true, service: 'cs2-case-opening-api' });
 
+      // Duyệt tài khoản qua email 1-click
+      if (path === '/approve' && req.method === 'GET') {
+        const token = url.searchParams.get('token');
+        if (!token) return renderHtmlStatus({ title: 'Lỗi', isSuccess: false, message: 'Thiếu mã xác nhận duyệt.' });
+        const user = await env.DB.prepare('SELECT id, name, status FROM users WHERE approve_token = ?').bind(token).first();
+        if (!user) {
+          return renderHtmlStatus({
+            title: 'Liên Kết Không Khả Dụng',
+            isSuccess: false,
+            message: 'Mã xác nhận này không tồn tại, đã hết hạn hoặc tài khoản đã được phê duyệt trước đó.',
+          });
+        }
+        await env.DB.prepare("UPDATE users SET status = 'active', approve_token = NULL WHERE id = ?").bind(user.id).run();
+        return renderHtmlStatus({
+          title: 'Phê Duyệt Tài Khoản Thành Công',
+          isSuccess: true,
+          userName: user.name,
+          message: 'Tài khoản đã được kích hoạt thành công. Người chơi hiện đã có thể đăng nhập vào web mở hòm CS2.',
+        });
+      }
+
+      // Từ chối tài khoản qua email 1-click
+      if (path === '/reject' && req.method === 'GET') {
+        const token = url.searchParams.get('token');
+        if (!token) return renderHtmlStatus({ title: 'Lỗi', isSuccess: false, message: 'Thiếu mã xác nhận từ chối.' });
+        const user = await env.DB.prepare('SELECT id, name FROM users WHERE approve_token = ?').bind(token).first();
+        if (!user) {
+          return renderHtmlStatus({
+            title: 'Liên Kết Không Khả Dụng',
+            isSuccess: false,
+            message: 'Mã xác nhận này không tồn tại hoặc tài khoản đã được xử lý trước đó.',
+          });
+        }
+        await env.DB.prepare("UPDATE users SET status = 'rejected', approve_token = NULL WHERE id = ?").bind(user.id).run();
+        return renderHtmlStatus({
+          title: 'Đã Từ Chối Tài Khoản',
+          isSuccess: false,
+          userName: user.name,
+          message: 'Tài khoản này đã bị từ chối phê duyệt và sẽ không thể đăng nhập vào hệ thống.',
+        });
+      }
+
       if (path === '/register' && req.method === 'POST') {
         const { name, password } = await readBody(req);
         if (!validName(name)) return reply({ error: 'Tên 1–20 ký tự: chữ, số, khoảng trắng, . _ -' }, 400);
@@ -79,9 +298,19 @@ export default {
         if (exists) return reply({ error: 'Tên này đã có người dùng. Hãy đăng nhập hoặc chọn tên khác.' }, 409);
         const salt = randomHex(16);
         const hash = await hashPassword(password, salt);
-        const res = await env.DB.prepare('INSERT INTO users (name, salt, hash, created) VALUES (?, ?, ?, ?)').bind(name, salt, hash, Date.now()).run();
-        const token = await createSession(env, res.meta.last_row_id);
-        return reply({ token, name });
+        const approveToken = randomHex(32);
+        await env.DB.prepare('INSERT INTO users (name, salt, hash, created, status, approve_token) VALUES (?, ?, ?, ?, ?, ?)').bind(name, salt, hash, Date.now(), 'pending', approveToken).run();
+        
+        // Gửi email thông báo cho Admin duyệt
+        const ip = req.headers.get('CF-Connecting-IP') || req.headers.get('X-Forwarded-For') || '';
+        await sendAdminNotification(env, { name, approveToken, reqUrl: req.url, ip });
+
+        return reply({
+          ok: true,
+          pending: true,
+          name,
+          message: 'Đăng ký thành công! Tài khoản của bạn đang chờ Quản trị viên phê duyệt qua email trước khi kích hoạt.',
+        });
       }
 
       if (path === '/login' && req.method === 'POST') {
@@ -90,6 +319,15 @@ export default {
         if (!user) return reply({ error: 'Không tìm thấy tài khoản này.' }, 404);
         const hash = await hashPassword(String(password || ''), user.salt);
         if (!safeEqual(hash, user.hash)) return reply({ error: 'Sai mật khẩu.' }, 401);
+
+        // Kiểm tra trạng thái phê duyệt (nếu cột status có giá trị)
+        if (user.status === 'pending') {
+          return reply({ error: 'Tài khoản của bạn đang chờ Quản trị viên phê duyệt qua email. Vui lòng thử lại sau!' }, 403);
+        }
+        if (user.status === 'rejected') {
+          return reply({ error: 'Tài khoản của bạn đã bị từ chối phê duyệt.' }, 403);
+        }
+
         const token = await createSession(env, user.id);
         return reply({ token, name: user.name });
       }
