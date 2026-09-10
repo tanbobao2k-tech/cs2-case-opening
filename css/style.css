@@ -1198,3 +1198,78 @@ main { max-width: 1240px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px) 80px
     width: 80px;
   }
 }
+
+/* Gold Knife / Special Rare Item Styling */
+.tile.tile-rare-gold {
+  background: radial-gradient(circle at 50% 35%, rgba(255, 215, 0, 0.28), rgba(12, 16, 24, 0.95)) !important;
+  border-bottom: 4px solid #ffd700 !important;
+  box-shadow: 0 0 16px rgba(255, 215, 0, 0.35) !important;
+}
+.tile.tile-rare-gold .name {
+  color: #ffd700 !important;
+  font-weight: 800 !important;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.6) !important;
+}
+.bt-tile.bt-tile-rare-gold {
+  background: radial-gradient(circle at 50% 35%, rgba(255, 215, 0, 0.28), rgba(12, 16, 24, 0.95)) !important;
+  border-left: 4px solid #ffd700 !important;
+  box-shadow: 0 0 16px rgba(255, 215, 0, 0.3) !important;
+}
+.bt-tile.bt-tile-rare-gold .n {
+  color: #ffd700 !important;
+  font-weight: 800 !important;
+}
+
+/* Single Special Rare Card in Case Details */
+.card-rare-special {
+  width: 220px !important;
+  background: radial-gradient(circle at 50% 30%, rgba(255, 215, 0, 0.2), rgba(13, 17, 23, 0.95)) !important;
+  border: 1.5px solid #ffd700 !important;
+  box-shadow: 0 0 18px rgba(255, 215, 0, 0.28) !important;
+  padding: 12px !important;
+  text-align: center;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+.card-rare-special:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 26px rgba(255, 215, 0, 0.5) !important;
+}
+.card-rare-special img {
+  width: 100% !important;
+  height: 90px !important;
+  object-fit: contain !important;
+}
+.card-rare-special .n {
+  color: #ffd700 !important;
+  font-weight: 800 !important;
+  font-size: 13px !important;
+  margin-top: 6px;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+}
+.card-rare-special .c {
+  font-size: 11px;
+  margin-top: 4px;
+}
+.cd-toggle-rare {
+  margin-top: 10px;
+  background: rgba(255, 215, 0, 0.1) !important;
+  color: #ffd700 !important;
+  border: 1px solid rgba(255, 215, 0, 0.35) !important;
+  border-radius: 6px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.cd-toggle-rare:hover {
+  background: rgba(255, 215, 0, 0.22) !important;
+  border-color: #ffd700 !important;
+  color: #fff !important;
+}
+.cd-rare-expanded {
+  margin-top: 12px;
+  border-top: 1px dashed rgba(255, 215, 0, 0.25);
+  padding-top: 12px;
+}
+

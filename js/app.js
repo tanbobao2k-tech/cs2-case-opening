@@ -26,6 +26,12 @@ const TOPUP = 1000;
 const TRADE_FEE = 0.05;
 const CUSTOM_RTP = 0.9;
 const CUSTOM_ALPHA = 0.9;
+const SPECIAL_RARE_IMG = 'assets/special_rare.svg';
+
+function isDedicatedKnifeCase(c) {
+  if (!c || !c.custom) return false;
+  return ['cc-knife', 'cc-glove', 'cc-karambit', 'cc-butterfly', 'cc-m9', 'cc-bayonet', 'cc-doppler'].includes(c.id);
+}
 // ---------- Hồ sơ người chơi (theo tên, lưu riêng trên thiết bị) ----------
 const API_URL = 'https://cs2-case-api.tanbobao2k.workers.dev';
 const PROFILES_KEY = 'cs2-profiles';
@@ -334,8 +340,35 @@ function showCaseDetail(c) {
       if (!items.length) return;
       wrap.appendChild(detailGroup(RARITY[r], items, RARITY[r].p / items.length));
     });
+    // Hiển thị ô Vàng Dao đặc trưng CS2 (★ Special Rare Item) thay vì bung cả danh sách dao ra
+    const rareCount = new Set(c.rare.map((i) => ITEMS[i].n)).size;
+    const rareGroup = document.createElement('div');
+    rareGroup.className = 'cd-group cd-group-rare';
+    rareGroup.style.setProperty('--rc', '#ffd700');
+    rareGroup.innerHTML = `
+      <h4>★ ${RARITY[5].name} <span>Tỷ lệ ${fmtPct(RARITY[5].p)} · ${rareCount} loại Dao & Găng siêu hiếm</span></h4>
+      <div class="cd-list cd-list-rare-single">
+        <div class="card card-rare-special" style="--rc: #ffd700">
+          <img src="${SPECIAL_RARE_IMG}" alt="★ Special Rare Item" />
+          <div class="n">★ Special Rare Item</div>
+          <div class="c muted">Chứa 1 trong ${rareCount} mẫu Dao / Găng siêu hiếm bí ẩn của hòm này</div>
+        </div>
+      </div>
+      <button type="button" class="btn btn-xs cd-toggle-rare" id="cd-toggle-rare-btn">🔍 Xem danh sách ${rareCount} dao/găng trong hòm ▼</button>
+      <div class="cd-list cd-rare-expanded" id="cd-rare-expanded" hidden></div>
+    `;
+    const expList = $('.cd-rare-expanded', rareGroup);
     const rareNames = [...new Map(c.rare.map((i) => [ITEMS[i].n, ITEMS[i]]).entries()).values()];
-    wrap.appendChild(detailGroup(RARITY[5], rareNames, RARITY[5].p / rareNames.length));
+    rareNames.forEach((i) => expList.appendChild(itemCard({ ...i, ph: undefined })));
+
+    const toggleBtn = $('.cd-toggle-rare', rareGroup);
+    toggleBtn.onclick = () => {
+      const isHidden = expList.hidden;
+      expList.hidden = !isHidden;
+      toggleBtn.textContent = isHidden ? `▲ Thu gọn danh sách dao/găng` : `🔍 Xem danh sách ${rareCount} dao/găng trong hòm ▼`;
+    };
+
+    wrap.appendChild(rareGroup);
   }
   openModal('#modal-case');
 }
@@ -480,12 +513,20 @@ async function openCase(c) {
   const strip = $('#roulette-strip');
   strip.innerHTML = '';
   strip.style.transform = 'translateX(0)';
+  const isCustomKnifeOnly = isDedicatedKnifeCase(c);
   const tiles = Array.from({ length: TILE_COUNT }, (_, i) => (i === WIN_INDEX ? won : rollItem(c)));
   tiles.forEach((it) => {
     const t = document.createElement('div');
     t.className = 'tile';
-    t.style.setProperty('--rc', RARITY[it.r].color);
-    t.innerHTML = `<img src="${it.img}" alt="" /><div class="name">${it.n}</div>`;
+    const isGoldKnife = !isCustomKnifeOnly && it.r === 5;
+    if (isGoldKnife) {
+      t.classList.add('tile-rare-gold');
+      t.style.setProperty('--rc', '#ffd700');
+      t.innerHTML = `<img src="${SPECIAL_RARE_IMG}" alt="★ Special Rare Item" /><div class="name">★ Special Rare Item</div>`;
+    } else {
+      t.style.setProperty('--rc', RARITY[it.r].color);
+      t.innerHTML = `<img src="${it.img}" alt="" /><div class="name">${it.n}</div>`;
+    }
     strip.appendChild(t);
   });
 
@@ -496,6 +537,10 @@ async function openCase(c) {
 
   if ($('#fast-mode').checked) {
     strip.style.transform = `translateX(${-target}px)`;
+    if (won.r === 5 && !isCustomKnifeOnly) {
+      const winTile = strip.children[WIN_INDEX];
+      if (winTile) winTile.innerHTML = `<img src="${won.img}" alt="" /><div class="name">${won.n}</div>`;
+    }
     revealResult(won);
     return;
   }
@@ -506,6 +551,15 @@ async function openCase(c) {
     onTick: () => tick(),
   });
   spinning = false;
+
+  // Khi kim dừng trúng ô vàng dao, lập tức đổi ô trúng thành dao thật
+  if (won.r === 5 && !isCustomKnifeOnly) {
+    const winTile = strip.children[WIN_INDEX];
+    if (winTile) {
+      winTile.innerHTML = `<img src="${won.img}" alt="" /><div class="name">${won.n}</div>`;
+    }
+  }
+
   await sleep(350);
   revealResult(won);
 }
@@ -1529,22 +1583,42 @@ function spinReel(p, c, won, fast, withSound) {
   const strip = $('.bt-strip', p.el);
   strip.innerHTML = '';
   strip.style.transform = 'translateY(0)';
+  const isCustomKnifeOnly = isDedicatedKnifeCase(c);
   const tiles = Array.from({ length: BT_TILES }, (_, i) => (i === BT_WIN ? won : rollItem(c)));
   tiles.forEach((it) => {
     const t = document.createElement('div');
     t.className = 'bt-tile';
-    t.style.setProperty('--rc', RARITY[it.r].color);
-    t.innerHTML = `<img src="${it.img}" alt="" /><div><div class="n">${it.n}</div><div class="p">${fmtUSD(it.price)}</div></div>`;
+    const isGoldKnife = !isCustomKnifeOnly && it.r === 5;
+    if (isGoldKnife) {
+      t.classList.add('bt-tile-rare-gold');
+      t.style.setProperty('--rc', '#ffd700');
+      t.innerHTML = `<img src="${SPECIAL_RARE_IMG}" alt="★ Special Rare Item" /><div><div class="n">★ Special Rare Item</div><div class="p">Vật phẩm vàng</div></div>`;
+    } else {
+      t.style.setProperty('--rc', RARITY[it.r].color);
+      t.innerHTML = `<img src="${it.img}" alt="" /><div><div class="n">${it.n}</div><div class="p">${fmtUSD(it.price)}</div></div>`;
+    }
     strip.appendChild(t);
   });
   const th = strip.firstElementChild.offsetHeight + 6;
   const reelH = strip.parentElement.clientHeight;
   const target = BT_WIN * th + th / 2 - reelH / 2;
-  if (fast) { strip.style.transform = `translateY(${-target}px)`; return sleep(120); }
+  if (fast) {
+    strip.style.transform = `translateY(${-target}px)`;
+    if (won.r === 5 && !isCustomKnifeOnly) {
+      const winTile = strip.children[BT_WIN];
+      if (winTile) winTile.innerHTML = `<img src="${won.img}" alt="" /><div><div class="n">${won.n}</div><div class="p">${fmtUSD(won.price)}</div></div>`;
+    }
+    return sleep(120);
+  }
   return animateSpin({
     target, duration: 4200 + Math.random() * 600, pitch: th,
     onFrame: (y) => { strip.style.transform = `translateY(${-y}px)`; },
     onTick: withSound ? () => tick(700) : null,
+  }).then(() => {
+    if (won.r === 5 && !isCustomKnifeOnly) {
+      const winTile = strip.children[BT_WIN];
+      if (winTile) winTile.innerHTML = `<img src="${won.img}" alt="" /><div><div class="n">${won.n}</div><div class="p">${fmtUSD(won.price)}</div></div>`;
+    }
   });
 }
 function finishBattle(current, me) {
