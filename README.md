@@ -2,14 +2,19 @@
 
 Web tĩnh mô phỏng mở hòm CS2. Không backend, không tài khoản, không tốn tiền.
 
-- 42 hòm chính thức, ~2500 vật phẩm, ảnh lấy trực tiếp từ Steam CDN
-- Giá vật phẩm theo Steam Market (Doppler theo phase từ Buff163), quy đổi ₫ tham khảo
-- Tỷ lệ rớt đúng công bố Valve: Mil-Spec 79,92% · Restricted 15,98% · Classified 3,2% · Covert 0,64% · Dao/găng 0,26% · StatTrak 10%
+- **Ví ảo**: bắt đầu $1.000, nút nạp thêm $1.000 không giới hạn (miễn phí). Mở hòm/battle trừ ví, bán đồ cộng ví. Lãi/lỗ = (ví + kho) − tổng nạp
+- 42 hòm chính thức + 25 **hòm đặc biệt kiểu Skin Club** (toàn dao, găng, Karambit, Doppler, AK/AWP, Huyền thoại ≥$1.000, Bình dân…) — tỷ lệ ∝ 1/giá^0.9, giá hòm = EV/0,9
+- Catalog **toàn bộ 2.119 skin/dao/găng** có giá (kể cả Dragon Lore, Howl, Doppler từng phase), ảnh từ Steam CDN
+- Giá theo Steam Market (Doppler theo phase từ Buff163), quy đổi ₫ tham khảo
+- Tỷ lệ hòm chính thức theo Valve nhưng dao/găng nâng lên **1%** (gốc 0,26%): Mil-Spec 79,33% · Restricted 15,86% · Classified 3,18% · Covert 0,64% · Dao/găng 1% · StatTrak 10%
 - Float roll theo phân phối độ mòn rồi ép vào khoảng float riêng của từng skin (giống cơ chế game)
 - Roulette quay như trong game (có "Mở nhanh" để bỏ qua animation)
 - **Case Battle**: chọn 1–10 hòm, đấu 1–3 bot, chế độ Thường / Đảo ngược, thắng ôm trọn đồ cả bàn
 - **Zoom soi skin**: nhấn vào ảnh (kết quả, kho đồ, drop battle) → lăn chuột / véo hai ngón để zoom, kéo để di chuyển
-- Kho đồ + thống kê (đã chi / đã nhận / lãi lỗ ảo, tỷ lệ thực tế vs kỳ vọng) lưu trong `localStorage`
+- **Bán đồ**: nút bán trên từng món, bán cả trang lọc, bán ngay sau khi mở
+- **Trade với bot**: đưa đồ trong kho, lấy bất kỳ món nào trong catalog, phí bot 5%, chênh lệch bù trừ qua ví
+- **Trade-Up**: 10 món cùng bậc (cùng StatTrak) → 1 món bậc trên cùng bộ sưu tập, xác suất và float như CS2
+- Kho đồ phân trang 3 hàng/trang; thống kê lãi/lỗ, số hòm đã mở theo từng loại, món đắt nhất — lưu trong `localStorage`
 - Responsive mobile
 
 ## Chạy
@@ -38,8 +43,8 @@ rm data/*_raw.json data/p_*.json
 ```
 index.html      giao diện
 css/style.css
-js/app.js       roll, roulette, zoom, case battle, kho đồ, thống kê
-data/cases.js   dữ liệu hòm + giá + khoảng float (window.CS2_CASES)
+js/app.js       roll, hòm đặc biệt, roulette, zoom, battle, trade, trade-up, ví, kho, thống kê
+data/cases.js   catalog item (window.CS2_ITEMS) + hòm chính thức (window.CS2_CASES)
 build-data.js   script gộp dữ liệu ByMykel/CSGO-API + giá csgotrader.app
 ```
 
