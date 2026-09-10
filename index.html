@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=22" />
+  <link rel="stylesheet" href="css/style.css?v=23" />
 </head>
 <body>
   <header class="topbar">
@@ -361,22 +361,53 @@
       <!-- Video In-Game Showcase Player -->
       <div id="zoom-video-wrap" class="zoom-video-wrap" hidden>
         <div class="zoom-video-box">
+          <!-- Inspected Skin Quick Banner -->
+          <div class="zoom-video-skin-header" id="zoom-video-skin-header">
+            <div class="zoom-v-skin-left">
+              <img id="zoom-v-skin-img" src="" alt="" />
+              <div class="zoom-v-skin-meta">
+                <div class="zoom-v-skin-row">
+                  <span class="zoom-v-skin-badge" id="zoom-v-skin-rarity">Covert</span>
+                  <span class="zoom-v-skin-wear" id="zoom-v-skin-wear">Factory New</span>
+                </div>
+                <h4 id="zoom-v-skin-name">Tên skin</h4>
+                <p id="zoom-v-skin-info" class="muted">Float: 0.0000 · Giá: $0.00</p>
+              </div>
+            </div>
+            <div class="zoom-v-skin-right">
+              <a id="zoom-video-yt-btn" href="#" target="_blank" rel="noopener" class="zoom-yt-link">
+                <span>▶ Xem Video 4K chuẩn của skin này</span> ↗
+              </a>
+            </div>
+          </div>
+
+          <!-- Video Player Display -->
           <div class="zoom-video-player-box">
             <video id="zoom-video-player" playsinline loop controls preload="auto"></video>
+            <iframe id="zoom-video-yt-frame" class="zoom-video-yt-frame" hidden allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
           </div>
+
+          <!-- Mode / Source Selector Bar -->
           <div class="zoom-video-controls-bar">
-            <div class="zoom-v-tabs" id="zoom-video-tabs">
-              <button class="btn btn-xs zoom-vtab active" data-v="awp">🎯 AWP Dragon Lore</button>
-              <button class="btn btn-xs zoom-vtab" data-v="ak47">🔥 AK-47 Vulcan</button>
-              <button class="btn btn-xs zoom-vtab" data-v="knife">🗡️ Karambit Doppler</button>
+            <div class="zoom-v-sources">
+              <button type="button" class="btn btn-xs zoom-vsource-btn active" id="zoom-vsrc-local">⚡ Clip mẫu 60FPS</button>
+              <button type="button" class="btn btn-xs zoom-vsource-btn" id="zoom-vsrc-yt">🔴 Tìm kiếm 4K YouTube</button>
             </div>
-            <a id="zoom-video-yt-btn" href="#" target="_blank" rel="noopener" class="btn btn-xs zoom-yt-link">
-              <span>▶ Xem 4K YouTube của skin này</span> ↗
-            </a>
+            <div class="zoom-v-tabs" id="zoom-video-tabs">
+              <span class="zoom-v-tabs-label muted text-xs">Đổi loại vũ khí:</span>
+              <button type="button" class="btn btn-xs zoom-vtab" data-v="ak47">🔥 Súng trường</button>
+              <button type="button" class="btn btn-xs zoom-vtab" data-v="awp">🎯 Súng ngắm</button>
+              <button type="button" class="btn btn-xs zoom-vtab" data-v="knife">🗡️ Dao & Găng</button>
+            </div>
           </div>
+
+          <!-- Footer Status -->
           <div class="zoom-video-footer">
-            <span class="zoom-video-status">🎮 <b id="zoom-video-label">AWP Dragon Lore</b> · Video In-Game CS2 (60 FPS)</span>
-            <span class="muted text-xs">Góc nhìn FPS & âm thanh bắn/inspect thật</span>
+            <div class="zoom-video-status">
+              <span id="zoom-video-match-badge" class="zoom-v-match-tag">ℹ️ Clip tham khảo</span>
+              <span id="zoom-video-label-wrap">Đang phát: <b id="zoom-video-label">AK-47 Vulcan</b> · In-Game CS2 (60 FPS)</span>
+            </div>
+            <span class="muted text-xs" id="zoom-video-subnote">Góc nhìn FPS & âm thanh bắn/inspect thật</span>
           </div>
         </div>
       </div>
@@ -716,6 +747,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="data/cases.js?v=8"></script>
-  <script src="js/app.js?v=22"></script>
+  <script src="js/app.js?v=23"></script>
 </body>
 </html>
