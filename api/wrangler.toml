@@ -1,0 +1,11 @@
+name = "cs2-case-api"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+ALLOWED_ORIGINS = "https://tanbobao2k-tech.github.io,http://localhost:5179,http://127.0.0.1:5179"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "cs2-case-db"
+database_id = "b95b6b25-91e2-4d1b-bcdf-12fd07da3f2b"

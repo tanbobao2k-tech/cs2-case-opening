@@ -494,3 +494,19 @@ main { max-width: 1240px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px) 80px
 .btn.danger { color: #ff7b7b; }
 .btn.danger:hover { border-color: #ff7b7b; }
 .pf-item .pf-lock { font-size: 11px; color: var(--muted); }
+
+/* ===== Đồng bộ / bảng xếp hạng ===== */
+.sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #7ee2a8; display: inline-block; box-shadow: 0 0 6px #7ee2a8; }
+.sync-dot.saving { background: var(--accent); box-shadow: 0 0 6px var(--accent); animation: glowPulse 1s infinite; }
+.sync-dot.error { background: #ff7b7b; box-shadow: 0 0 6px #ff7b7b; }
+.sync-dot.offline { background: var(--muted); box-shadow: none; }
+.stats-2 { grid-template-columns: 1fr 1.4fr 1fr; }
+.lb-row { display: flex; align-items: center; gap: 10px; font-size: 13px; padding: 6px 8px; background: var(--bg); border-radius: 8px; }
+.lb-row .rk { width: 24px; text-align: center; font-weight: 700; color: var(--muted); }
+.lb-row.top1 .rk { color: #ffd700; } .lb-row.top2 .rk { color: #c0c0c0; } .lb-row.top3 .rk { color: #cd7f32; }
+.lb-row .n { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.lb-row.me { outline: 1px solid var(--accent); }
+.lb-row .w { color: #7ee2a8; font-weight: 700; }
+.lb-row .o { color: var(--muted); font-size: 12px; }
+@media (max-width: 1000px) { .stats-2 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 760px) { .stats-2 { grid-template-columns: 1fr; } }

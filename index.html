@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=7" />
+  <link rel="stylesheet" href="css/style.css?v=8" />
 </head>
 <body>
   <header class="topbar">
@@ -17,7 +17,7 @@
       <span>Mở Hòm <b>CS2</b></span>
       <span class="brand-tag">miễn phí</span>
     </a>
-    <button id="profile-btn" class="profile-chip" title="Đổi người chơi">👤 <b id="profile-name">—</b></button>
+    <button id="profile-btn" class="profile-chip" title="Tài khoản">👤 <b id="profile-name">—</b> <span id="sync-dot" class="sync-dot" title="Trạng thái đồng bộ"></span></button>
     <div class="wallet">
       <span class="wallet-label">Ví ảo</span>
       <b id="wallet">$0.00</b>
@@ -130,6 +130,11 @@
       <div id="stats-table" class="stats"></div>
       <div class="stats-2">
         <div class="card">
+          <h3>Bảng xếp hạng tài sản <span class="muted h-sub">toàn bộ người chơi</span></h3>
+          <div id="leaderboard" class="stats-cases"></div>
+          <p id="leaderboard-empty" class="muted">Đang tải…</p>
+        </div>
+        <div class="card">
           <h3>Hòm đã mở</h3>
           <div id="stats-cases" class="stats-cases"></div>
           <p id="stats-cases-empty" class="muted">Chưa mở hòm nào.</p>
@@ -195,7 +200,7 @@
         <div class="pf-head">
           <span class="brand-mark">▣</span>
           <h2 id="auth-title">Đăng nhập</h2>
-          <p class="muted">Mỗi tài khoản có ví, kho đồ và thống kê riêng, được bảo vệ bằng mật khẩu.</p>
+          <p class="muted">Tài khoản lưu trên máy chủ — đăng nhập ở điện thoại hay máy tính đều thấy cùng ví, kho đồ và thống kê.</p>
         </div>
         <div class="seg auth-tabs" id="auth-tabs">
           <button data-mode="login" class="active">Đăng nhập</button>
@@ -208,9 +213,9 @@
           <p id="auth-err" class="auth-err" hidden></p>
           <button type="submit" class="btn btn-primary btn-lg" id="auth-submit">Đăng nhập</button>
         </form>
-        <p class="muted auth-hint">Tài khoản trên thiết bị này:</p>
+        <p class="muted auth-hint">Đã đăng nhập gần đây trên thiết bị này:</p>
         <div id="pf-list" class="pf-list"></div>
-        <p class="note">Dữ liệu lưu trên thiết bị này (không có máy chủ). Cùng một tên trên máy khác là tài khoản khác. Xoá dữ liệu trình duyệt sẽ mất tài khoản.</p>
+        <p class="note">Mật khẩu được băm trước khi lưu; không có cách khôi phục nếu quên — hãy nhớ kỹ. Đây là game giải trí, đừng dùng mật khẩu quan trọng.</p>
       </div>
 
       <div id="auth-user" hidden>
@@ -468,7 +473,7 @@
     </div>
   </div>
 
-  <script src="data/cases.js?v=7"></script>
-  <script src="js/app.js?v=7"></script>
+  <script src="data/cases.js?v=8"></script>
+  <script src="js/app.js?v=8"></script>
 </body>
 </html>

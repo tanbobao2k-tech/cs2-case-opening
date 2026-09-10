@@ -27,8 +27,10 @@ const TRADE_FEE = 0.05;
 const CUSTOM_RTP = 0.9;
 const CUSTOM_ALPHA = 0.9;
 // ---------- Hồ sơ người chơi (theo tên, lưu riêng trên thiết bị) ----------
+const API_URL = 'https://cs2-case-api.tanbobao2k.workers.dev';
 const PROFILES_KEY = 'cs2-profiles';
 const CURRENT_KEY = 'cs2-current';
+const TOKEN_KEY = 'cs2-token';
 const lsGet = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 const profile = lsGet(CURRENT_KEY, null);
@@ -152,7 +154,10 @@ const caseById = (id) => CASES.find((c) => c.id === id);
 
 // ---------- Storage ----------
 const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
-const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const save = (k, v) => {
+  try { localStorage.setItem(k, JSON.stringify(v)); } catch {}
+  if (k === STORE_INV || k === STORE_STATS) scheduleSync();
+};
 const freshStats = () => ({
   opened: 0, by: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, st: 0, spent: 0,
   balance: TOPUP, topup: TOPUP, sold: 0, byCase: {}, best: null,
@@ -1128,41 +1133,79 @@ $('#tu-clear').onclick = () => { tu.picked = []; renderTradeUp(); };
 $('#tu-confirm').onclick = confirmTradeUp;
 $('#tu-res-ok').onclick = () => { $('#tu-result').hidden = true; };
 
-// ---------- Tài khoản (cục bộ, mật khẩu băm PBKDF2) ----------
-const ACCOUNTS_KEY = 'cs2-accounts';
-const accounts = () => lsGet(ACCOUNTS_KEY, {});
-const enc = new TextEncoder();
-const toHex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
-async function hashPassword(pass, saltHex) {
-  if (crypto?.subtle) {
-    const key = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveBits']);
-    const salt = new Uint8Array(saltHex.match(/../g).map((h) => parseInt(h, 16)));
-    return toHex(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 120000, hash: 'SHA-256' }, key, 256));
+// ---------- Tài khoản (máy chủ Cloudflare) + đồng bộ ----------
+const token = () => localStorage.getItem(TOKEN_KEY);
+async function api(path, { method = 'GET', body, keepalive = false } = {}) {
+  const res = await fetch(API_URL + path, {
+    method, keepalive,
+    headers: { 'Content-Type': 'application/json', ...(token() ? { Authorization: 'Bearer ' + token() } : {}) },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { const e = new Error(data.error || `Lỗi ${res.status}`); e.status = res.status; throw e; }
+  return data;
+}
+let syncTimer = null, syncing = false, dirty = false;
+function setSync(state, title) {
+  const d = $('#sync-dot');
+  d.className = 'sync-dot ' + state;
+  d.title = title || { '': 'Đã lưu lên máy chủ', saving: 'Đang lưu…', error: 'Chưa lưu được — sẽ thử lại', offline: 'Chưa đăng nhập' }[state];
+}
+function scheduleSync() {
+  if (!profile || !token()) return;
+  dirty = true;
+  setSync('saving');
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(flushSync, 700);
+}
+async function flushSync(keepalive = false) {
+  if (!dirty || syncing || !token()) return;
+  syncing = true; dirty = false;
+  try {
+    await api('/state', { method: 'PUT', body: { data: { inv: inventory, stats } }, keepalive });
+    setSync('');
+  } catch (e) {
+    dirty = true;
+    if (e.status === 401) { setSync('error', 'Phiên đăng nhập hết hạn — hãy đăng nhập lại'); }
+    else { setSync('error'); setTimeout(flushSync, 4000); }
+  } finally { syncing = false; if (dirty && !syncTimer) scheduleSync(); }
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) { clearTimeout(syncTimer); flushSync(true); } });
+window.addEventListener('pagehide', () => { clearTimeout(syncTimer); flushSync(true); });
+window.addEventListener('online', () => dirty && flushSync());
+
+async function loadFromServer() {
+  if (!profile || !token()) return;
+  try {
+    const { data } = await api('/state');
+    if (data && Array.isArray(data.inv)) {
+      inventory = data.inv;
+      stats = { ...freshStats(), ...data.stats };
+      stats.byCase ??= {}; stats.battles ??= { played: 0, won: 0 }; stats.equipped ??= {};
+      try { localStorage.setItem(STORE_INV, JSON.stringify(inventory)); localStorage.setItem(STORE_STATS, JSON.stringify(stats)); } catch {}
+      setSync('');
+    } else if (inventory.length || stats.opened) {
+      // Máy chủ chưa có gì nhưng máy này có dữ liệu cũ → đẩy lên
+      dirty = true; await flushSync();
+    } else {
+      dirty = true; await flushSync();
+    }
+  } catch (e) {
+    if (e.status === 401) { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(CURRENT_KEY); location.reload(); return; }
+    setSync('error', 'Không kết nối được máy chủ — đang dùng bản lưu trên máy');
+    toast('Không kết nối được máy chủ, đang dùng dữ liệu lưu trên máy này');
   }
-  // Fallback khi không có WebCrypto (rất hiếm)
-  let h = 0x811c9dc5;
-  for (const ch of saltHex + pass) { h ^= ch.charCodeAt(0); h = Math.imul(h, 0x01000193) >>> 0; }
-  return 'fnv-' + h.toString(16);
+  renderInventory(); renderStats();
 }
-const randomSalt = () => toHex(crypto.getRandomValues(new Uint8Array(16)));
-async function verifyPassword(name, pass) {
-  const a = accounts()[name];
-  if (!a) return false;
-  return (await hashPassword(pass, a.salt)) === a.hash;
-}
-async function setPassword(name, pass) {
-  const all = accounts();
-  const salt = randomSalt();
-  all[name] = { ...(all[name] || { created: Date.now() }), salt, hash: await hashPassword(pass, salt) };
-  lsSet(ACCOUNTS_KEY, all);
-}
+
+const knownNames = () => lsGet(PROFILES_KEY, []);
+const rememberName = (n) => lsSet(PROFILES_KEY, [n, ...knownNames().filter((x) => x !== n)].slice(0, 8));
+const validName = (n) => /^[\p{L}\p{N} _.-]{1,20}$/u.test(n);
 function accountSummary(name) {
   const st = lsGet(`cs2-stats:${name}`, null);
   const inv = lsGet(`cs2-inv:${name}`, []);
-  return st ? `${fmtUSDShort(st.balance || 0)} · ${inv.length} món · ${st.opened || 0} hòm` : 'mới';
+  return st ? `${fmtUSDShort(st.balance || 0)} · ${inv.length} món · ${st.opened || 0} hòm` : '';
 }
-const knownNames = () => [...new Set([...lsGet(PROFILES_KEY, []), ...Object.keys(accounts())])];
-const validName = (n) => /^[\p{L}\p{N} _.-]{1,20}$/u.test(n);
 
 let authMode = 'login';
 function setAuthMode(mode) {
@@ -1171,7 +1214,6 @@ function setAuthMode(mode) {
   $('#auth-title').textContent = mode === 'login' ? 'Đăng nhập' : 'Tạo tài khoản';
   $('#auth-submit').textContent = mode === 'login' ? 'Đăng nhập' : 'Tạo tài khoản & bắt đầu';
   $('#auth-pass2').hidden = mode === 'login';
-  $('#auth-pass').autocomplete = mode === 'login' ? 'current-password' : 'new-password';
   showAuthErr('');
 }
 function showAuthErr(msg, sel = '#auth-err') { const el = $(sel); el.textContent = msg; el.hidden = !msg; }
@@ -1180,28 +1222,25 @@ function renderAccountList() {
   list.innerHTML = '';
   const names = knownNames();
   names.forEach((name) => {
-    const hasPw = !!accounts()[name]?.hash;
     const el = document.createElement('button');
     el.type = 'button';
     el.className = 'pf-item';
-    el.innerHTML = `<span>👤 <b>${name}</b><div class="pf-meta">${accountSummary(name)}</div>${hasPw ? '' : '<div class="pf-lock">chưa có mật khẩu — đăng nhập để tạo</div>'}</span>`;
+    el.innerHTML = `<span>👤 <b>${name}</b><div class="pf-meta">${accountSummary(name)}</div></span>`;
     el.onclick = () => { setAuthMode('login'); $('#auth-name').value = name; $('#auth-pass').focus(); };
     list.appendChild(el);
   });
   $('.auth-hint').hidden = names.length === 0;
 }
-function enterAccount(name) {
-  const all = lsGet(PROFILES_KEY, []);
-  if (!all.includes(name)) {
-    all.push(name);
-    lsSet(PROFILES_KEY, all);
-    if (all.length === 1 && localStorage.getItem('cs2-inv') && !localStorage.getItem(`cs2-inv:${name}`)) {
-      localStorage.setItem(`cs2-inv:${name}`, localStorage.getItem('cs2-inv'));
-      if (localStorage.getItem('cs2-stats')) localStorage.setItem(`cs2-stats:${name}`, localStorage.getItem('cs2-stats'));
-      localStorage.removeItem('cs2-inv'); localStorage.removeItem('cs2-stats');
-    }
-  }
+function enterAccount(name, tok) {
+  localStorage.setItem(TOKEN_KEY, tok);
   lsSet(CURRENT_KEY, name);
+  rememberName(name);
+  // Dữ liệu chơi từ bản cũ (chưa có tài khoản) chuyển cho tài khoản đầu tiên trên máy này
+  if (localStorage.getItem('cs2-inv') && !localStorage.getItem(`cs2-inv:${name}`)) {
+    localStorage.setItem(`cs2-inv:${name}`, localStorage.getItem('cs2-inv'));
+    if (localStorage.getItem('cs2-stats')) localStorage.setItem(`cs2-stats:${name}`, localStorage.getItem('cs2-stats'));
+    localStorage.removeItem('cs2-inv'); localStorage.removeItem('cs2-stats');
+  }
   location.reload();
 }
 async function submitAuth(e) {
@@ -1210,30 +1249,21 @@ async function submitAuth(e) {
   const pass = $('#auth-pass').value;
   if (!validName(name)) return showAuthErr('Tên 1–20 ký tự, chỉ chữ, số, khoảng trắng, . _ -');
   if (pass.length < 4) return showAuthErr('Mật khẩu tối thiểu 4 ký tự.');
+  if (authMode === 'register' && pass !== $('#auth-pass2').value) return showAuthErr('Mật khẩu nhập lại không khớp.');
   const btn = $('#auth-submit');
-  btn.disabled = true;
+  btn.disabled = true; btn.textContent = 'Đang xử lý…';
   try {
-    const acc = accounts()[name];
-    const exists = knownNames().includes(name);
-    if (authMode === 'register') {
-      if (pass !== $('#auth-pass2').value) return showAuthErr('Mật khẩu nhập lại không khớp.');
-      if (acc?.hash) return showAuthErr('Tên này đã có người dùng trên thiết bị này. Hãy đăng nhập hoặc chọn tên khác.');
-      await setPassword(name, pass);
-      return enterAccount(name);
-    }
-    if (!exists) return showAuthErr('Chưa có tài khoản này trên thiết bị. Chọn "Tạo tài khoản".');
-    if (!acc?.hash) {
-      // Hồ sơ cũ chưa có mật khẩu: mật khẩu vừa nhập trở thành mật khẩu tài khoản
-      await setPassword(name, pass);
-      toast(`Đã đặt mật khẩu cho ${name}`);
-      return enterAccount(name);
-    }
-    if (!(await verifyPassword(name, pass))) return showAuthErr('Sai mật khẩu.');
-    enterAccount(name);
-  } finally { btn.disabled = false; }
+    const r = await api(authMode === 'register' ? '/register' : '/login', { method: 'POST', body: { name, password: pass } });
+    enterAccount(r.name, r.token);
+  } catch (err) {
+    showAuthErr(err.status ? err.message : 'Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.');
+    btn.disabled = false; setAuthMode(authMode);
+  }
 }
-function logout() {
-  localStorage.removeItem(CURRENT_KEY);
+async function logout() {
+  clearTimeout(syncTimer); await flushSync();
+  try { await api('/logout', { method: 'POST' }); } catch {}
+  localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(CURRENT_KEY);
   location.reload();
 }
 async function changePassword(e) {
@@ -1241,19 +1271,20 @@ async function changePassword(e) {
   const o = $('#pw-old').value, n = $('#pw-new').value, n2 = $('#pw-new2').value;
   if (n.length < 4) return showAuthErr('Mật khẩu mới tối thiểu 4 ký tự.', '#pw-err');
   if (n !== n2) return showAuthErr('Mật khẩu mới nhập lại không khớp.', '#pw-err');
-  if (accounts()[profile]?.hash && !(await verifyPassword(profile, o))) return showAuthErr('Mật khẩu hiện tại không đúng.', '#pw-err');
-  await setPassword(profile, n);
+  try { await api('/password', { method: 'POST', body: { old: o, new: n } }); }
+  catch (err) { return showAuthErr(err.message, '#pw-err'); }
   $('#pw-form').hidden = true;
-  toast('Đã đổi mật khẩu');
+  toast('Đã đổi mật khẩu (các thiết bị khác cần đăng nhập lại)');
 }
 async function deleteAccount() {
-  const pw = accounts()[profile]?.hash ? prompt(`Nhập mật khẩu của "${profile}" để xoá tài khoản (mất toàn bộ kho đồ và ví):`) : (confirm(`Xoá tài khoản "${profile}" cùng toàn bộ kho đồ và ví?`) ? '' : null);
+  const pw = prompt(`Nhập mật khẩu của "${profile}" để xoá tài khoản vĩnh viễn (mất toàn bộ kho đồ và ví):`);
   if (pw == null) return;
-  if (accounts()[profile]?.hash && !(await verifyPassword(profile, pw))) return toast('Sai mật khẩu, không xoá.');
+  try { await api('/account', { method: 'DELETE', body: { password: pw } }); }
+  catch (err) { return toast(err.message); }
   localStorage.removeItem(`cs2-inv:${profile}`); localStorage.removeItem(`cs2-stats:${profile}`);
-  lsSet(PROFILES_KEY, lsGet(PROFILES_KEY, []).filter((n) => n !== profile));
-  const all = accounts(); delete all[profile]; lsSet(ACCOUNTS_KEY, all);
-  logout();
+  lsSet(PROFILES_KEY, knownNames().filter((n) => n !== profile));
+  localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(CURRENT_KEY);
+  location.reload();
 }
 function openProfileModal(force = false) {
   $('#profile-close').hidden = force;
@@ -1261,9 +1292,8 @@ function openProfileModal(force = false) {
   $('#auth-user').hidden = !profile;
   if (profile) {
     $('#auth-username').textContent = profile;
-    $('#auth-usersum').textContent = accountSummary(profile) + (accounts()[profile]?.hash ? '' : ' · chưa có mật khẩu');
+    $('#auth-usersum').textContent = `${fmtUSD(stats.balance)} trong ví · ${inventory.length} món · ${stats.opened} hòm đã mở · đồng bộ mọi thiết bị`;
     $('#pw-form').hidden = true;
-    $('#auth-changepw').textContent = accounts()[profile]?.hash ? 'Đổi mật khẩu' : 'Đặt mật khẩu';
   } else {
     renderAccountList();
     setAuthMode(knownNames().length ? 'login' : 'register');
@@ -1271,6 +1301,21 @@ function openProfileModal(force = false) {
   }
   openModal('#modal-profile');
   setTimeout(() => (profile ? null : $('#auth-name').focus()), 50);
+}
+async function renderLeaderboard() {
+  const wrap = $('#leaderboard');
+  try {
+    const { top } = await api('/top');
+    wrap.innerHTML = '';
+    top.forEach((r, i) => {
+      const el = document.createElement('div');
+      el.className = `lb-row top${i + 1}` + (r.name === profile ? ' me' : '');
+      el.innerHTML = `<span class="rk">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><span class="n">${r.name}</span><span class="o">${r.opened} hòm</span><span class="w">${fmtUSDShort(r.worth)}</span>`;
+      wrap.appendChild(el);
+    });
+    $('#leaderboard-empty').hidden = top.length > 0;
+    $('#leaderboard-empty').textContent = 'Chưa có ai.';
+  } catch { $('#leaderboard-empty').textContent = 'Không tải được bảng xếp hạng.'; }
 }
 $('#auth-tabs').onclick = (e) => { const b = e.target.closest('[data-mode]'); if (b) setAuthMode(b.dataset.mode); };
 $('#auth-form').onsubmit = submitAuth;
@@ -1281,7 +1326,10 @@ $('#auth-delete').onclick = deleteAccount;
 $('#profile-btn').onclick = () => openProfileModal(false);
 $('#profile-name').textContent = profile || 'Đăng nhập';
 if (profile) $('#hero-title').innerHTML = `Chào ${profile}.<br />Mở hòm không tốn một xu.`;
-if (!profile) openProfileModal(true);
+if (!profile || !token()) { localStorage.removeItem(TOKEN_KEY); setSync('offline'); openProfileModal(true); }
+else { loadFromServer(); }
+renderLeaderboard();
+setInterval(renderLeaderboard, 60000);
 
 $('#prices-date').textContent = window.CS2_PRICES_UPDATED || '';
 renderCases('');

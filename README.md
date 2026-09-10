@@ -2,7 +2,7 @@
 
 Web tĩnh mô phỏng mở hòm CS2. Không backend, không tài khoản, không tốn tiền.
 
-- **Tài khoản cục bộ**: đăng ký/đăng nhập bằng tên + mật khẩu (băm PBKDF2, lưu trên thiết bị, không có máy chủ); mỗi tài khoản có ví/kho/thống kê riêng; đổi/xoá mật khẩu, xoá tài khoản
+- **Tài khoản online** (Cloudflare Worker + D1, thư mục `api/`): đăng ký/đăng nhập bằng tên + mật khẩu (băm PBKDF2 phía máy chủ), ví/kho/thống kê đồng bộ mọi thiết bị, tự lưu sau mỗi thay đổi (chấm xanh cạnh tên), đổi/xoá mật khẩu, xoá tài khoản, bảng xếp hạng tài sản toàn cầu
 - **Ví ảo**: bắt đầu $1.000, nút nạp thêm $1.000 không giới hạn (miễn phí). Mở hòm/battle trừ ví, bán đồ cộng ví. Lãi/lỗ = (ví + kho) − tổng nạp
 - 42 hòm chính thức + 25 **hòm đặc biệt kiểu Skin Club** (toàn dao, găng, Karambit, Doppler, AK/AWP, Huyền thoại ≥$1.000, Bình dân…) — tỷ lệ ∝ 1/giá^0.9, giá hòm = EV/0,9
 - Catalog **toàn bộ 2.119 skin/dao/găng** có giá (kể cả Dragon Lore, Howl, Doppler từng phase), ảnh từ Steam CDN
@@ -25,7 +25,8 @@ Hoặc chạy server tĩnh bất kỳ: `npx serve .`
 
 ## Deploy
 
-Copy nguyên thư mục lên GitHub Pages / Netlify / Vercel / Cloudflare Pages. Không cần build.
+Frontend: copy nguyên thư mục lên GitHub Pages / Netlify / Vercel / Cloudflare Pages. Không cần build.
+Backend: xem `api/README.md` (wrangler). URL API đặt ở hằng `API_URL` trong `js/app.js`; origin được phép đặt ở `ALLOWED_ORIGINS` trong `api/wrangler.toml`.
 
 ## Cập nhật dữ liệu hòm / giá
 
