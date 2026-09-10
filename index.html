@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mở Hòm CS2 — Miễn phí, đúng tỷ lệ thật</title>
-  <meta name="description" content="Mô phỏng mở hòm CS2 hoàn toàn miễn phí với tỷ lệ rớt đồ chính thức của Valve. 42 hòm, hơn 2000 skin, ảnh gốc từ Steam." />
+  <meta name="description" content="Mô phỏng mở hòm CS2 hoàn toàn miễn phí với tỷ lệ rớt đồ chính thức của Valve. 42 hòm, hơn 2500 vật phẩm, giá Steam, Case Battle với bot." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -19,6 +19,7 @@
     </a>
     <nav class="topnav">
       <a href="#cases">Hòm</a>
+      <a href="#battle">Battle</a>
       <a href="#inventory">Kho đồ <span id="inv-count" class="pill">0</span></a>
       <a href="#stats">Thống kê</a>
       <a href="#odds">Tỷ lệ</a>
@@ -28,10 +29,11 @@
   <main>
     <section class="hero">
       <h1>Mở hòm CS2.<br />Không tốn một xu.</h1>
-      <p>Tỷ lệ rớt đồ giống hệt CS2 thật, ảnh skin lấy trực tiếp từ Steam. Mở bao nhiêu tuỳ thích — đồ rơi được lưu trong kho ngay trên trình duyệt của bạn.</p>
+      <p>Tỷ lệ rớt đồ giống hệt CS2 thật, ảnh và giá skin lấy từ Steam. Mở lẻ hoặc solo Case Battle với bot — đồ rơi được lưu trong kho ngay trên trình duyệt của bạn.</p>
       <div class="hero-stats">
         <div><b id="stat-opened">0</b><span>hòm đã mở</span></div>
-        <div><b id="stat-saved">$0</b><span>tiền key tiết kiệm được</span></div>
+        <div><b id="stat-value">$0</b><span>giá trị kho</span></div>
+        <div><b id="stat-profit">$0</b><span>lãi / lỗ (ảo)</span></div>
         <div><b id="stat-rare">0</b><span>dao / găng</span></div>
       </div>
     </section>
@@ -47,10 +49,28 @@
       <div id="case-grid" class="case-grid"></div>
     </section>
 
+    <section id="battle" class="section">
+      <div class="section-head">
+        <h2>Case Battle</h2>
+        <button id="battle-new" class="btn btn-primary">Tạo trận mới</button>
+      </div>
+      <div class="battle-intro card">
+        <div>
+          <h3>Solo mở hòm với bot</h3>
+          <p class="muted">Chọn 1–10 hòm, đấu với 1–3 bot. Mỗi vòng tất cả cùng mở một hòm, ai có tổng giá trị cao hơn thắng và <b>ôm trọn đồ của cả bàn</b>. Chế độ Đảo ngược: tổng thấp nhất thắng.</p>
+          <p class="muted" id="battle-record">Thành tích: chưa đấu trận nào.</p>
+        </div>
+      </div>
+    </section>
+
     <section id="inventory" class="section">
       <div class="section-head">
-        <h2>Kho đồ</h2>
+        <h2>Kho đồ <span id="inv-value" class="muted inv-value"></span></h2>
         <div class="section-tools">
+          <select id="inv-sort">
+            <option value="new">Mới nhất</option>
+            <option value="price">Giá cao nhất</option>
+          </select>
           <select id="inv-filter">
             <option value="all">Tất cả</option>
             <option value="5">Dao / Găng</option>
@@ -94,22 +114,24 @@
             <li>Well-Worn <b>24%</b></li>
             <li>Battle-Scarred <b>16%</b></li>
           </ul>
+          <p class="note">Float được roll theo phân phối trên rồi ép vào khoảng float riêng của từng skin, giống cơ chế trong game (skin có min float 0.10 sẽ không bao giờ ra Factory New).</p>
         </div>
         <div class="card">
           <h3>Khác</h3>
           <ul class="odds-list">
             <li>StatTrak™ <b>10%</b></li>
             <li>Phase Doppler <b>ngẫu nhiên đều</b></li>
-            <li>Float <b>random trong khoảng của độ mòn</b></li>
+            <li>Giá vật phẩm <b>Steam Market (7 ngày)</b></li>
+            <li>Giá mở hòm <b>giá hòm + key $2,49</b></li>
           </ul>
-          <p class="note">Tỷ lệ bậc hiếm theo công bố chính thức của Valve (bản Perfect World, 2017). Trang này chỉ để giải trí, không liên kết với Valve.</p>
+          <p class="note">Tỷ lệ bậc hiếm theo công bố chính thức của Valve (bản Perfect World, 2017). Giá cập nhật <span id="prices-date"></span>, quy đổi ₫ theo tỷ giá tham khảo. Trang này chỉ để giải trí, không liên kết với Valve.</p>
         </div>
       </div>
     </section>
   </main>
 
   <footer class="footer">
-    <p>Dự án mô phỏng phi lợi nhuận. Counter-Strike 2 và mọi hình ảnh skin thuộc về Valve Corporation. Dữ liệu vật phẩm: <a href="https://github.com/ByMykel/CSGO-API" target="_blank" rel="noopener">ByMykel/CSGO-API</a>.</p>
+    <p>Dự án mô phỏng phi lợi nhuận. Counter-Strike 2 và mọi hình ảnh skin thuộc về Valve Corporation. Dữ liệu vật phẩm: <a href="https://github.com/ByMykel/CSGO-API" target="_blank" rel="noopener">ByMykel/CSGO-API</a> · Giá: <a href="https://csgotrader.app" target="_blank" rel="noopener">CSGO Trader</a>.</p>
   </footer>
 
   <!-- Modal: chi tiết hòm -->
@@ -121,7 +143,10 @@
         <div>
           <h2 id="cd-name"></h2>
           <p id="cd-meta" class="muted"></p>
-          <button id="cd-open" class="btn btn-primary btn-lg">Mở hòm</button>
+          <div class="row-btns">
+            <button id="cd-open" class="btn btn-primary btn-lg">Mở hòm</button>
+            <button id="cd-battle" class="btn btn-lg">Đấu battle với hòm này</button>
+          </div>
         </div>
       </div>
       <div id="cd-items" class="cd-items"></div>
@@ -139,13 +164,100 @@
       <div id="result" class="result" hidden>
         <div class="result-card">
           <span id="res-rarity" class="res-rarity"></span>
-          <img id="res-image" alt="" />
+          <button id="res-zoom" class="zoom-hint" title="Phóng to">
+            <img id="res-image" alt="" />
+            <span>🔍 Nhấn để soi kỹ</span>
+          </button>
           <h3 id="res-name"></h3>
           <p id="res-wear" class="muted"></p>
+          <p id="res-price" class="res-price"></p>
         </div>
         <div class="result-actions">
           <button id="res-again" class="btn btn-primary btn-lg">Mở tiếp</button>
           <button id="res-close" class="btn btn-ghost btn-lg">Đóng</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: zoom -->
+  <div id="modal-zoom" class="modal modal-dark" hidden>
+    <button class="modal-close zoom-close" data-close>&times;</button>
+    <div class="zoom-stage" id="zoom-stage">
+      <img id="zoom-img" alt="" draggable="false" />
+    </div>
+    <div class="zoom-bar">
+      <div class="zoom-info">
+        <b id="zoom-name"></b>
+        <span id="zoom-sub" class="muted"></span>
+      </div>
+      <div class="zoom-ctrl">
+        <button class="btn" data-zoom="-1">−</button>
+        <span id="zoom-level">100%</span>
+        <button class="btn" data-zoom="1">+</button>
+        <button class="btn btn-ghost" data-zoom="0">Đặt lại</button>
+      </div>
+      <p class="zoom-tip muted">Lăn chuột / véo hai ngón để zoom, kéo để di chuyển</p>
+    </div>
+  </div>
+
+  <!-- Modal: thiết lập battle -->
+  <div id="modal-battle-setup" class="modal" hidden>
+    <div class="modal-box modal-wide">
+      <button class="modal-close" data-close>&times;</button>
+      <h2 class="modal-title">Tạo Case Battle</h2>
+      <div class="bs-grid">
+        <div class="bs-left">
+          <div class="bs-field">
+            <label>Đối thủ</label>
+            <div class="seg" id="bs-bots">
+              <button data-bots="1" class="active">1 bot</button>
+              <button data-bots="2">2 bot</button>
+              <button data-bots="3">3 bot</button>
+            </div>
+          </div>
+          <div class="bs-field">
+            <label>Chế độ</label>
+            <div class="seg" id="bs-mode">
+              <button data-mode="normal" class="active">Thường</button>
+              <button data-mode="crazy">Đảo ngược</button>
+            </div>
+          </div>
+          <div class="bs-field">
+            <label>Hòm đã chọn <span id="bs-round-count" class="muted"></span></label>
+            <div id="bs-selected" class="bs-selected"></div>
+            <p id="bs-selected-empty" class="muted">Chưa chọn hòm nào — bấm vào hòm bên phải để thêm (tối đa 10).</p>
+          </div>
+          <div class="bs-summary">
+            <div><span class="muted">Chi phí mỗi người</span><b id="bs-cost">$0</b></div>
+            <button id="bs-start" class="btn btn-primary btn-lg" disabled>Bắt đầu</button>
+          </div>
+        </div>
+        <div class="bs-right">
+          <input id="bs-search" type="search" placeholder="Tìm hòm…" />
+          <div id="bs-cases" class="bs-cases"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: battle -->
+  <div id="modal-battle" class="modal" hidden>
+    <div class="modal-box modal-battle">
+      <div class="bt-head">
+        <div>
+          <p class="open-title" id="bt-title">Case Battle</p>
+          <div id="bt-rounds" class="bt-rounds"></div>
+        </div>
+        <button id="bt-exit" class="btn btn-ghost">Thoát</button>
+      </div>
+      <div id="bt-players" class="bt-players"></div>
+      <div id="bt-final" class="bt-final" hidden>
+        <h3 id="bt-final-title"></h3>
+        <p id="bt-final-sub" class="muted"></p>
+        <div class="result-actions">
+          <button id="bt-again" class="btn btn-primary btn-lg">Đấu lại</button>
+          <button id="bt-close" class="btn btn-ghost btn-lg">Đóng</button>
         </div>
       </div>
     </div>
