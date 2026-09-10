@@ -426,17 +426,16 @@
       <div id="result" class="result" hidden>
         <div class="result-card">
           <span id="res-rarity" class="res-rarity"></span>
-          <button id="res-zoom" class="zoom-hint" title="Xem 3D Siêu thực">
+          <button id="res-zoom" class="zoom-hint" title="Phóng to ảnh skin">
             <img id="res-image" alt="" />
-            <span>🎮 Bấm để Soi 3D Siêu thực</span>
+            <span>🔍 Nhấn để soi kỹ / Phóng to</span>
           </button>
           <h3 id="res-name"></h3>
           <p id="res-wear" class="muted"></p>
           <p id="res-price" class="res-price"></p>
         </div>
         <div class="result-actions">
-          <button id="res-view-3d" class="btn btn-primary btn-lg res-btn-3d">🔍 Soi Skin 3D</button>
-          <button id="res-again" class="btn btn-lg">Mở tiếp</button>
+          <button id="res-again" class="btn btn-primary btn-lg">Mở tiếp</button>
           <button id="res-sell" class="btn btn-lg">Bán ngay</button>
           <button id="res-close" class="btn btn-ghost btn-lg">Đóng</button>
         </div>
@@ -444,94 +443,15 @@
     </div>
   </div>
 
-  <!-- Modal: 3D Inspect & Showcase -->
-  <div id="modal-zoom" class="modal modal-dark modal-3d-stage" hidden>
+  <!-- Modal: Soi Skin & Phóng to ảnh (Thuần 2D Siêu Mượt) -->
+  <div id="modal-zoom" class="modal modal-dark" hidden>
     <button class="modal-close zoom-close" data-close title="Đóng">&times;</button>
     
-    <div class="zoom-top-toolbar">
-      <div class="zoom-mode-toggle">
-        <button class="btn btn-sm active" id="zoom-mode-3d">🎮 3D Studio</button>
-        <button class="btn btn-sm" id="zoom-mode-video">🎬 Video In-Game</button>
-        <button class="btn btn-sm" id="zoom-mode-2d">🖼️ Tối giản</button>
-      </div>
-      <div class="zoom-lights-bar" id="zoom-lights-bar">
-        <span class="zoom-bar-label">Ánh sáng:</span>
-        <button class="btn btn-xs active" data-light="studio">Studio</button>
-        <button class="btn btn-xs" data-light="cyber">Cyber</button>
-        <button class="btn btn-xs" data-light="gold">Golden</button>
-        <button class="btn btn-xs" data-light="dark">Hầm tối</button>
-      </div>
-      <div class="zoom-actions-quick">
-        <button class="btn btn-xs" id="zoom-autorotate" title="Bật/tắt tự động xoay">⟳ Tự xoay: Bật</button>
-        <button class="btn btn-xs" id="zoom-screenshot" title="Chụp ảnh HD">📸 Chụp HD</button>
-      </div>
-    </div>
-
     <div class="zoom-stage" id="zoom-stage">
-      <!-- 3D WebGL Canvas Container: Floor, Hologram Rings, Ambient Particles -->
-      <div id="zoom-3d-wrap" class="zoom-3d-wrap">
-        <canvas id="zoom-3d-canvas"></canvas>
-      </div>
-
-      <!-- Foreground Weapon 3D Holographic Display -->
       <div class="zoom-glow" id="zoom-glow"></div>
       <div class="zoom-wrap" id="zoom-wrap">
         <img id="zoom-img" alt="" draggable="false" />
         <div class="zoom-shine" id="zoom-shine"></div>
-      </div>
-
-      <!-- Video In-Game Showcase Player -->
-      <div id="zoom-video-wrap" class="zoom-video-wrap" hidden>
-        <div class="zoom-video-box">
-          <!-- Inspected Skin Quick Banner -->
-          <div class="zoom-video-skin-header" id="zoom-video-skin-header">
-            <div class="zoom-v-skin-left">
-              <img id="zoom-v-skin-img" src="" alt="" />
-              <div class="zoom-v-skin-meta">
-                <div class="zoom-v-skin-row">
-                  <span class="zoom-v-skin-badge" id="zoom-v-skin-rarity">Covert</span>
-                  <span class="zoom-v-skin-wear" id="zoom-v-skin-wear">Factory New</span>
-                </div>
-                <h4 id="zoom-v-skin-name">Tên skin</h4>
-                <p id="zoom-v-skin-info" class="muted">Float: 0.0000 · Giá: $0.00</p>
-              </div>
-            </div>
-            <div class="zoom-v-skin-right">
-              <a id="zoom-video-yt-btn" href="#" target="_blank" rel="noopener" class="zoom-yt-link">
-                <span>▶ Xem Video 4K chuẩn của skin này</span> ↗
-              </a>
-            </div>
-          </div>
-
-          <!-- Video Player Display -->
-          <div class="zoom-video-player-box">
-            <video id="zoom-video-player" playsinline loop controls preload="auto"></video>
-            <iframe id="zoom-video-yt-frame" class="zoom-video-yt-frame" hidden allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-          </div>
-
-          <!-- Mode / Source Selector Bar -->
-          <div class="zoom-video-controls-bar">
-            <div class="zoom-v-sources">
-              <button type="button" class="btn btn-xs zoom-vsource-btn active" id="zoom-vsrc-local">⚡ Clip mẫu 60FPS</button>
-              <button type="button" class="btn btn-xs zoom-vsource-btn" id="zoom-vsrc-yt">🔴 Tìm kiếm 4K YouTube</button>
-            </div>
-            <div class="zoom-v-tabs" id="zoom-video-tabs">
-              <span class="zoom-v-tabs-label muted text-xs">Đổi loại vũ khí:</span>
-              <button type="button" class="btn btn-xs zoom-vtab" data-v="ak47">🔥 Súng trường</button>
-              <button type="button" class="btn btn-xs zoom-vtab" data-v="awp">🎯 Súng ngắm</button>
-              <button type="button" class="btn btn-xs zoom-vtab" data-v="knife">🗡️ Dao & Găng</button>
-            </div>
-          </div>
-
-          <!-- Footer Status -->
-          <div class="zoom-video-footer">
-            <div class="zoom-video-status">
-              <span id="zoom-video-match-badge" class="zoom-v-match-tag">ℹ️ Clip tham khảo</span>
-              <span id="zoom-video-label-wrap">Đang phát: <b id="zoom-video-label">AK-47 Vulcan</b> · In-Game CS2 (60 FPS)</span>
-            </div>
-            <span class="muted text-xs" id="zoom-video-subnote">Góc nhìn FPS & âm thanh bắn/inspect thật</span>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -539,26 +459,16 @@
       <div class="zoom-info">
         <b id="zoom-name"></b>
         <span id="zoom-sub" class="muted"></span>
-        <div class="zoom-float-display" id="zoom-float-box">
-          <span class="float-tag" id="zoom-wear-badge">Factory New</span>
-          <div class="float-slider-row">
-            <span class="muted text-xs">Float:</span>
-            <input type="range" id="zoom-float-slider" min="0" max="1" step="0.001" value="0.02" />
-            <b id="zoom-float-val" class="tabular">0.0200</b>
-          </div>
-        </div>
       </div>
       <div class="zoom-ctrl">
-        <button class="btn btn-primary" id="zoom-inspect">▶ Inspect (F)</button>
-        <button class="btn" id="zoom-quick-video" title="Xem video gameplay CS2">🎬 Video</button>
+        <button class="btn btn-primary" id="zoom-inspect">▶ Soi vũ khí (F)</button>
         <button class="btn" id="zoom-equip" hidden>Trang bị</button>
-        <button class="btn" id="zoom-reset-cam" title="Đặt lại góc nhìn">⟲ Góc chuẩn</button>
-        <button class="btn" data-zoom="-1">−</button>
-        <span id="zoom-level">100%</span>
-        <button class="btn" data-zoom="1">+</button>
+        <button class="btn" data-zoom="-1" title="Thu nhỏ">−</button>
+        <button class="btn" id="zoom-reset" title="Đặt lại kích thước 100%"><span id="zoom-level">100%</span></button>
+        <button class="btn" data-zoom="1" title="Phóng to">+</button>
       </div>
       <p class="zoom-tip muted" id="zoom-tip-text">
-        🎮 <b>Chế độ 3D:</b> Kéo chuột/vuốt để xoay 360° tự do · Lăn chuột để zoom cận cảnh · Chuột phải để di chuyển vị trí · Bấm Inspect để xoay lật ngắm vũ khí chuẩn CS2!
+        🔍 <b>Hướng dẫn:</b> Lăn chuột hoặc bấm <b>+ / −</b> để phóng to / thu nhỏ · Kéo chuột để di chuyển ảnh khi zoom · Bấm <b>Soi vũ khí (phím F)</b> để xem hiệu ứng xoay lật sáng bóng.
       </p>
     </div>
   </div>
@@ -866,9 +776,7 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="data/cases.js?v=8"></script>
-  <script src="js/app.js?v=28"></script>
+  <script src="js/app.js?v=29"></script>
 </body>
 </html>
