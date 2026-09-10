@@ -252,6 +252,7 @@ const shortCase = (n) => n.replace(/ (Weapon )?Case$/, '').replace(/^Hòm /, '')
 function itemCard(item, { showFrom = false, sell = false, odds } = {}) {
   const el = document.createElement('div');
   el.className = 'item';
+  el.title = 'Bấm để xem 3D / chi tiết';
   el.style.setProperty('--rc', RARITY[item.r].color);
   const priceLine = item.price != null
     ? `<span class="price">${fmtUSD(item.price)}</span>`
@@ -1096,6 +1097,7 @@ const viewer3D = (function () {
     },
     stop,
     start,
+    resize,
     updateFloat,
     playInspect,
     resetCamera,
@@ -1110,6 +1112,7 @@ const viewer3D = (function () {
 })();
 
 function openZoom(item) {
+  if (!item) return;
   zoomItem = item;
   zoom.scale = 1; zoom.x = 0; zoom.y = 0;
   applyZoom();
@@ -1144,6 +1147,11 @@ function openZoom(item) {
   if ($('#zoom-glow')) $('#zoom-glow').hidden = false;
 
   openModal('#modal-zoom');
+
+  // Trigger resize to ensure WebGL canvas fits stage when modal unhides
+  setTimeout(() => {
+    try { viewer3D.resize(); } catch {}
+  }, 40);
 
   // Update YouTube search link for this skin
   const ytBtn = $('#zoom-video-yt-btn');
@@ -1355,6 +1363,7 @@ async function startBattle() {
       d.className = 'bt-drop';
       d.style.setProperty('--rc', RARITY[it.r].color);
       d.innerHTML = `<img src="${it.img}" alt="" /><span class="n">${it.st ? 'ST™ ' : ''}${it.n}</span><span class="p">${fmtUSD(it.price)}</span>`;
+      d.title = "Bấm để soi đồ 3D";
       d.onclick = () => openZoom(it);
       $('.bt-drops', p.el).prepend(d);
     });
@@ -1440,11 +1449,15 @@ function pickCard(item, selected, onToggle, { disabled = false } = {}) {
   el.classList.add('pick');
   el.classList.toggle('selected', selected);
   el.classList.toggle('disabled', disabled);
-  el.insertAdjacentHTML('afterbegin', '<span class="chk"></span><button class="zoom-btn" data-zoomer>🔍</button>');
+  el.insertAdjacentHTML('afterbegin', '<span class="chk"></span><button type="button" class="zoom-btn" data-zoomer title="Xem 3D chi tiết">🔍</button>');
   el.onclick = (e) => {
     if (up.rolling) return;
-    if (e.target.matches('[data-zoomer]')) openZoom(item);
-    else onToggle(item);
+    if (e.target.matches('[data-zoomer]') || e.target.closest('[data-zoomer]')) {
+      e.stopPropagation();
+      openZoom(item);
+      return;
+    }
+    onToggle(item);
   };
   return el;
 }
@@ -1829,6 +1842,8 @@ async function startUpgrade() {
     panel.className = 'up-result-panel win';
     $('#up-res-badge').textContent = 'NÂNG CẤP THÀNH CÔNG!';
     $('#up-res-img').src = itemToAdd.img;
+    $('#up-res-img').title = 'Bấm để soi 3D';
+    $('#up-res-img').onclick = () => openZoom(itemToAdd);
     $('#up-res-name').innerHTML = nameHTML(itemToAdd);
     $('#up-res-meta').textContent = `${itemToAdd.wear} · Float ${itemToAdd.float}`;
     $('#up-res-price').textContent = fmtUSD(itemToAdd.price);
@@ -1849,6 +1864,8 @@ async function startUpgrade() {
     panel.className = 'up-result-panel lose';
     $('#up-res-badge').textContent = 'NÂNG CẤP THẤT BẠI';
     $('#up-res-img').src = wonItem.img;
+    $('#up-res-img').title = 'Bấm để soi 3D';
+    $('#up-res-img').onclick = () => wonItem && openZoom(wonItem);
     $('#up-res-name').innerHTML = `Trượt: ${wonItem.n}`;
     $('#up-res-meta').textContent = `Kim dừng ở ${stopAngle.toFixed(1)}° (ngoài vùng ${up.side === 'left' ? 'Trái' : 'Phải'})`;
     $('#up-res-price').textContent = `Mất ${wageredItems.length} món cược`;
