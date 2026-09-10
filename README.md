@@ -7,7 +7,7 @@ Web tĩnh mô phỏng mở hòm CS2. Không backend, không tài khoản, không
 - 42 hòm chính thức + 25 **hòm đặc biệt kiểu Skin Club** (toàn dao, găng, Karambit, Doppler, AK/AWP, Huyền thoại ≥$1.000, Bình dân…) — tỷ lệ ∝ 1/giá^0.9, giá hòm = EV/0,9
 - Catalog **toàn bộ 2.119 skin/dao/găng** có giá (kể cả Dragon Lore, Howl, Doppler từng phase), ảnh từ Steam CDN
 - Giá theo Steam Market (Doppler theo phase từ Buff163), quy đổi ₫ tham khảo
-- Tỷ lệ hòm chính thức theo Valve nhưng dao/găng nâng lên **1%** (gốc 0,26%): Mil-Spec 79,33% · Restricted 15,86% · Classified 3,18% · Covert 0,64% · Dao/găng 1% · StatTrak 10%
+- Tỷ lệ hòm chính thức đã nâng tỉ lệ dao/găng lên **30%**: Mil-Spec 56,09% · Restricted 11,22% · Classified 2,25% · Covert 0,45% · Dao/găng 30,00% · StatTrak 10%
 - Float roll theo phân phối độ mòn rồi ép vào khoảng float riêng của từng skin (giống cơ chế game)
 - Roulette quay như trong game (có "Mở nhanh" để bỏ qua animation)
 - **Case Battle**: chọn 1–10 hòm, đấu 1–3 bot, chế độ Thường / Đảo ngược, thắng ôm trọn đồ cả bàn

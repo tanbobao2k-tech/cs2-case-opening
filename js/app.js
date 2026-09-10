@@ -2,12 +2,12 @@ const ITEMS = window.CS2_ITEMS;
 const OFFICIAL = window.CS2_CASES;
 
 const RARITY = {
-  // Tỷ lệ Valve gốc: 79,92 / 15,98 / 3,20 / 0,64 / 0,26 — trang này nâng dao/găng lên 1%, các bậc còn lại co theo tỷ lệ
-  1: { name: 'Mil-Spec', color: '#4b69ff', p: 0.79327 },
-  2: { name: 'Restricted', color: '#8847ff', p: 0.15861 },
-  3: { name: 'Classified', color: '#d32ce6', p: 0.031763 },
-  4: { name: 'Covert', color: '#eb4b4b', p: 0.006353 },
-  5: { name: 'Vật phẩm đặc biệt ★', color: '#ffd700', p: 0.01 },
+  // Tỷ lệ hòm bình thường: Nâng tỉ lệ ra dao/găng (Vật phẩm đặc biệt ★) lên 30%, các bậc còn lại co theo tỷ lệ
+  1: { name: 'Mil-Spec', color: '#4b69ff', p: 0.560898 },
+  2: { name: 'Restricted', color: '#8847ff', p: 0.112152 },
+  3: { name: 'Classified', color: '#d32ce6', p: 0.022458 },
+  4: { name: 'Covert', color: '#eb4b4b', p: 0.004492 },
+  5: { name: 'Vật phẩm đặc biệt ★', color: '#ffd700', p: 0.30 },
   6: { name: 'Industrial', color: '#5e98d9', p: 0 },
   7: { name: 'Consumer', color: '#b0c3d9', p: 0 },
 };
