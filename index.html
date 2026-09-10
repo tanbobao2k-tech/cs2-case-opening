@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=6" />
+  <link rel="stylesheet" href="css/style.css?v=7" />
 </head>
 <body>
   <header class="topbar">
@@ -186,21 +186,52 @@
     <p>Dự án mô phỏng phi lợi nhuận. Counter-Strike 2 và mọi hình ảnh skin thuộc về Valve Corporation. Dữ liệu vật phẩm: <a href="https://github.com/ByMykel/CSGO-API" target="_blank" rel="noopener">ByMykel/CSGO-API</a> · Giá: <a href="https://csgotrader.app" target="_blank" rel="noopener">CSGO Trader</a>.</p>
   </footer>
 
-  <!-- Modal: chọn người chơi -->
+  <!-- Modal: tài khoản -->
   <div id="modal-profile" class="modal modal-profile" hidden>
     <div class="modal-box modal-profile-box">
       <button class="modal-close" data-close id="profile-close">&times;</button>
-      <div class="pf-head">
-        <span class="brand-mark">▣</span>
-        <h2>Bạn là ai?</h2>
-        <p class="muted">Mỗi tên có ví, kho đồ và thống kê riêng, lưu ngay trên thiết bị này. Nhập tên mới hoặc chọn tên đã có để tiếp tục.</p>
+
+      <div id="auth-guest">
+        <div class="pf-head">
+          <span class="brand-mark">▣</span>
+          <h2 id="auth-title">Đăng nhập</h2>
+          <p class="muted">Mỗi tài khoản có ví, kho đồ và thống kê riêng, được bảo vệ bằng mật khẩu.</p>
+        </div>
+        <div class="seg auth-tabs" id="auth-tabs">
+          <button data-mode="login" class="active">Đăng nhập</button>
+          <button data-mode="register">Tạo tài khoản</button>
+        </div>
+        <form id="auth-form" class="auth-form" autocomplete="off">
+          <input id="auth-name" type="text" maxlength="20" placeholder="Tên tài khoản" autocomplete="username" />
+          <input id="auth-pass" type="password" maxlength="64" placeholder="Mật khẩu" autocomplete="current-password" />
+          <input id="auth-pass2" type="password" maxlength="64" placeholder="Nhập lại mật khẩu" autocomplete="new-password" hidden />
+          <p id="auth-err" class="auth-err" hidden></p>
+          <button type="submit" class="btn btn-primary btn-lg" id="auth-submit">Đăng nhập</button>
+        </form>
+        <p class="muted auth-hint">Tài khoản trên thiết bị này:</p>
+        <div id="pf-list" class="pf-list"></div>
+        <p class="note">Dữ liệu lưu trên thiết bị này (không có máy chủ). Cùng một tên trên máy khác là tài khoản khác. Xoá dữ liệu trình duyệt sẽ mất tài khoản.</p>
       </div>
-      <form id="pf-form" class="pf-form">
-        <input id="pf-name" type="text" maxlength="20" placeholder="Nhập tên của bạn…" autocomplete="off" />
-        <button type="submit" class="btn btn-primary btn-lg">Bắt đầu</button>
-      </form>
-      <div id="pf-list" class="pf-list"></div>
-      <p class="note">Không cần mật khẩu — chỉ để tách người chơi trên cùng máy. Xoá trình duyệt/cache sẽ mất dữ liệu.</p>
+
+      <div id="auth-user" hidden>
+        <div class="pf-head">
+          <span class="pf-avatar">👤</span>
+          <h2 id="auth-username"></h2>
+          <p class="muted" id="auth-usersum"></p>
+        </div>
+        <div class="auth-actions">
+          <button class="btn btn-lg" id="auth-logout">Đăng xuất / đổi tài khoản</button>
+          <button class="btn btn-ghost" id="auth-changepw">Đổi mật khẩu</button>
+          <button class="btn btn-ghost danger" id="auth-delete">Xoá tài khoản</button>
+        </div>
+        <form id="pw-form" class="auth-form" hidden>
+          <input id="pw-old" type="password" placeholder="Mật khẩu hiện tại" autocomplete="current-password" />
+          <input id="pw-new" type="password" placeholder="Mật khẩu mới" autocomplete="new-password" />
+          <input id="pw-new2" type="password" placeholder="Nhập lại mật khẩu mới" autocomplete="new-password" />
+          <p id="pw-err" class="auth-err" hidden></p>
+          <button type="submit" class="btn btn-primary">Lưu mật khẩu</button>
+        </form>
+      </div>
     </div>
   </div>
 
@@ -437,7 +468,7 @@
     </div>
   </div>
 
-  <script src="data/cases.js?v=6"></script>
-  <script src="js/app.js?v=6"></script>
+  <script src="data/cases.js?v=7"></script>
+  <script src="js/app.js?v=7"></script>
 </body>
 </html>

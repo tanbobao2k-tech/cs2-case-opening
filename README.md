@@ -2,6 +2,7 @@
 
 Web tĩnh mô phỏng mở hòm CS2. Không backend, không tài khoản, không tốn tiền.
 
+- **Tài khoản cục bộ**: đăng ký/đăng nhập bằng tên + mật khẩu (băm PBKDF2, lưu trên thiết bị, không có máy chủ); mỗi tài khoản có ví/kho/thống kê riêng; đổi/xoá mật khẩu, xoá tài khoản
 - **Ví ảo**: bắt đầu $1.000, nút nạp thêm $1.000 không giới hạn (miễn phí). Mở hòm/battle trừ ví, bán đồ cộng ví. Lãi/lỗ = (ví + kho) − tổng nạp
 - 42 hòm chính thức + 25 **hòm đặc biệt kiểu Skin Club** (toàn dao, găng, Karambit, Doppler, AK/AWP, Huyền thoại ≥$1.000, Bình dân…) — tỷ lệ ∝ 1/giá^0.9, giá hòm = EV/0,9
 - Catalog **toàn bộ 2.119 skin/dao/găng** có giá (kể cả Dragon Lore, Howl, Doppler từng phase), ảnh từ Steam CDN
