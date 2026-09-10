@@ -1,7 +1,8 @@
 // ==========================================
 // CS2 3D AIM ARENA — SOURCE ENGINE FPS ENGINE
 // Multi-Weapon (1: Súng Dài, 2: Súng Ngắn, 3: Dao)
-// Full Skins & Inspect System
+// Full-Auto Spray (Sấy AK 30 viên) & Sniper Scope (Chuột phải)
+// Realistic 3D AK-47 Model with Gloved Arms & Wild Lotus Skin
 // Powered by Three.js WebGL
 // ==========================================
 
@@ -17,18 +18,21 @@
     accuracy: 0,
     health: 100,
     currentSlot: 1, // 1: Súng Dài, 2: Súng Ngắn, 3: Dao
+    isMouseDown: false,
+    isScoped: false,
     isSwitching: false,
     isReloading: false,
     isInspecting: false,
-    isAttacking: false,
+    sprayCount: 0,
+    lastShotTime: 0,
     activeTab: 'all',
     slots: {
       1: {
         type: 'primary',
         slot: 1,
         weapon: 'AK-47',
-        name: 'Asiimov',
-        wear: 'Field-Tested',
+        name: 'Wild Lotus',
+        wear: 'Factory New',
         rarity: 'covert',
         rarityColor: '#eb4b4b',
         ammo: 30,
@@ -36,7 +40,8 @@
         reserveAmmo: 90,
         damageBody: 35,
         damageHead: 100,
-        price: 185.00,
+        fireRate: 105, // ms (approx 600 RPM)
+        price: 12500.00,
         img: 'https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV08y5nb-GkvP9Jrafw2lU6ccp07qWpdyj2wPl-Us4am-icYGLelc4Z1vV-FO3k-q-1p6878vOnXZhuyFwsHbewUvg1B9Eafsv26I41v2zLg/360fx360f'
       },
       2: {
@@ -52,6 +57,7 @@
         reserveAmmo: 35,
         damageBody: 65,
         damageHead: 140,
+        fireRate: 260,
         price: 120.00,
         img: 'https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposr-kLAtl7PDdTjlH_86hkpiGkuP1PtfVk2lu5Mx2gv2PoNmk3w21qEA5N2-idteWcQBtNw7SqVG4lOa608S8upvAnXdjpGB8siu3Pz7E/360fx360f'
       },
@@ -68,7 +74,8 @@
         reserveAmmo: 0,
         damageBody: 65,
         damageHead: 120,
-        price: 2450.00,
+        fireRate: 400,
+        price: 4500.00,
         img: 'https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf1f_BYQJD4eOxlY2GlsjwPKvBmm5D19V5i_rEpLP5gVO8v11rMTjyd9CTclU8N1_W-VG_w7y9gpO475zNwXti7yYntHvfzAv330_Z8D4P1A/360fx360f'
       }
     },
@@ -79,6 +86,17 @@
   // DEFAULT PRESET SKINS
   const DEFAULT_SKINS = [
     // Súng Dài (Slot 1)
+    {
+      id: 'ak-wildlotus',
+      slot: 1,
+      weapon: 'AK-47',
+      name: 'Wild Lotus',
+      wear: 'Factory New',
+      rarity: 'covert',
+      rarityColor: '#eb4b4b',
+      price: 12500.00,
+      img: 'https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV08y5nb-GkvP9Jrafw2lU6ccp07qWpdyj2wPl-Us4am-icYGLelc4Z1vV-FO3k-q-1p6878vOnXZhuyFwsHbewUvg1B9Eafsv26I41v2zLg/360fx360f'
+    },
     {
       id: 'ak-asiimov',
       slot: 1,
@@ -112,17 +130,6 @@
       price: 5200.00,
       img: 'https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIITfn2xZ_Pp5i_vG8Inw3wDnqRFrMmzyd9SWdARrYFnQ_1bvwunmhpS_tJrPzHYy6CBwt3jcnAv330-JgLrh9A/360fx360f'
     },
-    {
-      id: 'ak-casehardened',
-      slot: 1,
-      weapon: 'AK-47',
-      name: 'Case Hardened (Blue Gem)',
-      wear: 'Factory New',
-      rarity: 'classified',
-      rarityColor: '#d32ce6',
-      price: 350.00,
-      img: 'https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV09-5lpKKqPrxN7LEmyVQ7MEpiLuSrYmnjQO3-UdsZGHyd4_Bd1RvNQ7T_FDrw-_ng5Pu75iY1zI97Sho9nfc/360fx360f'
-    },
 
     // Súng Ngắn (Slot 2)
     {
@@ -147,17 +154,6 @@
       price: 680.00,
       img: 'https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposr-kLAtl7PDdTjlH_86hkpiGkuP1PtfVk2lu5Mx2gv2PoNmk3w21qEA5N2-idteWcQBtNw7SqVG4lOa608S8upvAnXdjpGB8siu3Pz7E/360fx360f'
     },
-    {
-      id: 'glock-fade',
-      slot: 2,
-      weapon: 'Glock-18',
-      name: 'Fade',
-      wear: 'Factory New',
-      rarity: 'restricted',
-      rarityColor: '#8847ff',
-      price: 1400.00,
-      img: 'https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposbaqKA5v7ODYzjbN_8-mq42Ok_7hNqzumX5Q8fp8teXI8oThxlKwqRE_YW77Io-dcVdrNwrRrFa_wOi7jMK47Z7Nz3cwunVxsivfngv3308kM-42-A/360fx360f'
-    },
 
     // Dao (Slot 3)
     {
@@ -181,21 +177,9 @@
       rarityColor: '#ffd700',
       price: 3200.00,
       img: 'https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJfxPrMfipP7dezhr-Kmsj1P7bUgm5W5ctOxL3H9NWt0Vfm8kVoa2vydoeQdFQ4N16F-VG-xey815C_up7NzyEy7yYq4nrbzAv330_6Z1vBmg/360fx360f'
-    },
-    {
-      id: 'knife-karambit-casehardened',
-      slot: 3,
-      weapon: 'Karambit',
-      name: 'Case Hardened (Blue Gem)',
-      wear: 'Field-Tested',
-      rarity: 'special',
-      rarityColor: '#ffd700',
-      price: 15000.00,
-      img: 'https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf3qr3czxb49KzgL-Djsj7Pb_UqWdY781lxL3D8d732gPn-0BsMG36cY_Ac1NtZVvZ_1G8we_mhsPv6p7PzSdr7HN0s3uMnAv3308D6Z9K8g/360fx360f'
     }
   ];
 
-  // Helper to categorize weapon into slot 1, 2, or 3
   function detectSlot(item) {
     const name = ((item.weapon || '') + ' ' + (item.name || '')).toLowerCase();
     if (item.type === 'knife' || name.includes('knife') || name.includes('karambit') || name.includes('bayonet') || name.includes('daggers') || name.includes('dao')) {
@@ -219,7 +203,6 @@
     }
   }
 
-  // Rifle gunshot (AK-47 style)
   function playRifleShotSound() {
     if (!audioCtx) return;
     const now = audioCtx.currentTime;
@@ -230,7 +213,6 @@
     for (let i = 0; i < bufferSize; i++) {
       data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.04));
     }
-
     const noise = audioCtx.createBufferSource();
     noise.buffer = buffer;
 
@@ -249,7 +231,7 @@
     oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
 
     const masterGain = audioCtx.createGain();
-    masterGain.gain.setValueAtTime(0.65, now);
+    masterGain.gain.setValueAtTime(0.7, now);
     masterGain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
 
     noise.connect(filter);
@@ -264,7 +246,6 @@
     osc.stop(now + 0.15);
   }
 
-  // Pistol gunshot (Desert Eagle heavy snap)
   function playPistolShotSound() {
     if (!audioCtx) return;
     const now = audioCtx.currentTime;
@@ -302,7 +283,6 @@
     noise.stop(now + 0.15);
   }
 
-  // Knife slash whoosh
   function playKnifeSlashSound() {
     if (!audioCtx) return;
     const now = audioCtx.currentTime;
@@ -332,7 +312,6 @@
     noise.stop(now + 0.14);
   }
 
-  // Knife impact stab sound
   function playKnifeHitSound() {
     if (!audioCtx) return;
     const now = audioCtx.currentTime;
@@ -349,7 +328,22 @@
     osc.stop(now + 0.12);
   }
 
-  // Deploy / Switch weapon sound
+  function playScopeSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(800, now);
+    osc.frequency.setValueAtTime(1200, now + 0.03);
+    g.gain.setValueAtTime(0.2, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+    osc.connect(g);
+    g.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.07);
+  }
+
   function playDeploySound(slot) {
     if (!audioCtx) return;
     const now = audioCtx.currentTime;
@@ -357,28 +351,24 @@
     const g = audioCtx.createGain();
 
     if (slot === 3) {
-      // Knife ring draw
       osc.type = 'sine';
       osc.frequency.setValueAtTime(1200, now);
       osc.frequency.exponentialRampToValueAtTime(1800, now + 0.08);
       g.gain.setValueAtTime(0.3, now);
       g.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
     } else if (slot === 2) {
-      // Pistol rack slide
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(600, now);
       osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
       g.gain.setValueAtTime(0.25, now);
       g.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
     } else {
-      // Rifle bolt cock
       osc.type = 'square';
       osc.frequency.setValueAtTime(450, now);
       osc.frequency.exponentialRampToValueAtTime(220, now + 0.12);
       g.gain.setValueAtTime(0.2, now);
       g.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
     }
-
     osc.connect(g);
     g.connect(audioCtx.destination);
     osc.start(now);
@@ -510,19 +500,19 @@
     osc.stop(now + 0.06);
   }
 
-  // --- CS2 / SOURCE ENGINE EXACT PHYSICS CONSTANTS ---
+  // --- CS2 SOURCE ENGINE EXACT PHYSICS CONSTANTS ---
   const CS_PHYSICS = {
-    GRAVITY: 24.0,           // sv_gravity 800
-    MAX_SPEED: 7.2,          // sv_maxspeed (250 units/s)
-    WALK_SPEED: 3.8,         // Shift walk (130 units/s)
-    CROUCH_SPEED: 2.5,       // Crouch walk (85 units/s)
-    ACCELERATION: 5.5,       // sv_accelerate
-    AIR_ACCELERATION: 12.0,  // sv_airaccelerate (Air strafe & Bunny hop)
-    FRICTION: 5.2,           // sv_friction (Ground deceleration)
-    STOP_SPEED: 1.8,         // sv_stopspeed (Counter-strafe instant stop)
-    JUMP_IMPULSE: 8.0,       // Jump height
-    STAND_HEIGHT: 1.7,       // Chiều cao đứng
-    CROUCH_HEIGHT: 1.15      // Chiều cao ngồi
+    GRAVITY: 24.0,
+    MAX_SPEED: 7.2,
+    WALK_SPEED: 3.8,
+    CROUCH_SPEED: 2.5,
+    ACCELERATION: 5.5,
+    AIR_ACCELERATION: 12.0,
+    FRICTION: 5.2,
+    STOP_SPEED: 1.8,
+    JUMP_IMPULSE: 8.0,
+    STAND_HEIGHT: 1.7,
+    CROUCH_HEIGHT: 1.15
   };
 
   const player = {
@@ -577,7 +567,6 @@
   let muzzleFlashLight, muzzleSprite;
   let targets = [];
 
-  // Animation vectors
   let recoilOffset = new THREE.Vector3();
   let recoilRot = new THREE.Vector3();
   let switchOffset = 0;
@@ -605,11 +594,11 @@
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xb0c0d0, 0.7);
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xb0c0d0, 0.75);
     hemiLight.position.set(0, 50, 0);
     scene.add(hemiLight);
 
-    const dirLight = new THREE.DirectionalLight(0xfffaed, 0.9);
+    const dirLight = new THREE.DirectionalLight(0xfffaed, 0.95);
     dirLight.position.set(20, 40, 20);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 2048;
@@ -623,7 +612,6 @@
     window.addEventListener('resize', onWindowResize);
   }
 
-  // --- MAP BUILDER (DUST II AIM ARENA) ---
   function buildArena() {
     const floorGeo = new THREE.PlaneGeometry(50, 50);
     const floorMat = new THREE.MeshStandardMaterial({ color: 0x9a8362, roughness: 0.85 });
@@ -670,7 +658,6 @@
     createCrate(2, 14, 0);
   }
 
-  // --- TARGET DUMMIES (AIM BOTZ) ---
   function spawnTargets() {
     targets.forEach(t => scene.remove(t.group));
     targets = [];
@@ -746,7 +733,68 @@
     const drawPattern = (imgElement) => {
       ctx.clearRect(0, 0, 512, 512);
 
-      if (nameLower.includes('asiimov')) {
+      if (nameLower.includes('wild lotus') || nameLower.includes('lotus')) {
+        // --- AK-47 WILD LOTUS (AUTHENTIC CS2 INFERNO ARTWORK) ---
+        // Rich Emerald Green Vine Background
+        const grad = ctx.createLinearGradient(0, 0, 512, 512);
+        grad.addColorStop(0, '#1b5e20');
+        grad.addColorStop(0.5, '#2e7d32');
+        grad.addColorStop(1, '#0f3813');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Tan / Teak Wood Accent Edges
+        ctx.fillStyle = '#d7b377';
+        ctx.fillRect(0, 0, 512, 28);
+        ctx.fillRect(0, 484, 512, 28);
+
+        // Curling Green Vines & Leaves
+        ctx.strokeStyle = '#4caf50';
+        ctx.lineWidth = 6;
+        for (let i = 0; i < 4; i++) {
+          ctx.beginPath();
+          ctx.moveTo(0, 100 + i * 90);
+          ctx.bezierCurveTo(150, 60 + i * 110, 320, 160 + i * 70, 512, 120 + i * 90);
+          ctx.stroke();
+        }
+
+        // Blooming Magenta Lotus Flower (Right side)
+        const drawFlower = (cx, cy, radius, primaryColor, centerColor) => {
+          ctx.fillStyle = primaryColor;
+          for (let p = 0; p < 8; p++) {
+            const angle = (p / 8) * Math.PI * 2;
+            const px = cx + Math.cos(angle) * (radius * 0.7);
+            const py = cy + Math.sin(angle) * (radius * 0.7);
+            ctx.beginPath();
+            ctx.arc(px, py, radius * 0.45, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.fillStyle = centerColor;
+          ctx.beginPath();
+          ctx.arc(cx, cy, radius * 0.35, 0, Math.PI * 2);
+          ctx.fill();
+        };
+
+        // Big Blooming Red/Orange Lotus
+        drawFlower(340, 260, 75, '#e64a19', '#ffeb3b');
+        // Purple / Pink Lotus buds
+        drawFlower(180, 180, 50, '#d81b60', '#ffd54f');
+        drawFlower(100, 340, 40, '#ad1457', '#ffca28');
+        drawFlower(440, 380, 45, '#c2185b', '#ffe082');
+
+        // Gold Lotus Stamen Dots
+        ctx.fillStyle = '#ffb300';
+        for (let b = 0; b < 25; b++) {
+          ctx.beginPath();
+          ctx.arc((b * 67) % 512, (b * 93) % 512, 6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 30px Georgia, serif';
+        ctx.fillText('WILD LOTUS', 40, 80);
+
+      } else if (nameLower.includes('asiimov')) {
         // --- ASIIMOV ---
         ctx.fillStyle = '#f8fafc';
         ctx.fillRect(0, 0, 512, 512);
@@ -844,36 +892,17 @@
           ctx.fillRect(b, 370, (b % 4 === 0 ? 6 : 2), 55);
         }
 
-      } else if (nameLower.includes('case hardened') || nameLower.includes('blue gem')) {
-        // --- CASE HARDENED BLUE GEM ---
-        const grad = ctx.createLinearGradient(0, 0, 512, 512);
-        grad.addColorStop(0, '#0091ea'); grad.addColorStop(0.4, '#00b0ff');
-        grad.addColorStop(0.7, '#aa00ff'); grad.addColorStop(0.88, '#ff6d00'); grad.addColorStop(1, '#ffd600');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 512, 512);
-
-        for (let p = 0; p < 35; p++) {
-          ctx.fillStyle = p % 2 === 0 ? 'rgba(0, 230, 255, 0.75)' : 'rgba(213, 0, 249, 0.65)';
-          ctx.beginPath();
-          ctx.arc((p * 83) % 512, (p * 119) % 512, 35 + (p * 7) % 75, 0, Math.PI * 2);
-          ctx.fill();
-        }
-
-        ctx.fillStyle = '#fff';
-        ctx.font = '900 32px monospace';
-        ctx.fillText('TIER 1 BLUE GEM #661', 40, 460);
-
-      } else if (nameLower.includes('doppler') || nameLower.includes('sapphire') || nameLower.includes('ruby')) {
-        // --- DOPPLER SAPPHIRE / RUBY ---
+      } else if (nameLower.includes('doppler') || nameLower.includes('sapphire')) {
+        // --- DOPPLER SAPPHIRE ---
         const grad = ctx.createLinearGradient(0, 0, 512, 512);
         grad.addColorStop(0, '#0d47a1'); grad.addColorStop(0.5, '#2979ff'); grad.addColorStop(1, '#651fff');
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, 512, 512);
 
         for (let s = 0; s < 40; s++) {
-          ctx.fillStyle = 'rgba(0, 229, 255, 0.7)';
+          ctx.fillStyle = 'rgba(0, 229, 255, 0.75)';
           ctx.beginPath();
-          ctx.arc((s * 97) % 512, (s * 61) % 512, 10 + (s * 3) % 30, 0, Math.PI * 2);
+          ctx.arc((s * 97) % 512, (s * 61) % 512, 12 + (s * 3) % 28, 0, Math.PI * 2);
           ctx.fill();
         }
 
@@ -881,37 +910,8 @@
         ctx.font = 'bold 36px sans-serif';
         ctx.fillText('DOPPLER SAPPHIRE', 60, 450);
 
-      } else if (nameLower.includes('fade')) {
-        // --- 100% MAX FADE ---
-        const grad = ctx.createLinearGradient(0, 0, 512, 512);
-        grad.addColorStop(0, '#800080'); grad.addColorStop(0.5, '#e91e63');
-        grad.addColorStop(0.85, '#ff9800'); grad.addColorStop(1, '#ffeb3b');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 512, 512);
-
-        ctx.fillStyle = '#fff';
-        ctx.font = '900 36px Impact, sans-serif';
-        ctx.fillText('100% FULL FADE', 80, 460);
-
-      } else if (nameLower.includes('blaze')) {
-        // --- DEAGLE BLAZE ---
-        ctx.fillStyle = '#111317';
-        ctx.fillRect(0, 0, 512, 512);
-
-        const flame = ctx.createLinearGradient(0, 512, 512, 0);
-        flame.addColorStop(0, '#ff1744'); flame.addColorStop(0.4, '#ff9100'); flame.addColorStop(0.8, '#ffea00');
-        ctx.fillStyle = flame;
-        ctx.beginPath();
-        ctx.moveTo(100, 512); ctx.lineTo(200, 300); ctx.lineTo(280, 512); ctx.lineTo(380, 200); ctx.lineTo(460, 512);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.fillStyle = '#fff';
-        ctx.font = '900 38px Impact, sans-serif';
-        ctx.fillText('BLAZE', 60, 160);
-
       } else {
-        // --- GENERAL INVENTORY SKIN ---
+        // --- GENERAL CUSTOM SKIN ---
         const rarityCol = skin.rarityColor || '#de9b35';
         ctx.fillStyle = '#131720';
         ctx.fillRect(0, 0, 512, 512);
@@ -967,7 +967,7 @@
     return texture;
   }
 
-  // --- 3D VIEWMODEL WITH 3 SLOTS (RIFLE, PISTOL, KNIFE) ---
+  // --- 3D VIEWMODEL WITH DETAILED AK-47 & GLOVED ARMS ---
   function buildWeaponViewmodel() {
     viewmodelRig = new THREE.Group();
     camera.add(viewmodelRig);
@@ -977,178 +977,216 @@
     weaponMesh.position.set(0.28, -0.28, -0.6);
     viewmodelRig.add(weaponMesh);
 
-    // Muzzle flash light & sprite
     muzzleFlashLight = new THREE.PointLight(0xffaa33, 0, 8);
-    muzzleFlashLight.position.set(0, 0.02, -0.7);
+    muzzleFlashLight.position.set(0, 0.02, -0.75);
     weaponMesh.add(muzzleFlashLight);
 
     const flashGeo = new THREE.SphereGeometry(0.06, 8, 8);
     const flashMat = new THREE.MeshBasicMaterial({ color: 0xffdd44, transparent: true, opacity: 0 });
     muzzleSprite = new THREE.Mesh(flashGeo, flashMat);
-    muzzleSprite.position.set(0, 0.02, -0.7);
+    muzzleSprite.position.set(0, 0.02, -0.75);
     weaponMesh.add(muzzleSprite);
 
     const darkMetalMat = new THREE.MeshStandardMaterial({ color: 0x1f232b, roughness: 0.45, metalness: 0.85 });
     const goldAccentMat = new THREE.MeshStandardMaterial({ color: 0xde9b35, roughness: 0.25, metalness: 0.9 });
+    const gloveMat = new THREE.MeshStandardMaterial({ color: 0x242830, roughness: 0.8 }); // CS2 Tactical Gloves
+    const leatherSleeveMat = new THREE.MeshStandardMaterial({ color: 0x543d2b, roughness: 0.75 }); // Brown Leather Jacket Sleeve
 
     // ==========================================
-    // 1. SLOT 1: RIFLE (SÚNG DÀI)
+    // 1. SLOT 1: HIGH-POLYGON REALISTIC AK-47
     // ==========================================
     rifleGroup = new THREE.Group();
     weaponMesh.add(rifleGroup);
 
-    const rifleSkinMat = new THREE.MeshStandardMaterial({
-      roughness: 0.3,
-      metalness: 0.5,
-      side: THREE.DoubleSide
-    });
+    const rifleSkinMat = new THREE.MeshStandardMaterial({ roughness: 0.3, metalness: 0.5, side: THREE.DoubleSide });
     rifleMaterials.push(rifleSkinMat);
 
-    // Body
-    const rReceiver = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.12, 0.48), rifleSkinMat);
+    // Stamped Receiver Body
+    const rReceiver = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.11, 0.48), rifleSkinMat);
+    rReceiver.position.set(0, 0, 0);
     rifleGroup.add(rReceiver);
 
-    // Side Decal Plate facing camera (Normal towards -X)
+    // High-Res Side Decal Plate (Facing player camera)
     const rDecal = new THREE.Mesh(new THREE.PlaneGeometry(0.44, 0.11), rifleSkinMat);
     rDecal.rotation.y = Math.PI / 2;
-    rDecal.position.set(-0.041, 0, 0);
+    rDecal.position.set(-0.039, 0, 0);
     rifleGroup.add(rDecal);
 
-    // Top Decal Plate facing camera from above
-    const rTopDecal = new THREE.Mesh(new THREE.PlaneGeometry(0.075, 0.46), rifleSkinMat);
+    // Top Dust Cover Plate
+    const rTopDecal = new THREE.Mesh(new THREE.PlaneGeometry(0.072, 0.46), rifleSkinMat);
     rTopDecal.rotation.x = -Math.PI / 2;
-    rTopDecal.position.set(0, 0.061, 0);
+    rTopDecal.position.set(0, 0.056, 0);
     rifleGroup.add(rTopDecal);
 
-    // Barrel
-    const rBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.42, 12), darkMetalMat);
+    // Upper Gas Tube & Handguard (Wooden / Patterned)
+    const rUpperHandguard = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.24, 12), rifleSkinMat);
+    rUpperHandguard.rotation.x = Math.PI / 2;
+    rUpperHandguard.position.set(0, 0.038, -0.32);
+    rifleGroup.add(rUpperHandguard);
+
+    // Lower Wooden Handguard
+    const rLowerHandguard = new THREE.Mesh(new THREE.BoxGeometry(0.068, 0.07, 0.24), rifleSkinMat);
+    rLowerHandguard.position.set(0, -0.015, -0.32);
+    rifleGroup.add(rLowerHandguard);
+
+    // Barrel (Steel)
+    const rBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.52, 12), darkMetalMat);
     rBarrel.rotation.x = Math.PI / 2;
-    rBarrel.position.set(0, 0.02, -0.42);
+    rBarrel.position.set(0, 0.015, -0.48);
     rifleGroup.add(rBarrel);
 
-    // Handguard
-    const rHandguard = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.09, 0.28), rifleSkinMat);
-    rHandguard.position.set(0, 0.015, -0.32);
-    rifleGroup.add(rHandguard);
+    // Gas Block & Front Sight Tower
+    const rGasBlock = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.07, 0.05), darkMetalMat);
+    rGasBlock.position.set(0, 0.045, -0.44);
+    rifleGroup.add(rGasBlock);
 
-    // Muzzle Brake
-    const rMuzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.026, 0.08, 8), goldAccentMat);
+    const rFrontSight = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.05, 8), darkMetalMat);
+    rFrontSight.position.set(0, 0.065, -0.66);
+    rifleGroup.add(rFrontSight);
+
+    // Slanted Muzzle Brake
+    const rMuzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.018, 0.08, 8), darkMetalMat);
     rMuzzle.rotation.x = Math.PI / 2;
-    rMuzzle.position.set(0, 0.02, -0.65);
+    rMuzzle.position.set(0, 0.015, -0.74);
     rifleGroup.add(rMuzzle);
 
-    // Banana Mag
-    const rMag = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.24, 0.1), darkMetalMat);
-    rMag.rotation.x = -0.25;
-    rMag.position.set(0, -0.15, -0.05);
-    rifleGroup.add(rMag);
+    // Cleaning Rod under the barrel
+    const rRod = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.44, 8), darkMetalMat);
+    rRod.rotation.x = Math.PI / 2;
+    rRod.position.set(0, -0.018, -0.46);
+    rifleGroup.add(rRod);
 
-    // Grip
-    const rGrip = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.16, 0.08), darkMetalMat);
-    rGrip.rotation.x = 0.35;
+    // Authentic Curved AK Banana Magazine (3 curved segments)
+    const magGroup = new THREE.Group();
+    magGroup.position.set(0, -0.06, -0.06);
+    const m1 = new THREE.Mesh(new THREE.BoxGeometry(0.046, 0.1, 0.09), darkMetalMat);
+    m1.rotation.x = -0.15;
+    m1.position.set(0, -0.04, 0);
+    const m2 = new THREE.Mesh(new THREE.BoxGeometry(0.044, 0.1, 0.085), darkMetalMat);
+    m2.rotation.x = -0.32;
+    m2.position.set(0, -0.12, 0.02);
+    const m3 = new THREE.Mesh(new THREE.BoxGeometry(0.042, 0.08, 0.08), darkMetalMat);
+    m3.rotation.x = -0.48;
+    m3.position.set(0, -0.19, 0.055);
+    magGroup.add(m1, m2, m3);
+    rifleGroup.add(magGroup);
+
+    // Ergonomic Wooden Pistol Grip
+    const rGrip = new THREE.Mesh(new THREE.BoxGeometry(0.048, 0.16, 0.075), rifleSkinMat);
+    rGrip.rotation.x = 0.38;
     rGrip.position.set(0, -0.12, 0.16);
     rifleGroup.add(rGrip);
 
-    // Stock
-    const rStock = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.12, 0.32), rifleSkinMat);
-    rStock.position.set(0, 0, 0.36);
+    // Slanted Wooden Buttstock (With shoulder recoil pad)
+    const rStock = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.13, 0.36), rifleSkinMat);
+    rStock.rotation.x = -0.08;
+    rStock.position.set(0, -0.03, 0.4);
     rifleGroup.add(rStock);
 
-    // Rail
-    const rRail = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.38), goldAccentMat);
-    rRail.position.set(0, 0.07, -0.05);
-    rifleGroup.add(rRail);
+    const rButtpad = new THREE.Mesh(new THREE.BoxGeometry(0.058, 0.14, 0.03), darkMetalMat);
+    rButtpad.position.set(0, -0.045, 0.58);
+    rifleGroup.add(rButtpad);
 
     // ==========================================
-    // 2. SLOT 2: PISTOL (SÚNG NGẮN - DEAGLE)
+    // 2. GLOVED ARMS & SLEEVES (CS2 AUTHENTIC)
+    // ==========================================
+    const armsGroup = new THREE.Group();
+    rifleGroup.add(armsGroup);
+
+    // Right Hand (Holding Pistol Grip & Trigger)
+    const rHand = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.1, 0.12), gloveMat);
+    rHand.rotation.set(0.3, 0.1, -0.2);
+    rHand.position.set(0.04, -0.12, 0.16);
+    armsGroup.add(rHand);
+
+    const rForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.075, 0.45, 12), leatherSleeveMat);
+    rForearm.rotation.set(0.8, -0.2, 0.5);
+    rForearm.position.set(0.18, -0.28, 0.35);
+    armsGroup.add(rForearm);
+
+    // Left Hand (Cradling Lower Wooden Handguard)
+    const lHand = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.08, 0.14), gloveMat);
+    lHand.rotation.set(-0.1, -0.3, 0.4);
+    lHand.position.set(-0.06, -0.04, -0.3);
+    armsGroup.add(lHand);
+
+    const lForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.075, 0.5, 12), leatherSleeveMat);
+    lForearm.rotation.set(0.4, 0.3, -0.6);
+    lForearm.position.set(-0.25, -0.25, -0.1);
+    armsGroup.add(lForearm);
+
+    // ==========================================
+    // 3. SLOT 2: PISTOL (DESERT EAGLE)
     // ==========================================
     pistolGroup = new THREE.Group();
     pistolGroup.position.set(0, 0.02, 0.1);
     pistolGroup.visible = false;
     weaponMesh.add(pistolGroup);
 
-    const pistolSkinMat = new THREE.MeshStandardMaterial({
-      roughness: 0.28,
-      metalness: 0.55,
-      side: THREE.DoubleSide
-    });
+    const pistolSkinMat = new THREE.MeshStandardMaterial({ roughness: 0.28, metalness: 0.55, side: THREE.DoubleSide });
     pistolMaterials.push(pistolSkinMat);
 
-    // Deagle Slide (Top)
     const pSlide = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.075, 0.34), pistolSkinMat);
     pSlide.position.set(0, 0.04, -0.08);
     pistolGroup.add(pSlide);
 
-    // Slide Decal Plate facing camera
     const pDecal = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.07), pistolSkinMat);
     pDecal.rotation.y = Math.PI / 2;
     pDecal.position.set(-0.033, 0.04, -0.08);
     pistolGroup.add(pDecal);
 
-    // Slide Top Decal
     const pTopDecal = new THREE.Mesh(new THREE.PlaneGeometry(0.062, 0.32), pistolSkinMat);
     pTopDecal.rotation.x = -Math.PI / 2;
     pTopDecal.position.set(0, 0.078, -0.08);
     pistolGroup.add(pTopDecal);
 
-    // Deagle Barrel tip
     const pBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.06, 12), darkMetalMat);
     pBarrel.rotation.x = Math.PI / 2;
     pBarrel.position.set(0, 0.04, -0.27);
     pistolGroup.add(pBarrel);
 
-    // Lower Frame & Trigger guard
     const pFrame = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.05, 0.28), darkMetalMat);
     pFrame.position.set(0, -0.01, -0.06);
     pistolGroup.add(pFrame);
 
-    // Grip
     const pGrip = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.16, 0.07), pistolSkinMat);
     pGrip.rotation.x = 0.28;
     pGrip.position.set(0, -0.09, 0.02);
     pistolGroup.add(pGrip);
 
     // ==========================================
-    // 3. SLOT 3: KNIFE (DAO KARAMBIT)
+    // 4. SLOT 3: KNIFE (KARAMBIT)
     // ==========================================
     knifeGroup = new THREE.Group();
     knifeGroup.position.set(-0.04, -0.02, 0.12);
     knifeGroup.visible = false;
     weaponMesh.add(knifeGroup);
 
-    const knifeSkinMat = new THREE.MeshStandardMaterial({
-      roughness: 0.15,
-      metalness: 0.85,
-      side: THREE.DoubleSide
-    });
+    const knifeSkinMat = new THREE.MeshStandardMaterial({ roughness: 0.15, metalness: 0.85, side: THREE.DoubleSide });
     knifeMaterials.push(knifeSkinMat);
 
-    // Curved Blade (Karambit claw)
     const kBlade = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.08, 0.24), knifeSkinMat);
     kBlade.rotation.x = 0.45;
     kBlade.rotation.z = -0.15;
     kBlade.position.set(0, 0.06, -0.16);
     knifeGroup.add(kBlade);
 
-    // Blade Decal Plate facing camera
     const kDecal = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.075), knifeSkinMat);
     kDecal.rotation.y = Math.PI / 2;
     kDecal.position.set(-0.009, 0.06, -0.16);
     knifeGroup.add(kDecal);
 
-    // Handle with finger grooves
     const kHandle = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.07, 0.16), darkMetalMat);
     kHandle.rotation.x = -0.3;
     kHandle.position.set(0, -0.04, -0.02);
     knifeGroup.add(kHandle);
 
-    // Safety Ring at the end
     const kRing = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.009, 8, 16), goldAccentMat);
     kRing.position.set(0, -0.1, 0.07);
     knifeGroup.add(kRing);
   }
 
-  // --- APPLY SKIN TO SPECIFIC SLOT ---
+  // --- APPLY SKIN TO SLOT ---
   function applySkinToSlot(slotNum, skin) {
     if (!skin) return;
     STATE.slots[slotNum].skin = skin;
@@ -1175,36 +1213,36 @@
     }
   }
 
-  // --- SWITCH WEAPON SLOTS (1, 2, 3) ---
+  // --- SWITCH SLOTS (1, 2, 3) ---
   function switchSlot(slotNum) {
     if (slotNum < 1 || slotNum > 3) return;
     if (STATE.currentSlot === slotNum && !STATE.isSwitching) return;
 
     initAudio();
+    if (STATE.isScoped) toggleScope(false);
+
     STATE.currentSlot = slotNum;
     STATE.isSwitching = true;
     STATE.isReloading = false;
-    switchOffset = 0.35; // Drop weapon down for deploy animation
+    STATE.sprayCount = 0;
+    switchOffset = 0.35;
 
     playDeploySound(slotNum);
 
-    // Swap 3D meshes visibility
     if (rifleGroup) rifleGroup.visible = (slotNum === 1);
     if (pistolGroup) pistolGroup.visible = (slotNum === 2);
     if (knifeGroup) knifeGroup.visible = (slotNum === 3);
 
-    // Position muzzle point for pistols vs rifles
     if (muzzleFlashLight && muzzleSprite) {
       if (slotNum === 1) {
-        muzzleFlashLight.position.set(0, 0.02, -0.7);
-        muzzleSprite.position.set(0, 0.02, -0.7);
+        muzzleFlashLight.position.set(0, 0.02, -0.75);
+        muzzleSprite.position.set(0, 0.02, -0.75);
       } else if (slotNum === 2) {
         muzzleFlashLight.position.set(0, 0.06, -0.28);
         muzzleSprite.position.set(0, 0.06, -0.28);
       }
     }
 
-    // Update HUD Slot indicators
     [1, 2, 3].forEach(s => {
       const el = document.getElementById(`slot-item-${s}`);
       if (el) {
@@ -1221,14 +1259,32 @@
     }, 280);
   }
 
+  // --- TOGGLE SNIPER SCOPE (CHUỘT PHẢI) ---
+  function toggleScope(forcedState) {
+    initAudio();
+    const targetState = (typeof forcedState === 'boolean') ? forcedState : !STATE.isScoped;
+    STATE.isScoped = targetState;
+
+    playScopeSound();
+
+    const scopeOverlay = document.getElementById('sniper-scope');
+    const crosshair = document.getElementById('crosshair');
+
+    if (STATE.isScoped) {
+      if (scopeOverlay) scopeOverlay.classList.remove('hidden');
+      if (crosshair) crosshair.style.opacity = '0';
+    } else {
+      if (scopeOverlay) scopeOverlay.classList.add('hidden');
+      if (crosshair) crosshair.style.opacity = '1';
+    }
+  }
+
   function updateWeaponHUD() {
     const curSlot = STATE.slots[STATE.currentSlot];
     const wpnEl = document.getElementById('hud-wpn-name');
     const skinEl = document.getElementById('hud-skin-name');
     const bannerEl = document.getElementById('hud-weapon-banner');
     const ammoBox = document.getElementById('hud-ammo-box');
-    const ammoCur = document.getElementById('hud-ammo-cur');
-    const ammoMax = document.getElementById('hud-ammo-max');
 
     if (wpnEl) wpnEl.textContent = curSlot.weapon;
     if (skinEl) skinEl.textContent = curSlot.name;
@@ -1236,7 +1292,6 @@
 
     if (ammoBox) {
       if (STATE.currentSlot === 3) {
-        // Knife: no ammo counter
         ammoBox.innerHTML = '<span style="font-size:1.1rem;font-weight:800;color:#ffd700;">⚔ CẬN CHIẾN</span>';
       } else {
         ammoBox.innerHTML = `
@@ -1257,37 +1312,34 @@
 
     if (insImg && item.img) insImg.src = item.img;
     if (insName) insName.textContent = `${item.weapon || ''} | ${item.name || ''}`;
-    if (insWear) insWear.textContent = `${item.wear || 'Factory New'} (Float: 0.0194)`;
+    if (insWear) insWear.textContent = `${item.wear || 'Factory New'} (Float: 0.0142)`;
     if (insRarity) {
       insRarity.textContent = (item.rarity || 'Covert').toUpperCase();
       insRarity.style.color = item.rarityColor || '#eb4b4b';
       insRarity.style.background = (item.rarityColor || '#eb4b4b') + '26';
     }
-    if (insPrice) insPrice.textContent = item.price ? `$${Number(item.price).toFixed(2)}` : '$250.00';
+    if (insPrice) insPrice.textContent = item.price ? `$${Number(item.price).toLocaleString('en-US', {minimumFractionDigits:2})}` : '$12,500.00';
   }
 
-  // --- ATTACK (SHOOT / KNIFE SLASH) ---
-  function attack() {
+  // --- FULL-AUTO SPRAY & SINGLE SHOT SYSTEM ---
+  function fireSingleBullet() {
     if (STATE.isSwitching || STATE.isReloading) return;
     initAudio();
 
     const cur = STATE.slots[STATE.currentSlot];
 
     if (STATE.currentSlot === 3) {
-      // KNIFE ATTACK
+      // KNIFE SLASH
       STATE.shots++;
       slashProgress = 1.0;
       playKnifeSlashSound();
 
-      // Knife melee raycast (short range 2.8 units)
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
       raycaster.far = 2.8;
 
       const hitObjects = [];
-      targets.forEach(t => {
-        if (!t.isDead) hitObjects.push(t.head, t.torso);
-      });
+      targets.forEach(t => { if (!t.isDead) hitObjects.push(t.head, t.torso); });
 
       const intersects = raycaster.intersectObjects(hitObjects);
       if (intersects.length > 0) {
@@ -1301,14 +1353,13 @@
         showHitmarker(isHead, isHead ? `KNIFE CRIT! +${dmg}` : `KNIFE HIT +${dmg}`);
         STATE.score += dmg;
         target.health -= dmg;
-
         if (target.health <= 0 && !target.isDead) killTarget(target);
       }
       updateAccuracy();
       return;
     }
 
-    // GUN SHOOTING (Rifle or Pistol)
+    // GUN FIRE
     if (cur.ammo <= 0) {
       playDryFireSound();
       return;
@@ -1316,38 +1367,51 @@
 
     cur.ammo--;
     STATE.shots++;
+    STATE.sprayCount++;
     updateWeaponHUD();
 
     if (STATE.currentSlot === 1) {
       playRifleShotSound();
+
+      // CS2 AK Spray Recoil Progression
+      const sprayY = Math.min(0.06, 0.02 + (STATE.sprayCount * 0.003));
+      const sprayX = (Math.sin(STATE.sprayCount * 0.8) * 0.02);
+
       recoilOffset.z = 0.08;
-      recoilOffset.y = 0.028;
-      recoilRot.x = 0.12;
-      recoilRot.y = (Math.random() - 0.5) * 0.04;
+      recoilOffset.y = sprayY;
+      recoilRot.x = 0.1 + Math.min(0.08, STATE.sprayCount * 0.004);
+      recoilRot.y = sprayX;
+
+      // Subtle screen recoil
+      player.pitch += 0.008;
     } else {
       playPistolShotSound();
       recoilOffset.z = 0.09;
       recoilOffset.y = 0.04;
       recoilRot.x = 0.18;
       recoilRot.y = (Math.random() - 0.5) * 0.03;
+      player.pitch += 0.012;
     }
 
-    // Muzzle flash
-    muzzleFlashLight.intensity = 3.5;
+    // Muzzle Flash
+    muzzleFlashLight.intensity = 3.8;
     muzzleSprite.material.opacity = 1;
     setTimeout(() => {
       muzzleFlashLight.intensity = 0;
       muzzleSprite.material.opacity = 0;
-    }, 45);
+    }, 40);
 
-    // Raycast bullet hit
+    // Bullet Raycast Hit
     const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+    // When scoped: laser precision; when spraying: slight spread
+    const spreadFactor = STATE.isScoped ? 0.001 : (STATE.currentSlot === 1 ? Math.min(0.04, STATE.sprayCount * 0.003) : 0.008);
+    const spreadX = (Math.random() - 0.5) * spreadFactor;
+    const spreadY = (Math.random() - 0.5) * spreadFactor;
+
+    raycaster.setFromCamera(new THREE.Vector2(spreadX, spreadY), camera);
 
     const hitObjects = [];
-    targets.forEach(t => {
-      if (!t.isDead) hitObjects.push(t.head, t.torso);
-    });
+    targets.forEach(t => { if (!t.isDead) hitObjects.push(t.head, t.torso); });
 
     const intersects = raycaster.intersectObjects(hitObjects);
     if (intersects.length > 0) {
@@ -1399,12 +1463,15 @@
   }
 
   function reload() {
-    if (STATE.currentSlot === 3) return; // Knife cannot reload
+    if (STATE.currentSlot === 3) return;
     const cur = STATE.slots[STATE.currentSlot];
     if (STATE.isReloading || cur.ammo === cur.maxAmmo) return;
 
     initAudio();
+    if (STATE.isScoped) toggleScope(false);
+
     STATE.isReloading = true;
+    STATE.sprayCount = 0;
     playReloadSound();
 
     recoilOffset.y = -0.2;
@@ -1417,10 +1484,11 @@
     }, 1500);
   }
 
+  // --- INSPECT ANIMATION (MATCHING CS2 PHOTO INSPECT POSE) ---
   function triggerInspect() {
     if (STATE.isInspecting) return;
     STATE.isInspecting = true;
-    inspectTarget = 1;
+    inspectTarget = 1.0;
 
     const insCard = document.getElementById('inspect-card');
     if (insCard) insCard.classList.remove('hidden');
@@ -1431,7 +1499,7 @@
         STATE.isInspecting = false;
         if (insCard) insCard.classList.add('hidden');
       }, 1000);
-    }, 1800);
+    }, 2400);
   }
 
   function updateAccuracy() {
@@ -1473,14 +1541,12 @@
         special: '#ffd700'
       };
 
-      const detectedSlot = detectSlot({ weapon: wpn, name: skinName, type: item.type });
-
       return {
         id: `user-${i}`,
-        slot: detectedSlot,
+        slot: detectSlot({ weapon: wpn, name: skinName, type: item.type }),
         weapon: wpn,
         name: skinName,
-        wear: item.wear || 'Field-Tested',
+        wear: item.wear || 'Factory New',
         rarity: item.rarity || 'covert',
         rarityColor: rarityMap[item.rarity] || '#de9b35',
         img: item.image || item.img,
@@ -1490,7 +1556,6 @@
 
     STATE.inventory = [...userSkins, ...DEFAULT_SKINS];
 
-    // Setup initial skins for all 3 slots
     applySkinToSlot(1, DEFAULT_SKINS[0]);
     applySkinToSlot(2, DEFAULT_SKINS.find(s => s.slot === 2));
     applySkinToSlot(3, DEFAULT_SKINS.find(s => s.slot === 3));
@@ -1608,7 +1673,8 @@
     document.addEventListener('mousemove', (e) => {
       if (!isPointerLocked) return;
 
-      const sensitivity = 0.0022;
+      // If scoped in, reduce mouse sensitivity for accurate sniping
+      const sensitivity = STATE.isScoped ? 0.0009 : 0.0022;
       player.yaw -= e.movementX * sensitivity;
       player.pitch -= e.movementY * sensitivity;
       player.pitch = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, player.pitch));
@@ -1617,14 +1683,30 @@
       player.swayY = THREE.MathUtils.lerp(player.swayY, e.movementY * 0.0008, 0.2);
     });
 
+    // MOUSE DOWN: Chuột trái (Bắn/Sấy) & Chuột phải (Scope)
     document.addEventListener('mousedown', (e) => {
       if (!isPointerLocked) return;
       if (e.button === 0) {
-        attack();
+        STATE.isMouseDown = true;
+        fireSingleBullet();
+        STATE.lastShotTime = performance.now();
+      } else if (e.button === 2) {
+        // Chuột phải: Bật / Tắt Ngắm (Sniper Scope)
+        toggleScope();
       }
     });
 
-    // Mouse wheel weapon cycle (Up = prev, Down = next)
+    document.addEventListener('mouseup', (e) => {
+      if (e.button === 0) {
+        STATE.isMouseDown = false;
+        STATE.sprayCount = 0;
+      }
+    });
+
+    // Chặn menu chuột phải mặc định
+    document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    // Mouse wheel weapon cycle
     document.addEventListener('wheel', (e) => {
       if (!isPointerLocked) return;
       let nextSlot = STATE.currentSlot;
@@ -1642,11 +1724,8 @@
       if (e.code === 'KeyA') player.moveLeft = true;
       if (e.code === 'KeyD') player.moveRight = true;
 
-      // Slot 1: Súng Dài
       if (e.code === 'Digit1') switchSlot(1);
-      // Slot 2: Súng Ngắn
       if (e.code === 'Digit2') switchSlot(2);
-      // Slot 3: Dao
       if (e.code === 'Digit3') switchSlot(3);
 
       if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
@@ -1719,6 +1798,22 @@
     const dt = Math.min((now - lastTime) / 1000, 0.05);
     lastTime = now;
 
+    // FULL-AUTO SPRAY LOOP (Sấy liên thanh AK 30 viên khi giữ chuột trái)
+    if (isPointerLocked && STATE.isMouseDown && STATE.currentSlot === 1 && !STATE.isReloading && !STATE.isSwitching) {
+      const curSlot = STATE.slots[1];
+      if (now - STATE.lastShotTime >= curSlot.fireRate) {
+        fireSingleBullet();
+        STATE.lastShotTime = now;
+      }
+    }
+
+    // Camera FOV Zoom for Sniper Scope
+    const targetFOV = STATE.isScoped ? 22 : 75;
+    if (Math.abs(camera.fov - targetFOV) > 0.1) {
+      camera.fov = THREE.MathUtils.lerp(camera.fov, targetFOV, dt * 18);
+      camera.updateProjectionMatrix();
+    }
+
     // CS2 Player Movement
     if (isPointerLocked) {
       const wishDir = new THREE.Vector3();
@@ -1740,7 +1835,7 @@
       let wishSpeed = CS_PHYSICS.MAX_SPEED;
       if (player.isCrouching) {
         wishSpeed = CS_PHYSICS.CROUCH_SPEED;
-      } else if (player.isWalking) {
+      } else if (player.isWalking || STATE.isScoped) {
         wishSpeed = CS_PHYSICS.WALK_SPEED;
       }
       if (!hasMoveInput) wishSpeed = 0;
@@ -1798,7 +1893,7 @@
     );
     camera.rotation.set(player.pitch, player.yaw, 0);
 
-    // Viewmodel Weapon Animation (Recoil, Inspect, Deploy, Knife Slash)
+    // Viewmodel Weapon Animation & Authentic CS2 Photo Inspect Pose
     recoilOffset.lerp(new THREE.Vector3(0, 0, 0), dt * 12);
     recoilRot.lerp(new THREE.Vector3(0, 0, 0), dt * 10);
     switchOffset = THREE.MathUtils.lerp(switchOffset, 0, dt * 14);
@@ -1813,15 +1908,15 @@
       const bobY = Math.sin(bobTimer) * 0.015;
 
       // Base stance with CS2 natural inward weapon canting
-      let posX = 0.28 + recoilOffset.x + player.swayX + bobX - (inspectProgress * 0.1);
-      let posY = -0.28 + recoilOffset.y + player.swayY + bobY + (inspectProgress * 0.05) - switchOffset;
-      let posZ = -0.6 + recoilOffset.z;
+      // When inspectProgress > 0: Rifle brings up horizontally across chest matching the user's photo!
+      let posX = 0.28 + recoilOffset.x + player.swayX + bobX - (inspectProgress * 0.32);
+      let posY = -0.28 + recoilOffset.y + player.swayY + bobY + (inspectProgress * 0.18) - switchOffset - (STATE.isScoped ? 0.4 : 0);
+      let posZ = -0.6 + recoilOffset.z + (inspectProgress * 0.12);
 
-      let rotX = recoilRot.x - (inspectProgress * 0.2) + 0.03;
-      let rotY = recoilRot.y + (inspectProgress * 0.85) - 0.14;
-      let rotZ = recoilRot.z - (inspectProgress * 0.6) + 0.06;
+      let rotX = recoilRot.x + 0.03 - (inspectProgress * 0.15);
+      let rotY = recoilRot.y - 0.14 + (inspectProgress * 0.95);
+      let rotZ = recoilRot.z + 0.06 - (inspectProgress * 0.55);
 
-      // Knife attack slash motion
       if (STATE.currentSlot === 3 && slashProgress > 0.01) {
         posX -= slashProgress * 0.25;
         posY += slashProgress * 0.12;
@@ -1834,7 +1929,7 @@
       weaponMesh.rotation.set(rotX, rotY, rotZ);
     }
 
-    // Update targets (strafe and respawn)
+    // Update targets
     targets.forEach(t => {
       if (t.isDead) {
         t.respawnTimer -= dt;

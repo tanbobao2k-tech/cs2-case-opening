@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/game.css?v=5" />
+  <link rel="stylesheet" href="css/game.css?v=6" />
 </head>
 <body>
   <!-- 3D WebGL Canvas Container -->
@@ -20,6 +20,13 @@
   <!-- Center Crosshair & Hitmarker -->
   <div id="crosshair"></div>
   <div id="hit-indicator">HEADSHOT!</div>
+
+  <!-- Sniper Scope Overlay (Chuột phải AWP) -->
+  <div id="sniper-scope" class="hidden">
+    <div class="scope-ring"></div>
+    <div class="scope-crosshair-h"></div>
+    <div class="scope-crosshair-v"></div>
+  </div>
 
   <!-- HUD: Top Bar -->
   <div class="hud hud-top">
@@ -57,7 +64,8 @@
     <span><span class="hint-key">Space</span>Nhảy</span>
     <span><span class="hint-key">Shift</span>Đi bộ</span>
     <span><span class="hint-key">Ctrl</span>Ngồi</span>
-    <span><span class="hint-key">Chuột Trái</span>Bắn/Chém</span>
+    <span><span class="hint-key">Chuột Trái</span>Bắn / Sấy (30 viên)</span>
+    <span><span class="hint-key">Chuột Phải</span>Bật ngắm (Scope)</span>
     <span><span class="hint-key">R</span>Nạp đạn</span>
     <span><span class="hint-key">F</span>Soi Skin</span>
     <span><span class="hint-key">B</span>Đổi Skin</span>
@@ -148,6 +156,6 @@
   <!-- Three.js Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <!-- Game Engine -->
-  <script src="js/fps-game.js?v=5"></script>
+  <script src="js/fps-game.js?v=6"></script>
 </body>
 </html>
