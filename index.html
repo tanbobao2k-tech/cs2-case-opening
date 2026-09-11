@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=31" />
+  <link rel="stylesheet" href="css/style.css?v=32" />
   <script>
     document.addEventListener('contextmenu', (e) => e.preventDefault());
     document.addEventListener('keydown', (e) => {
@@ -109,15 +109,48 @@
     </section>
 
     <section id="battle" class="section">
-      <div class="section-head">
-        <h2>Case Battle</h2>
-        <button id="battle-new" class="btn btn-primary">Tạo trận mới</button>
+      <div class="section-head" style="flex-wrap: wrap; gap: 12px; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <h2>Case Battle</h2>
+          <span class="pvp-live-tag" id="pvp-active-badge"><span class="pvp-pulse-dot"></span> Đấu Online PvP</span>
+        </div>
+        <div class="battle-tab-buttons seg" id="battle-main-tabs">
+          <button type="button" class="active" data-btab="pvp">🌐 Sảnh Đấu Online (PvP)</button>
+          <button type="button" data-btab="bot">🤖 Solo Đấu Bot</button>
+        </div>
       </div>
-      <div class="battle-intro card">
-        <div>
-          <h3>Solo mở hòm với bot</h3>
-          <p class="muted">Chọn 1–10 hòm, đấu với 1–3 bot. Mỗi vòng tất cả cùng mở một hòm, ai có tổng giá trị cao hơn thắng và <b>ôm trọn đồ của cả bàn</b>. Chế độ Đảo ngược: tổng thấp nhất thắng.</p>
-          <p class="muted" id="battle-record">Thành tích: chưa đấu trận nào.</p>
+
+      <!-- Tab 1: Sảnh Đấu Online (PvP) -->
+      <div id="battle-tab-pvp" class="battle-tab-content">
+        <div class="battle-lobby-bar card" style="display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; padding: 20px 24px; background: radial-gradient(circle at 10% 50%, rgba(245, 165, 36, 0.12), transparent 50%), var(--bg-2); border: 1px solid rgba(245, 165, 36, 0.25);">
+          <div>
+            <h3 style="margin: 0 0 6px; font-size: 18px; color: #fff;">Sảnh PK Mở Hòm Trực Tuyến</h3>
+            <p class="muted" style="margin: 0; font-size: 14px; line-height: 1.4;">Tạo phòng chọn 1-10 hòm, cược tiền từ ví. Người chơi online khác sẽ vào PK trực tiếp, kim quay cùng lúc, người thắng ôm trọn toàn bộ skin!</p>
+          </div>
+          <div style="display: flex; gap: 10px; flex-shrink: 0; flex-wrap: wrap;">
+            <button id="battle-pvp-create-btn" class="btn btn-primary btn-lg" style="font-weight: 700; box-shadow: 0 0 16px rgba(245, 165, 36, 0.35);">⚡ Tạo Phòng PK</button>
+            <button id="battle-pvp-refresh-btn" class="btn btn-ghost" title="Làm mới danh sách phòng">🔄 Làm mới</button>
+          </div>
+        </div>
+
+        <div id="battle-rooms-grid" class="battle-rooms-grid"></div>
+        <div id="battle-rooms-empty" class="battle-rooms-empty card" style="text-align: center; padding: 48px 24px; border: 1px dashed var(--line);" hidden>
+          <span style="font-size: 40px; display: block; margin-bottom: 10px;">⚔️</span>
+          <h3 style="margin: 0 0 6px; font-size: 18px;">Chưa có phòng đấu online nào đang chờ</h3>
+          <p class="muted" style="margin: 0 auto 16px; max-width: 460px; font-size: 14px;">Hãy bấm nút <b>"Tạo Phòng PK"</b> để chọn hòm và tạo bàn đấu thách đấu mọi người chơi đang có mặt trên web!</p>
+          <button id="battle-pvp-empty-create-btn" class="btn btn-primary">⚡ Tạo Phòng Đấu Ngay</button>
+        </div>
+      </div>
+
+      <!-- Tab 2: Solo Bot (Offline) -->
+      <div id="battle-tab-bot" class="battle-tab-content" hidden>
+        <div class="battle-intro card" style="display: flex; justify-content: space-between; align-items: center; gap: 20px;">
+          <div>
+            <h3>Solo mở hòm với bot</h3>
+            <p class="muted">Chọn 1–10 hòm, đấu với 1–3 bot. Mỗi vòng tất cả cùng mở một hòm, ai có tổng giá trị cao hơn thắng và <b>ôm trọn đồ của cả bàn</b>. Chế độ Đảo ngược: tổng thấp nhất thắng.</p>
+            <p class="muted" id="battle-record">Thành tích: chưa đấu trận nào.</p>
+          </div>
+          <button id="battle-new" class="btn btn-primary" style="flex-shrink: 0;">Tạo trận với Bot</button>
         </div>
       </div>
     </section>
@@ -504,11 +537,18 @@
       <div class="bs-grid">
         <div class="bs-left">
           <div class="bs-field">
-            <label>Đối thủ</label>
+            <label>Kiểu đấu</label>
+            <div class="seg" id="bs-type">
+              <button type="button" data-type="online" class="active">🌐 Đấu Online (PvP)</button>
+              <button type="button" data-type="bot">🤖 Đấu Với Bot</button>
+            </div>
+          </div>
+          <div class="bs-field" id="bs-bots-field" hidden>
+            <label>Số lượng Bot</label>
             <div class="seg" id="bs-bots">
-              <button data-bots="1" class="active">1 bot</button>
-              <button data-bots="2">2 bot</button>
-              <button data-bots="3">3 bot</button>
+              <button type="button" data-bots="1" class="active">1 bot</button>
+              <button type="button" data-bots="2">2 bot</button>
+              <button type="button" data-bots="3">3 bot</button>
             </div>
           </div>
           <div class="bs-field">
@@ -918,6 +958,6 @@
   </div>
 
   <script src="data/cases.js?v=9"></script>
-  <script src="js/app.js?v=36"></script>
+  <script src="js/app.js?v=37"></script>
 </body>
 </html>

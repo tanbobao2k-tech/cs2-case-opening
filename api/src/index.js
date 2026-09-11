@@ -670,6 +670,44 @@ export default {
         return reply({ ok: true, status: newStatus });
       }
 
+      // ==========================================
+      // BATTLE ONLINE ENDPOINTS (PUBLIC)
+      // ==========================================
+      if (path === '/battles' && req.method === 'GET') {
+        const tenMinsAgo = Date.now() - 10 * 60 * 1000;
+        const { results } = await env.DB.prepare(
+          "SELECT * FROM online_battles WHERE status IN ('waiting', 'running') OR (status = 'finished' AND updated > ?) ORDER BY created DESC LIMIT 25"
+        ).bind(tenMinsAgo).all();
+        const safeParse = (str, fallback) => {
+          try { return JSON.parse(str || ''); } catch (e) { return fallback; }
+        };
+        const battles = (results || []).map(b => ({
+          ...b,
+          cases: safeParse(b.cases_json, []),
+          players: safeParse(b.players_json, []),
+          drops: b.drops_json ? safeParse(b.drops_json, null) : null,
+        }));
+        return reply({ battles });
+      }
+
+      if (path === '/battles/get' && req.method === 'GET') {
+        const battleId = url.searchParams.get('id');
+        if (!battleId) return reply({ error: 'Thiếu mã trận đấu.' }, 400);
+        const b = await env.DB.prepare('SELECT * FROM online_battles WHERE id = ?').bind(battleId).first();
+        if (!b) return reply({ error: 'Không tìm thấy trận đấu.' }, 404);
+        const safeParse = (str, fallback) => {
+          try { return JSON.parse(str || ''); } catch (e) { return fallback; }
+        };
+        return reply({
+          battle: {
+            ...b,
+            cases: safeParse(b.cases_json, []),
+            players: safeParse(b.players_json, []),
+            drops: b.drops_json ? safeParse(b.drops_json, null) : null,
+          }
+        });
+      }
+
       // ---- cần đăng nhập ----
       const me = await auth(req, env);
       if (!me) return reply({ error: 'Chưa đăng nhập hoặc phiên hết hạn.' }, 401);
@@ -756,6 +794,168 @@ export default {
           env.DB.prepare('DELETE FROM states WHERE user_id = ?').bind(me.id),
           env.DB.prepare('DELETE FROM users WHERE id = ?').bind(me.id),
         ]);
+        return reply({ ok: true });
+      }
+
+      // ==========================================
+      // BATTLE ONLINE ENDPOINTS (AUTHENTICATED)
+      // ==========================================
+      if (path === '/battles/create' && req.method === 'POST') {
+        const { cases, cost, mode } = await readBody(req);
+        if (!Array.isArray(cases) || !cases.length || cases.length > 10) {
+          return reply({ error: 'Số lượng hòm phải từ 1 đến 10.' }, 400);
+        }
+        const numericCost = Number(cost) || 0;
+        if (numericCost <= 0) return reply({ error: 'Chi phí không hợp lệ.' }, 400);
+
+        // Kiểm tra tiền trong ví
+        const stRow = await env.DB.prepare('SELECT data FROM states WHERE user_id = ?').bind(me.id).first();
+        let stData = { inv: [], stats: { balance: 0, opened: 0, spent: 0 } };
+        if (stRow?.data) {
+          try { stData = JSON.parse(stRow.data); } catch (e) {}
+        }
+        stData.stats ??= {};
+        stData.stats.balance = Number(stData.stats.balance) || 0;
+        if (stData.stats.balance < numericCost) {
+          return reply({ error: 'Số dư ví không đủ để tạo trận Case Battle!' }, 400);
+        }
+
+        // Trừ tiền cược
+        stData.stats.balance -= numericCost;
+        stData.stats.spent = (Number(stData.stats.spent) || 0) + numericCost;
+        const worth = Number(stData.stats.balance || 0) + (stData.inv || []).reduce((s, i) => s + (Number(i.price) || 0), 0);
+        const now = Date.now();
+        await env.DB.prepare(
+          'INSERT INTO states (user_id, data, worth, opened, updated) VALUES (?, ?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET data = excluded.data, worth = excluded.worth, updated = excluded.updated'
+        ).bind(me.id, JSON.stringify(stData), worth, stData.stats.opened || 0, now).run();
+
+        const battleId = 'btl_' + Date.now().toString(36) + '_' + randomHex(4);
+        const players = [{ id: me.id, name: me.name, isCreator: true, av: '🧑', ready: true }];
+        await env.DB.prepare(
+          "INSERT INTO online_battles (id, creator_id, creator_name, cases_json, cost, mode, players_needed, status, players_json, created, updated) VALUES (?, ?, ?, ?, ?, ?, 2, 'waiting', ?, ?, ?)"
+        ).bind(battleId, me.id, me.name, JSON.stringify(cases), numericCost, mode || 'normal', JSON.stringify(players), now, now).run();
+
+        return reply({ ok: true, battleId, balance: stData.stats.balance });
+      }
+
+      if (path === '/battles/join' && req.method === 'POST') {
+        const { battleId } = await readBody(req);
+        if (!battleId) return reply({ error: 'Thiếu mã phòng.' }, 400);
+        const b = await env.DB.prepare("SELECT * FROM online_battles WHERE id = ? AND status = 'waiting'").bind(battleId).first();
+        if (!b) return reply({ error: 'Phòng không tồn tại hoặc đã bắt đầu thi đấu.' }, 404);
+
+        const players = JSON.parse(b.players_json || '[]');
+        if (players.some(p => p.id === me.id)) {
+          return reply({ error: 'Bạn đã tham gia phòng này rồi!' }, 400);
+        }
+
+        // Kiểm tra tiền ví
+        const stRow = await env.DB.prepare('SELECT data FROM states WHERE user_id = ?').bind(me.id).first();
+        let stData = { inv: [], stats: { balance: 0, opened: 0, spent: 0 } };
+        if (stRow?.data) {
+          try { stData = JSON.parse(stRow.data); } catch (e) {}
+        }
+        stData.stats ??= {};
+        stData.stats.balance = Number(stData.stats.balance) || 0;
+        if (stData.stats.balance < b.cost) {
+          return reply({ error: 'Số dư ví của bạn không đủ để tham gia phòng này!' }, 400);
+        }
+
+        // Trừ tiền cược
+        stData.stats.balance -= b.cost;
+        stData.stats.spent = (Number(stData.stats.spent) || 0) + b.cost;
+        const worth = Number(stData.stats.balance || 0) + (stData.inv || []).reduce((s, i) => s + (Number(i.price) || 0), 0);
+        const now = Date.now();
+        await env.DB.prepare(
+          'INSERT INTO states (user_id, data, worth, opened, updated) VALUES (?, ?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET data = excluded.data, worth = excluded.worth, updated = excluded.updated'
+        ).bind(me.id, JSON.stringify(stData), worth, stData.stats.opened || 0, now).run();
+
+        // Thêm người chơi vào phòng
+        players.push({ id: me.id, name: me.name, isCreator: false, av: '👤', ready: true });
+        const newStatus = players.length >= b.players_needed ? 'running' : 'waiting';
+
+        await env.DB.prepare(
+          'UPDATE online_battles SET players_json = ?, status = ?, updated = ? WHERE id = ?'
+        ).bind(JSON.stringify(players), newStatus, now, battleId).run();
+
+        return reply({ ok: true, battleId, status: newStatus, balance: stData.stats.balance });
+      }
+
+      if (path === '/battles/call-bot' && req.method === 'POST') {
+        const { battleId } = await readBody(req);
+        if (!battleId) return reply({ error: 'Thiếu mã phòng.' }, 400);
+        const b = await env.DB.prepare("SELECT * FROM online_battles WHERE id = ? AND creator_id = ? AND status = 'waiting'").bind(battleId, me.id).first();
+        if (!b) return reply({ error: 'Chỉ chủ phòng mới có quyền gọi Bot PK.' }, 403);
+
+        const players = JSON.parse(b.players_json || '[]');
+        players.push({ id: -1, name: 'Bot Bravo', isCreator: false, av: '🤖', isBot: true, ready: true });
+        const now = Date.now();
+        await env.DB.prepare(
+          "UPDATE online_battles SET players_json = ?, status = 'running', updated = ? WHERE id = ?"
+        ).bind(JSON.stringify(players), now, battleId).run();
+
+        return reply({ ok: true, battleId, status: 'running' });
+      }
+
+      if (path === '/battles/cancel' && req.method === 'POST') {
+        const { battleId } = await readBody(req);
+        if (!battleId) return reply({ error: 'Thiếu mã phòng.' }, 400);
+        const b = await env.DB.prepare("SELECT * FROM online_battles WHERE id = ? AND creator_id = ? AND status = 'waiting'").bind(battleId, me.id).first();
+        if (!b) return reply({ error: 'Phòng không tồn tại hoặc không thể hủy.' }, 403);
+
+        const now = Date.now();
+        await env.DB.prepare("UPDATE online_battles SET status = 'cancelled', updated = ? WHERE id = ?").bind(now, battleId).run();
+
+        // Hoàn tiền cho chủ phòng
+        const stRow = await env.DB.prepare('SELECT data FROM states WHERE user_id = ?').bind(me.id).first();
+        let stData = { inv: [], stats: { balance: 0, spent: 0 } };
+        if (stRow?.data) {
+          try { stData = JSON.parse(stRow.data); } catch (e) {}
+        }
+        stData.stats ??= {};
+        stData.stats.balance = (Number(stData.stats.balance) || 0) + b.cost;
+        stData.stats.spent = Math.max(0, (Number(stData.stats.spent) || 0) - b.cost);
+        const worth = Number(stData.stats.balance || 0) + (stData.inv || []).reduce((s, i) => s + (Number(i.price) || 0), 0);
+        await env.DB.prepare(
+          'INSERT INTO states (user_id, data, worth, opened, updated) VALUES (?, ?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET data = excluded.data, worth = excluded.worth, updated = excluded.updated'
+        ).bind(me.id, JSON.stringify(stData), worth, stData.stats.opened || 0, now).run();
+
+        return reply({ ok: true, balance: stData.stats.balance, message: 'Đã hủy phòng và hoàn tiền cược.' });
+      }
+
+      if (path === '/battles/finish' && req.method === 'POST') {
+        const { battleId, winnerId, winnerName, drops, wonItems } = await readBody(req);
+        if (!battleId) return reply({ error: 'Thiếu mã phòng.' }, 400);
+        const b = await env.DB.prepare("SELECT * FROM online_battles WHERE id = ?").bind(battleId).first();
+        if (!b) return reply({ error: 'Phòng không tồn tại.' }, 404);
+
+        if (b.status !== 'finished') {
+          const now = Date.now();
+          await env.DB.prepare(
+            "UPDATE online_battles SET status = 'finished', winner_id = ?, winner_name = ?, drops_json = ?, updated = ? WHERE id = ?"
+          ).bind(winnerId || null, winnerName || '', JSON.stringify(drops || []), now, battleId).run();
+
+          // Nếu người thắng là người chơi thật (id > 0) và có wonItems
+          if (winnerId && winnerId > 0 && Array.isArray(wonItems) && wonItems.length > 0) {
+            const stRow = await env.DB.prepare('SELECT data FROM states WHERE user_id = ?').bind(winnerId).first();
+            if (stRow?.data) {
+              try {
+                const stData = JSON.parse(stRow.data);
+                stData.inv = [...(wonItems || []), ...(stData.inv || [])];
+                if (stData.inv.length > 2000) stData.inv.length = 2000;
+                stData.stats ??= {};
+                stData.stats.battles ??= { played: 0, won: 0 };
+                stData.stats.battles.played = (Number(stData.stats.battles.played) || 0) + 1;
+                stData.stats.battles.won = (Number(stData.stats.battles.won) || 0) + 1;
+                const worth = Number(stData.stats.balance || 0) + (stData.inv || []).reduce((s, i) => s + (Number(i.price) || 0), 0);
+                await env.DB.prepare('UPDATE states SET data = ?, worth = ?, updated = ? WHERE user_id = ?')
+                  .bind(JSON.stringify(stData), worth, now, winnerId).run();
+              } catch (e) {
+                console.error('Lỗi cộng thưởng battle:', e);
+              }
+            }
+          }
+        }
         return reply({ ok: true });
       }
 
