@@ -474,6 +474,202 @@ export default {
         return reply({ top: results });
       }
 
+      // ==========================================
+      // ENDPOINTS QUẢN TRỊ VIÊN (ADMIN DASHBOARD)
+      // ==========================================
+      function checkAdminReq(r, e) {
+        const adminPass = e.ADMIN_SECRET || 'cs2admin2026';
+        const hKey = r.headers.get('X-Admin-Key') || '';
+        if (hKey && safeEqual(hKey, adminPass)) return true;
+        const aH = r.headers.get('Authorization') || '';
+        if (aH.startsWith('Admin ') && safeEqual(aH.slice(6), adminPass)) return true;
+        if (aH.startsWith('Bearer ') && safeEqual(aH.slice(7), adminPass)) return true;
+        const qKey = url.searchParams.get('admin_key') || '';
+        if (qKey && safeEqual(qKey, adminPass)) return true;
+        return false;
+      }
+
+      if (path === '/admin/login' && req.method === 'POST') {
+        const { password } = await readBody(req);
+        const adminPass = env.ADMIN_SECRET || 'cs2admin2026';
+        if (!password || !safeEqual(String(password), adminPass)) {
+          return reply({ error: 'Mật khẩu quản trị viên không chính xác.' }, 401);
+        }
+        return reply({ ok: true, token: adminPass, message: 'Đăng nhập Quản trị viên thành công.' });
+      }
+
+      if (path === '/admin/stats' && req.method === 'GET') {
+        if (!checkAdminReq(req, env)) return reply({ error: 'Không có quyền quản trị.' }, 401);
+        const totalUsers = (await env.DB.prepare('SELECT count(*) as c FROM users').first())?.c || 0;
+        const activeUsers = (await env.DB.prepare("SELECT count(*) as c FROM users WHERE status = 'active' OR status IS NULL").first())?.c || 0;
+        const pendingUsers = (await env.DB.prepare("SELECT count(*) as c FROM users WHERE status = 'pending'").first())?.c || 0;
+        const rejectedUsers = (await env.DB.prepare("SELECT count(*) as c FROM users WHERE status = 'rejected'").first())?.c || 0;
+        const totalSessions = (await env.DB.prepare('SELECT count(*) as c FROM sessions').first())?.c || 0;
+        const economy = await env.DB.prepare('SELECT sum(worth) as total_worth, sum(opened) as total_opened FROM states').first();
+        const pendingTopups = (await env.DB.prepare("SELECT count(*) as c FROM topup_requests WHERE status = 'pending'").first())?.c || 0;
+        return reply({
+          totalUsers,
+          activeUsers,
+          pendingUsers,
+          rejectedUsers,
+          totalSessions,
+          totalWorth: economy?.total_worth || 0,
+          totalOpened: economy?.total_opened || 0,
+          pendingTopups,
+        });
+      }
+
+      if (path === '/admin/users' && req.method === 'GET') {
+        if (!checkAdminReq(req, env)) return reply({ error: 'Không có quyền quản trị.' }, 401);
+        const search = url.searchParams.get('q') || '';
+        const status = url.searchParams.get('status') || '';
+        let query = `
+          SELECT u.id, u.name, u.created, u.status,
+                 s.worth, s.opened, s.updated as state_updated, s.data,
+                 (SELECT count(*) FROM sessions ss WHERE ss.user_id = u.id) as session_count,
+                 (SELECT max(ss.created) FROM sessions ss WHERE ss.user_id = u.id) as last_session
+          FROM users u
+          LEFT JOIN states s ON s.user_id = u.id
+        `;
+        const conditions = [];
+        const bindings = [];
+        if (search) {
+          conditions.push('u.name LIKE ?');
+          bindings.push(`%${search}%`);
+        }
+        if (status && status !== 'all') {
+          if (status === 'active') conditions.push("(u.status = 'active' OR u.status IS NULL)");
+          else {
+            conditions.push('u.status = ?');
+            bindings.push(status);
+          }
+        }
+        if (conditions.length) {
+          query += ' WHERE ' + conditions.join(' AND ');
+        }
+        query += ' ORDER BY u.created DESC LIMIT 200';
+        const stmt = env.DB.prepare(query);
+        const { results } = bindings.length ? await stmt.bind(...bindings).all() : await stmt.all();
+
+        const users = (results || []).map(r => {
+          let balance = 0;
+          let invCount = 0;
+          try {
+            if (r.data) {
+              const parsed = JSON.parse(r.data);
+              balance = Number(parsed?.stats?.balance) || 0;
+              invCount = Array.isArray(parsed?.inv) ? parsed.inv.length : 0;
+            }
+          } catch (e) {}
+          return {
+            id: r.id,
+            name: r.name,
+            created: r.created,
+            status: r.status || 'active',
+            worth: Number(r.worth) || balance,
+            opened: Number(r.opened) || 0,
+            balance,
+            invCount,
+            sessionCount: Number(r.session_count) || 0,
+            lastSession: r.last_session || null,
+            lastActive: r.state_updated || r.last_session || r.created,
+          };
+        });
+        return reply({ users });
+      }
+
+      if (path === '/admin/user-status' && req.method === 'POST') {
+        if (!checkAdminReq(req, env)) return reply({ error: 'Không có quyền quản trị.' }, 401);
+        const { userId, status } = await readBody(req);
+        if (!userId || !['active', 'rejected', 'pending'].includes(status)) {
+          return reply({ error: 'Dữ liệu không hợp lệ.' }, 400);
+        }
+        await env.DB.prepare('UPDATE users SET status = ? WHERE id = ?').bind(status, userId).run();
+        if (status === 'rejected') {
+          await env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(userId).run();
+        }
+        return reply({ ok: true });
+      }
+
+      if (path === '/admin/user-balance' && req.method === 'POST') {
+        if (!checkAdminReq(req, env)) return reply({ error: 'Không có quyền quản trị.' }, 401);
+        const { userId, delta, setBalance } = await readBody(req);
+        if (!userId) return reply({ error: 'Thiếu userId.' }, 400);
+        const stRow = await env.DB.prepare('SELECT data FROM states WHERE user_id = ?').bind(userId).first();
+        let stData = { inv: [], stats: { balance: 0, opened: 0 } };
+        if (stRow?.data) {
+          try { stData = JSON.parse(stRow.data); } catch (e) {}
+        }
+        stData.stats ??= {};
+        if (setBalance !== undefined) {
+          stData.stats.balance = Math.max(0, Number(setBalance) || 0);
+        } else if (delta !== undefined) {
+          stData.stats.balance = Math.max(0, (Number(stData.stats.balance) || 0) + Number(delta));
+        }
+        const worth = Number(stData.stats.balance || 0) + (stData.inv || []).reduce((s, i) => s + (Number(i.price) || 0), 0);
+        const now = Date.now();
+        await env.DB.prepare(
+          'INSERT INTO states (user_id, data, worth, opened, updated) VALUES (?, ?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET data = excluded.data, worth = excluded.worth, updated = excluded.updated'
+        ).bind(userId, JSON.stringify(stData), worth, stData.stats.opened || 0, now).run();
+        return reply({ ok: true, balance: stData.stats.balance });
+      }
+
+      if (path === '/admin/user-reset-password' && req.method === 'POST') {
+        if (!checkAdminReq(req, env)) return reply({ error: 'Không có quyền quản trị.' }, 401);
+        const { userId, newPassword } = await readBody(req);
+        if (!userId || !validPass(newPassword)) return reply({ error: 'Mật khẩu mới từ 4-64 ký tự.' }, 400);
+        const salt = randomHex(16);
+        const hash = await hashPassword(newPassword, salt);
+        await env.DB.prepare('UPDATE users SET salt = ?, hash = ? WHERE id = ?').bind(salt, hash, userId).run();
+        await env.DB.prepare('DELETE FROM sessions WHERE user_id = ? AND token != ?').bind(userId, '').run();
+        return reply({ ok: true });
+      }
+
+      if (path === '/admin/user' && req.method === 'DELETE') {
+        if (!checkAdminReq(req, env)) return reply({ error: 'Không có quyền quản trị.' }, 401);
+        const { userId } = await readBody(req);
+        if (!userId) return reply({ error: 'Thiếu userId.' }, 400);
+        await env.DB.batch([
+          env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(userId),
+          env.DB.prepare('DELETE FROM states WHERE user_id = ?').bind(userId),
+          env.DB.prepare('DELETE FROM topup_requests WHERE user_id = ?').bind(userId),
+          env.DB.prepare('DELETE FROM users WHERE id = ?').bind(userId),
+        ]);
+        return reply({ ok: true });
+      }
+
+      if (path === '/admin/topup-requests' && req.method === 'GET') {
+        if (!checkAdminReq(req, env)) return reply({ error: 'Không có quyền quản trị.' }, 401);
+        const { results } = await env.DB.prepare('SELECT * FROM topup_requests ORDER BY id DESC LIMIT 100').all();
+        return reply({ requests: results || [] });
+      }
+
+      if (path === '/admin/topup-action' && req.method === 'POST') {
+        if (!checkAdminReq(req, env)) return reply({ error: 'Không có quyền quản trị.' }, 401);
+        const { requestId, action } = await readBody(req);
+        if (!requestId || !['approve', 'reject'].includes(action)) return reply({ error: 'Dữ liệu không hợp lệ.' }, 400);
+        const reqRow = await env.DB.prepare('SELECT * FROM topup_requests WHERE id = ?').bind(requestId).first();
+        if (!reqRow) return reply({ error: 'Yêu cầu không tồn tại.' }, 404);
+        const now = Date.now();
+        const newStatus = action === 'approve' ? 'approved' : 'rejected';
+        await env.DB.prepare('UPDATE topup_requests SET status = ?, approve_token = NULL, updated = ? WHERE id = ?').bind(newStatus, now, requestId).run();
+        if (action === 'approve') {
+          const stRow = await env.DB.prepare('SELECT data FROM states WHERE user_id = ?').bind(reqRow.user_id).first();
+          if (stRow?.data) {
+            try {
+              const stData = JSON.parse(stRow.data);
+              stData.stats ??= {};
+              stData.stats.balance = (Number(stData.stats.balance) || 0) + reqRow.amount;
+              stData.stats.topup = (Number(stData.stats.topup) || 0) + reqRow.amount;
+              const worth = Number(stData.stats.balance || 0) + (stData.inv || []).reduce((s, i) => s + (Number(i.price) || 0), 0);
+              await env.DB.prepare('UPDATE states SET data = ?, worth = ?, updated = ? WHERE user_id = ?')
+                .bind(JSON.stringify(stData), worth, now, reqRow.user_id).run();
+            } catch (e) {}
+          }
+        }
+        return reply({ ok: true, status: newStatus });
+      }
+
       // ---- cần đăng nhập ----
       const me = await auth(req, env);
       if (!me) return reply({ error: 'Chưa đăng nhập hoặc phiên hết hạn.' }, 401);
