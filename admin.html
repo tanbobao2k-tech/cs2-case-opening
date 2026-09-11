@@ -107,6 +107,8 @@
       border-radius: 6px;
     }
 
+    [hidden] { display: none !important; }
+
     /* Màn hình Đăng nhập (Lock Screen) */
     #admin-lock-screen {
       position: fixed;
@@ -117,6 +119,9 @@
       justify-content: center;
       padding: 20px;
       z-index: 9999;
+    }
+    #admin-lock-screen[hidden] {
+      display: none !important;
     }
     .lock-box {
       background: var(--bg-1);
@@ -675,6 +680,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="js/admin.js?v=1"></script>
+  <script src="js/admin.js?v=2"></script>
 </body>
 </html>

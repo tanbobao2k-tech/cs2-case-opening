@@ -70,7 +70,10 @@ async function adminFetch(endpoint, options = {}) {
 // ----------------------------------------------------
 function showLockScreen() {
   const lock = $("#admin-lock-screen");
-  if (lock) lock.hidden = false;
+  if (lock) {
+    lock.hidden = false;
+    lock.style.display = "flex";
+  }
   const passInput = $("#admin-password-input");
   if (passInput) {
     passInput.value = "";
@@ -80,7 +83,10 @@ function showLockScreen() {
 
 function hideLockScreen() {
   const lock = $("#admin-lock-screen");
-  if (lock) lock.hidden = true;
+  if (lock) {
+    lock.hidden = true;
+    lock.style.display = "none";
+  }
 }
 
 async function handleAdminLogin(e) {
