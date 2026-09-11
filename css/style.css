@@ -1224,4 +1224,158 @@ main { max-width: 1240px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px) 80px
   color: #fff !important;
 }
 
+/* User Custom Cases Styles */
+.case-card.user-custom {
+  border: 1px solid rgba(255, 107, 0, 0.35);
+  background: radial-gradient(circle at top right, rgba(255, 107, 0, 0.12), transparent 70%), var(--bg-2);
+  position: relative;
+}
+.case-card.user-custom:hover {
+  border-color: #ff8800;
+  box-shadow: 0 8px 30px rgba(255, 107, 0, 0.25);
+}
+.ucc-tag {
+  background: linear-gradient(135deg, #ff5e00, #ff8800) !important;
+  color: #fff !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.5px;
+}
+.ucc-actions-bar {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  justify-content: center;
+  border-top: 1px dashed rgba(255,255,255,0.12);
+  padding-top: 8px;
+}
+
+/* Custom Case Editor Modal Components */
+.ce-preset-btn {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  color: #eee !important;
+  font-size: 11px !important;
+  padding: 3px 8px !important;
+  border-radius: 6px !important;
+  transition: all 0.15s ease !important;
+}
+.ce-preset-btn:hover {
+  background: rgba(255, 107, 0, 0.25) !important;
+  border-color: #ff8800 !important;
+  color: #fff !important;
+  transform: translateY(-1px);
+}
+
+.ce-selected-chip {
+  flex: 0 0 120px;
+  background: rgba(25, 30, 42, 0.85);
+  border: 1px solid var(--rc, #ffd700);
+  border-radius: 8px;
+  padding: 8px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+.ce-selected-chip img {
+  width: 60px;
+  height: 45px;
+  object-fit: contain;
+  margin-bottom: 4px;
+}
+.ce-selected-chip .n {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+.ce-selected-chip .p {
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 2px;
+}
+.ce-selected-chip .del-btn {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 50, 50, 0.85);
+  color: #fff;
+  border: none;
+  font-size: 12px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.ce-selected-chip .del-btn:hover {
+  transform: scale(1.15);
+  background: #ff2222;
+}
+
+.ce-catalog-card {
+  background: rgba(22, 26, 36, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 3px solid var(--rc, #4b69ff);
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+.ce-catalog-card:hover {
+  background: rgba(30, 36, 50, 0.95);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+.ce-catalog-card.selected {
+  background: rgba(255, 107, 0, 0.15);
+  border-color: #ff8800;
+}
+.ce-catalog-card.selected::after {
+  content: "✓";
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  color: #ff8800;
+  font-weight: 900;
+  font-size: 14px;
+}
+.ce-catalog-card img {
+  width: 70px;
+  height: 52px;
+  object-fit: contain;
+  margin-bottom: 4px;
+}
+.ce-catalog-card .n {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+.ce-catalog-card .p {
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 2px;
+}
+
+
 

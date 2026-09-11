@@ -59,6 +59,34 @@
       </div>
     </section>
 
+    <!-- User Custom Cases (Người chơi tự tạo đồ) -->
+    <section id="user-cases-section" class="section">
+      <div class="section-head">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <h2>🛠️ Hòm Tự Tạo <span class="h-sub">Do bạn thiết kế</span></h2>
+          <span class="pill" style="background: rgba(255, 107, 0, 0.18); color: #ff8800; border: 1px solid rgba(255, 107, 0, 0.35); font-weight: 700; padding: 4px 12px; border-radius: 999px; font-size: 12px;">★ CUSTOM BY PLAYER</span>
+        </div>
+        <div class="section-tools">
+          <button type="button" id="btn-create-custom-case" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; background: linear-gradient(135deg, #ff5e00, #ff8800); border: none; box-shadow: 0 0 16px rgba(255, 94, 0, 0.35);">
+            <span>➕</span> Tự Tạo Hòm Mới
+          </button>
+          <button type="button" id="btn-import-custom-case" class="btn btn-ghost" title="Nhập mã hòm do bạn bè chia sẻ">
+            📥 Nhập mã hòm
+          </button>
+        </div>
+      </div>
+      <p class="muted case-note">Tự chọn danh sách skin từ toàn bộ hơn 2.100 món trong CS2, đặt tên hòm, tuỳ chỉnh giá mở hoặc tự động tính toán, và trực tiếp mở hòm do chính bạn tạo ra!</p>
+      <div id="user-cases-grid" class="case-grid"></div>
+      <div id="user-cases-empty" class="card" style="text-align: center; padding: 36px 20px; border: 1px dashed rgba(255,255,255,0.18); background: rgba(20, 24, 33, 0.5);">
+        <div style="font-size: 42px; margin-bottom: 8px;">🎨</div>
+        <h3 style="margin: 0 0 8px; font-size: 18px; color: #fff;">Bạn chưa tạo hòm nào!</h3>
+        <p class="muted" style="margin: 0 0 16px; font-size: 14px;">Hãy bấm nút bên dưới để chọn các món đồ yêu thích nhất và tạo hòm riêng cho mình.</p>
+        <button type="button" class="btn btn-primary" id="btn-create-first-case" style="font-weight: 700; background: linear-gradient(135deg, #ff5e00, #ff8800); border: none;">
+          ✨ Bắt Đầu Tự Tạo Hòm Ngay
+        </button>
+      </div>
+    </section>
+
     <section id="cases" class="section">
       <div class="section-head">
         <h2>Hòm đặc biệt <span class="h-sub">kiểu Skin Club</span></h2>
@@ -771,7 +799,125 @@
     </div>
   </div>
 
-  <script src="data/cases.js?v=8"></script>
-  <script src="js/app.js?v=34"></script>
+  <!-- Modal: Custom Case Editor (Người chơi tự tạo đồ) -->
+  <div id="modal-case-editor" class="modal" hidden>
+    <div class="modal-box modal-lg" style="max-width: 980px; max-height: 92vh; display: flex; flex-direction: column;">
+      <button class="modal-close" data-close>&times;</button>
+      <h2 class="modal-title" id="ce-modal-title">🛠️ Thiết Kế Hòm Tự Tạo (Custom Case Creator)</h2>
+      
+      <div class="ce-body" style="overflow-y: auto; padding-right: 6px; display: flex; flex-direction: column; gap: 16px;">
+        <!-- Hàng 1: Tên & Mô tả -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div>
+            <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #eee;">Tên Hòm Của Bạn *</label>
+            <input type="text" id="ce-name" placeholder="VD: Hòm Thần Tài CS2" style="width: 100%; padding: 10px 14px; border-radius: 8px; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 14px;" />
+          </div>
+          <div>
+            <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #eee;">Mô tả ngắn</label>
+            <input type="text" id="ce-desc" placeholder="VD: Tuyển tập AWP, dao và găng tay siêu đỉnh" style="width: 100%; padding: 10px 14px; border-radius: 8px; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 14px;" />
+          </div>
+        </div>
+
+        <!-- Hàng 2: Vỏ hòm & Màu nhãn & Giá mở -->
+        <div style="display: grid; grid-template-columns: 1.2fr 1fr 1.2fr; gap: 14px; align-items: start;">
+          <div>
+            <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #eee;">Giao diện vỏ hòm</label>
+            <select id="ce-crate-style" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+              <!-- Populated via JS from official crates -->
+            </select>
+          </div>
+          <div>
+            <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #eee;">Màu thẻ hòm</label>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <input type="color" id="ce-color" value="#ff6b00" style="width: 44px; height: 38px; border: none; border-radius: 6px; cursor: pointer; background: transparent;" />
+              <span id="ce-color-text" style="font-size: 13px; color: #aaa;">#ff6b00</span>
+            </div>
+          </div>
+          <div>
+            <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #eee;">Giá mở hòm ($ USD)</label>
+            <div style="display: flex; gap: 8px;">
+              <select id="ce-price-mode" style="padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+                <option value="auto">Tự động (Fair EV ~90%)</option>
+                <option value="fixed">Tự đặt giá</option>
+              </select>
+              <input type="number" id="ce-fixed-price" min="0.1" step="0.5" value="10" style="width: 90px; padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.2); color: #fff;" disabled />
+            </div>
+          </div>
+        </div>
+
+        <!-- Hàng 3: Danh sách đồ đã chọn vào hòm -->
+        <div style="background: rgba(15, 18, 26, 0.75); border: 1px solid rgba(255, 107, 0, 0.3); border-radius: 12px; padding: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <h4 style="margin: 0; font-size: 15px; color: #ff9944; display: flex; align-items: center; gap: 6px;">
+                <span>🎒</span> Đồ Đã Cho Vào Hòm (<span id="ce-selected-count">0</span> món)
+              </h4>
+              <span id="ce-selected-stats" class="muted" style="font-size: 12px;">Cần tối thiểu 2 món. Tổng giá trị TB: $0.00 · Giá hòm khuyến nghị: $0.00</span>
+            </div>
+            <div>
+              <button type="button" id="ce-btn-clear" class="btn btn-xs btn-ghost" style="color: #ff5555;">Xóa hết đồ đã chọn</button>
+            </div>
+          </div>
+          <div id="ce-selected-grid" style="display: flex; gap: 10px; overflow-x: auto; min-height: 110px; padding-bottom: 8px;">
+            <p id="ce-selected-empty-msg" class="muted" style="margin: auto; font-size: 13px;">Chưa chọn skin nào. Hãy bấm vào các món bên dưới để thêm vào hòm!</p>
+          </div>
+        </div>
+
+        <!-- Hàng 4: Bộ lọc và chọn skin từ kho CS2 -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+            <h4 style="margin: 0; font-size: 15px; color: #fff;">🔍 Chọn đồ từ kho CS2 để thêm vào hòm:</h4>
+            <!-- Preset buttons -->
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button type="button" class="btn btn-xs ce-preset-btn" data-preset="knives">★ Thêm 10 Dao</button>
+              <button type="button" class="btn btn-xs ce-preset-btn" data-preset="gloves">🧤 Thêm 10 Găng</button>
+              <button type="button" class="btn btn-xs ce-preset-btn" data-preset="asiimov">⚡ Thêm Asiimov</button>
+              <button type="button" class="btn btn-xs ce-preset-btn" data-preset="ak47">🔫 Thêm AK-47</button>
+              <button type="button" class="btn btn-xs ce-preset-btn" data-preset="awp">🎯 Thêm AWP</button>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 2fr 1.2fr 1.2fr; gap: 10px; margin-bottom: 12px;">
+            <input type="search" id="ce-search" placeholder="Tìm theo tên skin, súng, dao (VD: Dragon Lore, Doppler, Wild Lotus)..." style="padding: 10px 14px; border-radius: 8px; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.2); color: #fff;" />
+            <select id="ce-filter-cat" style="padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+              <option value="all">Tất cả loại vũ khí</option>
+              <option value="Knives">Dao (Knives)</option>
+              <option value="Gloves">Găng tay (Gloves)</option>
+              <option value="Rifles">Súng trường (Rifles)</option>
+              <option value="Pistols">Súng lục (Pistols)</option>
+              <option value="SMGs">Tiểu liên (SMGs)</option>
+              <option value="Heavy">Súng nặng (Heavy)</option>
+            </select>
+            <select id="ce-filter-rarity" style="padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+              <option value="all">Tất cả bậc hiếm</option>
+              <option value="5">★ Dao & Găng siêu hiếm</option>
+              <option value="4">Covert (Đỏ)</option>
+              <option value="3">Classified (Hồng)</option>
+              <option value="2">Restricted (Tím)</option>
+              <option value="1">Mil-Spec (Lam)</option>
+            </select>
+          </div>
+
+          <!-- Catalog Items Grid -->
+          <div id="ce-catalog-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 10px; max-height: 290px; overflow-y: auto; padding-right: 4px;">
+            <!-- Catalog items rendered here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer Actions -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.1);">
+        <button type="button" class="btn btn-ghost" data-close>Hủy bỏ</button>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" id="ce-btn-save" class="btn btn-primary btn-lg" style="font-weight: 700; background: linear-gradient(135deg, #ff5e00, #ff8800); border: none; padding: 10px 24px; box-shadow: 0 0 16px rgba(255, 94, 0, 0.35);">
+            💾 Lưu Hòm & Xuất Bản
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="data/cases.js?v=9"></script>
+  <script src="js/app.js?v=35"></script>
 </body>
 </html>
