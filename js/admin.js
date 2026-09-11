@@ -365,14 +365,13 @@ document.addEventListener("click", async (e) => {
     } else if (act === "reset-pass") {
       openResetPassModal(userId, userName);
     } else if (act === "delete") {
-      const promptName = prompt(`⚠️ CẢNH BÁO: Hành động này sẽ XÓA VĨNH VIỄN tài khoản và toàn bộ kho đồ của "${userName}".\n\nNhập chính xác "${userName}" để xác nhận:`);
-      if (promptName === userName) {
+      if (confirm(`Bạn có chắc chắn muốn XÓA VĨNH VIỄN tài khoản "${userName}" cùng toàn bộ kho đồ không?`)) {
         try {
           await adminFetch("/admin/user", {
             method: "DELETE",
             body: JSON.stringify({ userId }),
           });
-          showToast(`🗑️ Đã xóa vĩnh viễn tài khoản "${userName}".`);
+          showToast(`🗑️ Đã xóa vĩnh viễn tài khoản "${userName}" thành công!`);
           loadDashboard();
         } catch (err) {
           alert("Lỗi: " + err.message);
