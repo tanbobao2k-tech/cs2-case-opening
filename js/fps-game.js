@@ -114,10 +114,21 @@
       weapon: 'AWP',
       name: 'Dragon Lore',
       wear: 'Factory New',
-      rarity: 'covert',
+      rarity: 'special',
       rarityColor: '#ffd700',
       price: 8500.00,
       img: 'assets/awp_dragon_lore.png'
+    },
+    {
+      id: 'awp-asiimov',
+      slot: 1,
+      weapon: 'AWP',
+      name: 'Asiimov',
+      wear: 'Field-Tested',
+      rarity: 'covert',
+      rarityColor: '#eb4b4b',
+      price: 240.00,
+      img: 'assets/ak47_asiimov.png'
     },
     {
       id: 'm4a4-howl',
@@ -244,6 +255,144 @@
     osc.start(now);
     noise.stop(now + 0.2);
     osc.stop(now + 0.15);
+  }
+
+  function playAwpShotSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+
+    // 1. Massive Sub-Bass Concussive Punch (The iconic CS2 AWP heavy thump)
+    const subOsc = audioCtx.createOscillator();
+    subOsc.type = 'triangle';
+    subOsc.frequency.setValueAtTime(140, now);
+    subOsc.frequency.exponentialRampToValueAtTime(24, now + 0.35);
+
+    const subGain = audioCtx.createGain();
+    subGain.gain.setValueAtTime(1.4, now);
+    subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+    // 2. High Supersonic Crack (Bullet exiting muzzle brake at Mach 3)
+    const crackSize = Math.floor(audioCtx.sampleRate * 0.08);
+    const crackBuffer = audioCtx.createBuffer(1, crackSize, audioCtx.sampleRate);
+    const crackData = crackBuffer.getChannelData(0);
+    for (let i = 0; i < crackSize; i++) {
+      crackData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.015));
+    }
+    const crackSrc = audioCtx.createBufferSource();
+    crackSrc.buffer = crackBuffer;
+
+    const crackFilter = audioCtx.createBiquadFilter();
+    crackFilter.type = 'highpass';
+    crackFilter.frequency.setValueAtTime(2200, now);
+
+    const crackGain = audioCtx.createGain();
+    crackGain.gain.setValueAtTime(1.1, now);
+    crackGain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+
+    // 3. Heavy Gunpowder Explosion Body (Mid-range thunder)
+    const bodySize = Math.floor(audioCtx.sampleRate * 0.45);
+    const bodyBuffer = audioCtx.createBuffer(1, bodySize, audioCtx.sampleRate);
+    const bodyData = bodyBuffer.getChannelData(0);
+    for (let i = 0; i < bodySize; i++) {
+      bodyData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.12));
+    }
+    const bodySrc = audioCtx.createBufferSource();
+    bodySrc.buffer = bodyBuffer;
+
+    const bodyFilter = audioCtx.createBiquadFilter();
+    bodyFilter.type = 'lowpass';
+    bodyFilter.frequency.setValueAtTime(1800, now);
+    bodyFilter.frequency.exponentialRampToValueAtTime(180, now + 0.4);
+
+    const bodyGain = audioCtx.createGain();
+    bodyGain.gain.setValueAtTime(1.3, now);
+    bodyGain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+
+    // 4. Outdoor Tail Reverb (Long echoing rumble across the arena)
+    const tailSize = Math.floor(audioCtx.sampleRate * 1.3);
+    const tailBuffer = audioCtx.createBuffer(1, tailSize, audioCtx.sampleRate);
+    const tailData = tailBuffer.getChannelData(0);
+    for (let i = 0; i < tailSize; i++) {
+      tailData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.35));
+    }
+    const tailSrc = audioCtx.createBufferSource();
+    tailSrc.buffer = tailBuffer;
+
+    const tailFilter = audioCtx.createBiquadFilter();
+    tailFilter.type = 'bandpass';
+    tailFilter.frequency.setValueAtTime(450, now);
+    tailFilter.Q.value = 1.2;
+
+    const tailGain = audioCtx.createGain();
+    tailGain.gain.setValueAtTime(0.75, now);
+    tailGain.gain.exponentialRampToValueAtTime(0.001, now + 1.25);
+
+    subOsc.connect(subGain);
+    subGain.connect(audioCtx.destination);
+
+    crackSrc.connect(crackFilter);
+    crackFilter.connect(crackGain);
+    crackGain.connect(audioCtx.destination);
+
+    bodySrc.connect(bodyFilter);
+    bodyFilter.connect(bodyGain);
+    bodyGain.connect(audioCtx.destination);
+
+    tailSrc.connect(tailFilter);
+    tailFilter.connect(tailGain);
+    tailGain.connect(audioCtx.destination);
+
+    subOsc.start(now);
+    crackSrc.start(now);
+    bodySrc.start(now);
+    tailSrc.start(now);
+
+    subOsc.stop(now + 0.45);
+    crackSrc.stop(now + 0.09);
+    bodySrc.stop(now + 0.5);
+    tailSrc.stop(now + 1.3);
+
+    // Bolt-action cycling sound
+    setTimeout(() => playAwpBoltSound(), 420);
+  }
+
+  function playAwpBoltSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+
+    // Metallic bolt pull
+    const osc = audioCtx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(550, now);
+    osc.frequency.exponentialRampToValueAtTime(180, now + 0.12);
+
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.13);
+
+    // Bolt push & lock
+    setTimeout(() => {
+      if (!audioCtx) return;
+      const t = audioCtx.currentTime;
+      const osc2 = audioCtx.createOscillator();
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(320, t);
+      osc2.frequency.exponentialRampToValueAtTime(680, t + 0.1);
+
+      const gain2 = audioCtx.createGain();
+      gain2.gain.setValueAtTime(0.4, t);
+      gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.11);
+
+      osc2.connect(gain2);
+      gain2.connect(audioCtx.destination);
+      osc2.start(t);
+      osc2.stop(t + 0.12);
+    }, 380);
   }
 
   function playPistolShotSound() {
@@ -563,11 +712,16 @@
   let scene, camera, renderer;
   let viewmodelRig, weaponMesh;
   let rifleGroup, pistolGroup, knifeGroup;
+  let awpGroup = null;
+  let awpMaterials = [];
+  let awpScopeCheckerMat = null;
+  let awpSideDecalMat = null;
   let akRealGroup = null;
   let akRealMixer = null;
   let akRealActions = {};
   let akRealMaterial = null;
   let akBakedLotusTexture = null;
+  let akBakedAsiimovTexture = null;
   let rifleMaterials = [], pistolMaterials = [], knifeMaterials = [];
   let rifleSideDecalMat, pistolSideDecalMat, knifeSideDecalMat;
   let muzzleFlashLight, muzzleSprite;
@@ -1140,57 +1294,166 @@
         }
 
       } else if (nameLower.includes('asiimov')) {
-        // --- ASIIMOV ---
-        ctx.fillStyle = '#f8fafc';
+        // --- ASIIMOV (CS2 AUTHENTIC CYBER-TECH AESTHETICS) ---
+        ctx.fillStyle = '#f5f6f9';
         ctx.fillRect(0, 0, 1024, 1024);
 
-        ctx.fillStyle = '#ff5500';
+        // Carbon Black Inset Framing
+        ctx.fillStyle = '#181b20';
+        ctx.fillRect(0, 0, 1024, 80);
+        ctx.fillRect(0, 940, 1024, 84);
+        ctx.fillRect(0, 680, 1024, 70);
+
+        // Bold Vivid CS2 Orange Geometric Blocks (#ff5e00)
+        ctx.fillStyle = '#ff5e00';
         ctx.beginPath();
-        ctx.moveTo(0, 120); ctx.lineTo(520, 0); ctx.lineTo(680, 0); ctx.lineTo(160, 520); ctx.closePath();
+        ctx.moveTo(0, 160); ctx.lineTo(460, 80); ctx.lineTo(620, 80); ctx.lineTo(140, 560); ctx.closePath();
         ctx.fill();
 
         ctx.beginPath();
-        ctx.moveTo(240, 1024); ctx.lineTo(760, 504); ctx.lineTo(920, 504); ctx.lineTo(400, 1024); ctx.closePath();
+        ctx.moveTo(220, 940); ctx.lineTo(720, 480); ctx.lineTo(880, 480); ctx.lineTo(380, 940); ctx.closePath();
         ctx.fill();
 
-        ctx.fillStyle = '#15171e';
         ctx.beginPath();
-        ctx.moveTo(560, 0); ctx.lineTo(1024, 0); ctx.lineTo(1024, 360); ctx.lineTo(760, 360); ctx.closePath();
+        ctx.moveTo(680, 80); ctx.lineTo(960, 80); ctx.lineTo(840, 320); ctx.lineTo(580, 320); ctx.closePath();
         ctx.fill();
-        ctx.fillRect(0, 720, 1024, 90);
 
-        ctx.fillStyle = '#15171e';
-        ctx.font = '900 76px monospace';
+        // Warning Hazard Chevrons
+        const drawHazardStrip = (x, y, w, h) => {
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(x, y, w, h);
+          ctx.clip();
+          ctx.fillStyle = '#181b20';
+          ctx.fillRect(x, y, w, h);
+          ctx.fillStyle = '#ff5e00';
+          for (let i = -h; i < w + h; i += 24) {
+            ctx.beginPath();
+            ctx.moveTo(x + i, y); ctx.lineTo(x + i + 12, y);
+            ctx.lineTo(x + i + 12 - h, y + h); ctx.lineTo(x + i - h, y + h);
+            ctx.closePath();
+            ctx.fill();
+          }
+          ctx.restore();
+        };
+        drawHazardStrip(80, 420, 340, 26);
+        drawHazardStrip(560, 780, 380, 26);
+
+        // Futuristic Stencil Typography
+        ctx.fillStyle = '#181b20';
+        ctx.font = '900 68px "Arial Black", monospace';
         ctx.fillText('ASIIMOV // 01', 80, 640);
-        ctx.fillStyle = '#ff5500';
-        ctx.font = 'bold 36px monospace';
-        ctx.fillText('HIGH VOLTAGE // SPEC-A', 80, 700);
+        ctx.fillStyle = '#ff5e00';
+        ctx.font = 'bold 30px monospace';
+        ctx.fillText('SPEC. SYSTEM // HIGH VOLTAGE', 84, 672);
 
       } else if (nameLower.includes('dragon lore') || nameLower.includes('lore')) {
-        // --- DRAGON LORE ---
+        // --- CS2 AWP DRAGON LORE (AUTHENTIC GOLD CHASSIS & FIRE DRAGON) ---
+        // 1. Rich Knightly Brass & Dragon Gold Gradient
         const grad = ctx.createLinearGradient(0, 0, 1024, 1024);
-        grad.addColorStop(0, '#e5c158'); grad.addColorStop(0.5, '#bfa038'); grad.addColorStop(1, '#5c4813');
+        grad.addColorStop(0, '#f2ce69');
+        grad.addColorStop(0.3, '#d4ab3e');
+        grad.addColorStop(0.7, '#a98224');
+        grad.addColorStop(1, '#563e0b');
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, 1024, 1024);
 
-        ctx.strokeStyle = 'rgba(255, 240, 180, 0.45)';
-        ctx.lineWidth = 8;
-        for (let y = 80; y < 1024; y += 90) {
-          ctx.beginPath(); ctx.arc(512, y, 130, 0, Math.PI); ctx.stroke();
+        // 2. Celtic Knotwork Filigree Top & Bottom Borders
+        ctx.strokeStyle = '#3e2c07';
+        ctx.lineWidth = 14;
+        ctx.strokeRect(8, 8, 1008, 1008);
+
+        ctx.strokeStyle = '#ffeaa7';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(16, 16, 992, 992);
+
+        // Celtic Interlocking Rings / Knots
+        ctx.strokeStyle = 'rgba(255, 238, 160, 0.45)';
+        ctx.lineWidth = 7;
+        for (let x = 60; x < 980; x += 80) {
+          ctx.beginPath();
+          ctx.arc(x, 60, 32, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(x, 964, 32, 0, Math.PI * 2);
+          ctx.stroke();
         }
 
+        // 3. Celtic Sinuous Fire Dragon (Center Receiver Art)
+        // Dragon Body (Ruby-Crimson with Gold Trim)
         ctx.fillStyle = '#b71c1c';
+        ctx.strokeStyle = '#ffd54f';
+        ctx.lineWidth = 5;
+
+        // Serpentine Coiled Body
         ctx.beginPath();
-        ctx.moveTo(120, 800); ctx.bezierCurveTo(300, 360, 640, 440, 880, 240);
-        ctx.bezierCurveTo(720, 520, 600, 760, 320, 880); ctx.closePath();
+        ctx.moveTo(80, 780);
+        ctx.bezierCurveTo(240, 860, 380, 580, 520, 640);
+        ctx.bezierCurveTo(660, 700, 720, 480, 840, 360);
+        ctx.bezierCurveTo(740, 380, 620, 520, 480, 510);
+        ctx.bezierCurveTo(340, 500, 220, 720, 80, 780);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Dragon Head (Horned, Snarling, Fire Spitting)
+        ctx.fillStyle = '#c62828';
+        ctx.beginPath();
+        ctx.moveTo(820, 370);
+        ctx.lineTo(920, 310); // Snout tip
+        ctx.lineTo(950, 330); // Jaw open
+        ctx.lineTo(890, 365);
+        ctx.lineTo(870, 420); // Neck
+        ctx.lineTo(840, 380);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Dragon Horns
+        ctx.fillStyle = '#ffe082';
+        ctx.beginPath();
+        ctx.moveTo(850, 320);
+        ctx.quadraticCurveTo(840, 240, 810, 220);
+        ctx.quadraticCurveTo(835, 260, 860, 315);
         ctx.fill();
 
-        ctx.fillStyle = '#ff9800';
-        ctx.beginPath(); ctx.arc(880, 240, 64, 0, Math.PI * 2); ctx.fill();
+        // Glowing Dragon Eye
+        ctx.fillStyle = '#ffeb3b';
+        ctx.beginPath();
+        ctx.arc(880, 330, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.arc(880, 330, 2.5, 0, Math.PI * 2);
+        ctx.fill();
 
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 64px Georgia, serif';
-        ctx.fillText('DRAGON LORE', 120, 180);
+        // Plumes of Billowing Dragon Fire Spitting Forward
+        const fireGrad = ctx.createRadialGradient(920, 320, 20, 1000, 300, 220);
+        fireGrad.addColorStop(0, '#ffffff');
+        fireGrad.addColorStop(0.2, '#ffeb3b');
+        fireGrad.addColorStop(0.5, '#ff5722');
+        fireGrad.addColorStop(0.8, '#d50000');
+        fireGrad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = fireGrad;
+
+        ctx.beginPath();
+        ctx.moveTo(920, 315);
+        ctx.bezierCurveTo(960, 240, 1020, 260, 1024, 220);
+        ctx.bezierCurveTo(1024, 380, 960, 390, 920, 330);
+        ctx.closePath();
+        ctx.fill();
+
+        // Gold Title Script
+        ctx.fillStyle = '#ffeaa7';
+        ctx.shadowColor = 'rgba(0,0,0,0.85)';
+        ctx.shadowBlur = 8;
+        ctx.font = '900 68px Georgia, serif';
+        ctx.fillText('DRAGON LORE', 90, 220);
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = '#261b05';
+        ctx.font = 'bold 28px serif';
+        ctx.fillText('2000 KNIGHTS // COVERT SNIPER', 95, 264);
 
       } else if (nameLower.includes('howl')) {
         // --- HOWL ---
@@ -1209,26 +1472,39 @@
         ctx.fillText('THE HOWL', 320, 940);
 
       } else if (nameLower.includes('printstream')) {
-        // --- PRINTSTREAM ---
+        // --- PRINTSTREAM (PEARLESCENT TITANIUM WHITE & HOLOGRAPHIC STRIPES) ---
         ctx.fillStyle = '#f8fafc';
         ctx.fillRect(0, 0, 1024, 1024);
 
+        // Pearlescent Rainbow Iridescent Wash
         const holo = ctx.createLinearGradient(0, 0, 1024, 1024);
-        holo.addColorStop(0, 'rgba(0, 255, 230, 0.25)');
-        holo.addColorStop(0.5, 'rgba(255, 0, 180, 0.25)');
-        holo.addColorStop(1, 'rgba(255, 255, 0, 0.25)');
+        holo.addColorStop(0, 'rgba(0, 240, 255, 0.28)');
+        holo.addColorStop(0.33, 'rgba(255, 0, 190, 0.25)');
+        holo.addColorStop(0.66, 'rgba(255, 230, 0, 0.28)');
+        holo.addColorStop(1, 'rgba(0, 255, 140, 0.22)');
         ctx.fillStyle = holo;
         ctx.fillRect(0, 0, 1024, 1024);
 
+        // CS2 Minimalist Dark Bars & Badges
         ctx.fillStyle = '#0f172a';
-        ctx.fillRect(80, 160, 864, 28);
+        ctx.fillRect(60, 120, 904, 32);
+        ctx.fillRect(60, 880, 904, 40);
 
-        ctx.font = '900 136px sans-serif';
-        ctx.fillText('X X', 160, 460);
+        ctx.font = '900 120px sans-serif';
+        ctx.fillText('X X X Y', 120, 440);
 
-        ctx.font = 'bold 48px monospace';
-        ctx.fillText('PROJECT: PRINTSTREAM', 160, 580);
-        ctx.fillText('STAT: VER 2.0.4 ACTIVE', 160, 648);
+        ctx.font = 'bold 44px monospace';
+        ctx.fillText('PROJECT: PRINTSTREAM // REVISION 3.2', 120, 540);
+        ctx.fillText('OPTICAL ILLUSION // PEARLESCENT FINISH', 120, 600);
+
+        // Holographic Color Swatch Dots
+        const swatchCols = ['#00e5ff', '#ff007f', '#ffd600', '#00e676'];
+        swatchCols.forEach((col, idx) => {
+          ctx.fillStyle = col;
+          ctx.beginPath();
+          ctx.arc(140 + idx * 45, 680, 14, 0, Math.PI * 2);
+          ctx.fill();
+        });
 
       } else if (nameLower.includes('doppler') || nameLower.includes('sapphire')) {
         // --- DOPPLER SAPPHIRE ---
@@ -1283,6 +1559,7 @@
     const canvasTexture = new THREE.CanvasTexture(canvas);
     canvasTexture.wrapS = THREE.RepeatWrapping;
     canvasTexture.wrapT = THREE.RepeatWrapping;
+    canvasTexture.encoding = THREE.sRGBEncoding;
 
     if (skin.img) {
       const img = new Image();
@@ -1294,13 +1571,206 @@
       img.src = skin.img;
     }
 
+    const isDragonLore = nameLower.includes('dragon lore') || nameLower.includes('lore');
+    const scopeTexture = generateAwpScopeTexture(isDragonLore);
+
     const result = {
       canvasTex: canvasTexture,
-      decalTex: decalTexture || canvasTexture
+      decalTex: decalTexture || canvasTexture,
+      scopeTex: scopeTexture
     };
 
     skinCanvasCache[key] = result;
     return result;
+  }
+
+  // --- AWP SCOPE TEXTURE GENERATOR (CS2 EMERALD CHECKERBOARD) ---
+  function generateAwpScopeTexture(isDragonLore) {
+    const c = document.createElement('canvas');
+    c.width = 512;
+    c.height = 512;
+    const ctx = c.getContext('2d');
+
+    if (isDragonLore) {
+      // Iconic CS2 AWP Dragon Lore Green & Olive/Gold Checkerboard
+      const size = 32;
+      const col1 = '#1c4a2a'; // Forest emerald
+      const col2 = '#0d2616'; // Deep hunter green
+      for (let y = 0; y < 512; y += size) {
+        for (let x = 0; x < 512; x += size) {
+          ctx.fillStyle = ((x / size + y / size) % 2 === 0) ? col1 : col2;
+          ctx.fillRect(x, y, size, size);
+        }
+      }
+      // Gold cross grid lines
+      ctx.strokeStyle = 'rgba(212, 175, 55, 0.45)';
+      ctx.lineWidth = 2;
+      for (let i = 0; i <= 512; i += size) {
+        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 512); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(512, i); ctx.stroke();
+      }
+    } else {
+      // Matte Tactical Carbon / Dark Gunmetal
+      ctx.fillStyle = '#1c1e22';
+      ctx.fillRect(0, 0, 512, 512);
+      ctx.strokeStyle = '#2d3139';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 512; i += 16) {
+        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 512); ctx.stroke();
+      }
+    }
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(4, 2);
+    tex.encoding = THREE.sRGBEncoding;
+    return tex;
+  }
+
+  // --- BAKED 2048x2048 ASIIMOV UV ATLAS FOR 3D AK-47 MODEL ---
+  function generateBakedAsiimovTexture() {
+    if (akBakedAsiimovTexture) return akBakedAsiimovTexture;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 2048;
+    canvas.height = 2048;
+    const ctx = canvas.getContext('2d');
+
+    // Base Matte White Ceramic Coating (CS2 Asiimov signature)
+    ctx.fillStyle = '#f3f4f7';
+    ctx.fillRect(0, 0, 2048, 2048);
+
+    // Micro Hexagonal Composite Texture Pattern across weapon
+    ctx.strokeStyle = 'rgba(210, 215, 225, 0.35)';
+    ctx.lineWidth = 1;
+    const hexSize = 28;
+    for (let y = 0; y < 2048; y += hexSize * 1.5) {
+      for (let x = 0; x < 2048; x += hexSize * Math.sqrt(3)) {
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+          const angle = (Math.PI / 3) * i;
+          const hx = x + hexSize * Math.cos(angle);
+          const hy = y + hexSize * Math.sin(angle);
+          if (i === 0) ctx.moveTo(hx, hy);
+          else ctx.lineTo(hx, hy);
+        }
+        ctx.closePath();
+        ctx.stroke();
+      }
+    }
+
+    // Dark Carbon Fiber Panels (#1c1e22)
+    ctx.fillStyle = '#1c1e22';
+    ctx.fillRect(400, 200, 1100, 180);
+    ctx.fillRect(150, 600, 450, 400);
+    ctx.fillRect(800, 850, 600, 300);
+    ctx.fillRect(1500, 1200, 450, 500);
+
+    // Vivid CS2 Asiimov Cyber-Orange Shapes (#ff5e00, #ff6b14)
+    const drawOrangePolygon = (pts) => {
+      ctx.fillStyle = '#ff5e00';
+      ctx.beginPath();
+      ctx.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = '#22252b';
+      ctx.lineWidth = 6;
+      ctx.stroke();
+    };
+
+    // Bold Diagonal Racing Stripes across Receiver
+    drawOrangePolygon([[300, 420], [700, 420], [600, 780], [200, 780]]);
+    drawOrangePolygon([[760, 420], [1050, 420], [950, 780], [660, 780]]);
+    drawOrangePolygon([[1120, 420], [1450, 420], [1350, 780], [1020, 780]]);
+
+    // Lower magazine accents
+    drawOrangePolygon([[500, 1200], [900, 1200], [800, 1750], [400, 1750]]);
+    ctx.fillStyle = '#1c1e22';
+    ctx.fillRect(550, 1300, 250, 40);
+    ctx.fillRect(530, 1400, 250, 40);
+    ctx.fillRect(510, 1500, 250, 40);
+
+    // Chevron Arrow Graphics
+    const drawChevron = (x, y, w, h, col) => {
+      ctx.fillStyle = col;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + w, y + h / 2);
+      ctx.lineTo(x, y + h);
+      ctx.lineTo(x + w * 0.4, y + h / 2);
+      ctx.closePath();
+      ctx.fill();
+    };
+
+    drawChevron(620, 500, 80, 120, '#ffffff');
+    drawChevron(720, 500, 80, 120, '#ffffff');
+    drawChevron(820, 500, 80, 120, '#1c1e22');
+
+    // Asiimov Stenciled Typography
+    ctx.fillStyle = '#1c1e22';
+    ctx.font = '900 64px "Arial Black", sans-serif';
+    ctx.fillText('ASIIMOV // 01', 350, 320);
+
+    ctx.font = '700 36px "Courier New", monospace';
+    ctx.fillStyle = '#ff5e00';
+    ctx.fillText('DESIGN / SPEC. 83-A', 355, 370);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '900 72px "Arial Black", sans-serif';
+    ctx.fillText('A // 77', 1200, 600);
+
+    // Crosshair glyphs
+    const drawTechCross = (cx, cy, s) => {
+      ctx.strokeStyle = '#ff5e00';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(cx - s, cy); ctx.lineTo(cx + s, cy);
+      ctx.moveTo(cx, cy - s); ctx.lineTo(cx, cy + s);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx, cy, s * 0.6, 0, Math.PI * 2);
+      ctx.stroke();
+    };
+
+    drawTechCross(500, 650, 30);
+    drawTechCross(1000, 650, 30);
+    drawTechCross(1350, 650, 30);
+
+    // Hazard diagonal stripes bar
+    const drawHazardBar = (x, y, w, h) => {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, w, h);
+      ctx.clip();
+      ctx.fillStyle = '#1c1e22';
+      ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = '#ff5e00';
+      for (let i = -h; i < w + h; i += 32) {
+        ctx.beginPath();
+        ctx.moveTo(x + i, y);
+        ctx.lineTo(x + i + 16, y);
+        ctx.lineTo(x + i + 16 - h, y + h);
+        ctx.lineTo(x + i - h, y + h);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    };
+
+    drawHazardBar(350, 720, 400, 32);
+    drawHazardBar(1100, 720, 350, 32);
+    drawHazardBar(500, 1150, 350, 28);
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.flipY = false;
+    tex.encoding = THREE.sRGBEncoding;
+
+    akBakedAsiimovTexture = tex;
+    return akBakedAsiimovTexture;
   }
 
   // --- 3D VIEWMODEL WITH DETAILED AK-47 & GLOVED ARMS ---
@@ -1683,9 +2153,303 @@
     const kRing = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.009, 8, 16), goldAccentMat);
     kRing.position.set(0, -0.1, 0.07);
     knifeGroup.add(kRing);
+
+    // ==========================================
+    // 5. SLOT 1: DEDICATED AUTHENTIC CS2 AWP (SNIPER)
+    // ==========================================
+    buildAwpModel();
   }
 
-  // --- APPLY SKIN TO SLOT ---
+  // --- DEDICATED CS2 AWP 3D VIEWMODEL ---
+  function buildAwpModel() {
+    awpGroup = new THREE.Group();
+    awpGroup.position.set(0, -0.01, 0.04);
+    awpGroup.visible = false;
+    weaponMesh.add(awpGroup);
+
+    const darkGunmetal = new THREE.MeshStandardMaterial({ color: 0x181a1f, roughness: 0.42, metalness: 0.85 });
+    const steelMat = new THREE.MeshStandardMaterial({ color: 0x3d434c, roughness: 0.28, metalness: 0.9 });
+    const leatherPadMat = new THREE.MeshStandardMaterial({ color: 0x4a3423, roughness: 0.75 });
+    const rubberMat = new THREE.MeshStandardMaterial({ color: 0x121417, roughness: 0.92 });
+    const lensGlassMat = new THREE.MeshPhysicalMaterial({
+      color: 0x0c2538,
+      roughness: 0.05,
+      metalness: 0.1,
+      transmission: 0.65,
+      transparent: true,
+      opacity: 0.88,
+      reflectivity: 0.95
+    });
+
+    // Main chassis material (Applied with Dragon Lore or Asiimov livery)
+    const awpChassisMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.26,
+      metalness: 0.22,
+      side: THREE.DoubleSide
+    });
+    awpMaterials.push(awpChassisMat);
+
+    // Scope checkerboard material (CS2 Emerald & Gold Checkerboard for Dragon Lore)
+    awpScopeCheckerMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.32,
+      metalness: 0.18
+    });
+
+    // --- 1. ACCURACY INTERNATIONAL AWP CHASSIS & THUMBHOLE STOCK ---
+    // Central receiver block
+    const chassisMid = new THREE.Mesh(new THREE.BoxGeometry(0.076, 0.115, 0.60), awpChassisMat);
+    chassisMid.position.set(0, 0.012, -0.06);
+    awpGroup.add(chassisMid);
+
+    // Front tapered forend handguard
+    const forend = new THREE.Mesh(new THREE.BoxGeometry(0.072, 0.088, 0.38), awpChassisMat);
+    forend.position.set(0, 0.006, -0.44);
+    awpGroup.add(forend);
+
+    // Rear thumbhole stock body
+    const stockMain = new THREE.Mesh(new THREE.BoxGeometry(0.066, 0.145, 0.36), awpChassisMat);
+    stockMain.rotation.x = -0.06;
+    stockMain.position.set(0, 0.018, 0.36);
+    awpGroup.add(stockMain);
+
+    // Lower thumbhole connector bridge
+    const stockBridge = new THREE.Mesh(new THREE.BoxGeometry(0.056, 0.038, 0.24), awpChassisMat);
+    stockBridge.position.set(0, -0.082, 0.26);
+    awpGroup.add(stockBridge);
+
+    // Ergonomic thumbhole pistol grip
+    const grip = new THREE.Mesh(new THREE.BoxGeometry(0.058, 0.15, 0.075), awpChassisMat);
+    grip.rotation.x = 0.36;
+    grip.position.set(0, -0.105, 0.12);
+    awpGroup.add(grip);
+
+    // Cheek Riser Pad (Leather / Polymer on top of stock)
+    const cheekRiser = new THREE.Mesh(new THREE.BoxGeometry(0.064, 0.038, 0.19), leatherPadMat);
+    cheekRiser.position.set(0, 0.098, 0.33);
+    awpGroup.add(cheekRiser);
+
+    // Adjustable Rubber Buttpad with Spacers
+    const buttpad = new THREE.Mesh(new THREE.BoxGeometry(0.070, 0.16, 0.048), rubberMat);
+    buttpad.position.set(0, -0.008, 0.55);
+    awpGroup.add(buttpad);
+
+    // Steel trigger guard & curved trigger
+    const triggerGuard = new THREE.Mesh(new THREE.TorusGeometry(0.034, 0.005, 6, 12, Math.PI), darkGunmetal);
+    triggerGuard.rotation.x = Math.PI;
+    triggerGuard.position.set(0, -0.062, 0.04);
+    awpGroup.add(triggerGuard);
+
+    const trigger = new THREE.Mesh(new THREE.BoxGeometry(0.007, 0.028, 0.01), darkGunmetal);
+    trigger.rotation.x = -0.28;
+    trigger.position.set(0, -0.052, 0.04);
+    awpGroup.add(trigger);
+
+    // 5-Round Box Magazine with Ribbed Detailing
+    const mag = new THREE.Mesh(new THREE.BoxGeometry(0.056, 0.135, 0.105), darkGunmetal);
+    mag.rotation.x = -0.08;
+    mag.position.set(0, -0.125, -0.08);
+    awpGroup.add(mag);
+
+    const magBase = new THREE.Mesh(new THREE.BoxGeometry(0.060, 0.016, 0.115), rubberMat);
+    magBase.rotation.x = -0.08;
+    magBase.position.set(0, -0.192, -0.085);
+    awpGroup.add(magBase);
+
+    // --- 2. MATCH-GRADE FLUTED BARREL & DUAL-PORT MUZZLE BRAKE ---
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.020, 0.023, 0.82, 16), darkGunmetal);
+    barrel.rotation.x = Math.PI / 2;
+    barrel.position.set(0, 0.044, -0.76);
+    awpGroup.add(barrel);
+
+    // 4 Long barrel flutes
+    for (let f = 0; f < 4; f++) {
+      const flute = new THREE.Mesh(new THREE.BoxGeometry(0.005, 0.006, 0.56), steelMat);
+      const ang = (f / 4) * Math.PI * 2;
+      flute.position.set(Math.cos(ang) * 0.022, 0.044 + Math.sin(ang) * 0.022, -0.76);
+      awpGroup.add(flute);
+    }
+
+    // Iconic Dual-Port Hexagonal Muzzle Brake
+    const muzzleBrake = new THREE.Mesh(new THREE.BoxGeometry(0.048, 0.044, 0.125), steelMat);
+    muzzleBrake.position.set(0, 0.044, -1.20);
+    awpGroup.add(muzzleBrake);
+
+    // Gas exhaust side cutouts
+    const port1 = new THREE.Mesh(new THREE.BoxGeometry(0.054, 0.024, 0.032), darkGunmetal);
+    port1.position.set(0, 0.044, -1.18);
+    awpGroup.add(port1);
+    const port2 = new THREE.Mesh(new THREE.BoxGeometry(0.054, 0.024, 0.032), darkGunmetal);
+    port2.position.set(0, 0.044, -1.23);
+    awpGroup.add(port2);
+
+    // Bore hole
+    const bore = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.013, 0.03, 12), rubberMat);
+    bore.rotation.x = Math.PI / 2;
+    bore.position.set(0, 0.044, -1.26);
+    awpGroup.add(bore);
+
+    // --- 3. FOLDED TACTICAL BIPOD (Front Underside) ---
+    const bipodMount = new THREE.Mesh(new THREE.BoxGeometry(0.046, 0.036, 0.05), steelMat);
+    bipodMount.position.set(0, -0.052, -0.44);
+    awpGroup.add(bipodMount);
+
+    [-0.038, 0.038].forEach(bx => {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.29, 8), darkGunmetal);
+      leg.rotation.x = Math.PI / 2 + 0.12;
+      leg.position.set(bx, -0.068, -0.30);
+      awpGroup.add(leg);
+
+      const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.008, 0.035, 8), rubberMat);
+      foot.rotation.x = Math.PI / 2 + 0.12;
+      foot.position.set(bx, -0.086, -0.15);
+      awpGroup.add(foot);
+    });
+
+    // --- 4. STEEL BOLT-ACTION MECHANISM & EXTENDED HANDLE ---
+    const ejectPort = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.04, 0.125), darkGunmetal);
+    ejectPort.position.set(0.032, 0.058, -0.04);
+    awpGroup.add(ejectPort);
+
+    const boltBody = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.12, 12), steelMat);
+    boltBody.rotation.x = Math.PI / 2;
+    boltBody.position.set(0.028, 0.058, -0.04);
+    awpGroup.add(boltBody);
+
+    const boltArm = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.008, 0.068, 8), steelMat);
+    boltArm.rotation.z = -Math.PI / 3.2;
+    boltArm.position.set(0.060, 0.070, 0.01);
+    awpGroup.add(boltArm);
+
+    const boltKnob = new THREE.Mesh(new THREE.SphereGeometry(0.017, 12, 12), rubberMat);
+    boltKnob.position.set(0.088, 0.088, 0.01);
+    awpGroup.add(boltKnob);
+
+    // --- 5. CS2 HIGH-MAGNIFICATION OPTICAL SNIPER SCOPE ---
+    // Picatinny Mounting Rail
+    const scopeRail = new THREE.Mesh(new THREE.BoxGeometry(0.034, 0.018, 0.33), darkGunmetal);
+    scopeRail.position.set(0, 0.078, -0.06);
+    awpGroup.add(scopeRail);
+
+    // Dual Heavy Clamping Scope Rings
+    [-0.15, 0.03].forEach(rz => {
+      const ringBase = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.036, 0.028), steelMat);
+      ringBase.position.set(0, 0.104, rz);
+      awpGroup.add(ringBase);
+
+      const ringClamp = new THREE.Mesh(new THREE.TorusGeometry(0.029, 0.006, 8, 16), steelMat);
+      ringClamp.position.set(0, 0.130, rz);
+      awpGroup.add(ringClamp);
+    });
+
+    // 34mm Main Scope Tube (Uses CS2 green/gold checkerboard)
+    const scopeTube = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.36, 16), awpScopeCheckerMat);
+    scopeTube.rotation.x = Math.PI / 2;
+    scopeTube.position.set(0, 0.130, -0.06);
+    awpGroup.add(scopeTube);
+
+    // Top Elevation Turret Dial
+    const topTurret = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.024, 16), steelMat);
+    topTurret.position.set(0, 0.160, -0.06);
+    awpGroup.add(topTurret);
+
+    // Right Windage Turret Dial
+    const sideTurret = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.024, 16), steelMat);
+    sideTurret.rotation.z = Math.PI / 2;
+    sideTurret.position.set(0.040, 0.130, -0.06);
+    awpGroup.add(sideTurret);
+
+    // Front Objective Bell (Large Conical flare with checkerboard pattern)
+    const objectiveBell = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.025, 0.145, 16), awpScopeCheckerMat);
+    objectiveBell.rotation.x = Math.PI / 2;
+    objectiveBell.position.set(0, 0.130, -0.315);
+    awpGroup.add(objectiveBell);
+
+    // Objective Sunshade Hood
+    const sunshade = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.042, 0.065, 16), darkGunmetal);
+    sunshade.rotation.x = Math.PI / 2;
+    sunshade.position.set(0, 0.130, -0.42);
+    awpGroup.add(sunshade);
+
+    // Front Optical Glass Lens (Deep anti-reflective emerald/sapphire coating)
+    const frontLens = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.038, 0.005, 16), lensGlassMat);
+    frontLens.rotation.x = Math.PI / 2;
+    frontLens.position.set(0, 0.130, -0.43);
+    awpGroup.add(frontLens);
+
+    // Rear Ocular Bell & Accordion Rubber Eyepiece
+    const ocularBell = new THREE.Mesh(new THREE.CylinderGeometry(0.033, 0.025, 0.10, 16), darkGunmetal);
+    ocularBell.rotation.x = -Math.PI / 2;
+    ocularBell.position.set(0, 0.130, 0.17);
+    awpGroup.add(ocularBell);
+
+    const eyeCup = new THREE.Mesh(new THREE.CylinderGeometry(0.034, 0.031, 0.046, 16), rubberMat);
+    eyeCup.rotation.x = Math.PI / 2;
+    eyeCup.position.set(0, 0.130, 0.24);
+    awpGroup.add(eyeCup);
+
+    const rearLens = new THREE.Mesh(new THREE.CylinderGeometry(0.029, 0.029, 0.005, 16), lensGlassMat);
+    rearLens.rotation.x = Math.PI / 2;
+    rearLens.position.set(0, 0.130, 0.245);
+    awpGroup.add(rearLens);
+
+    // --- 6. HIGH-RES TWO-SIDED ARTWORK DECALS (Dragon Lore / Asiimov) ---
+    awpSideDecalMat = new THREE.MeshStandardMaterial({
+      transparent: true,
+      alphaTest: 0.04,
+      roughness: 0.24,
+      metalness: 0.2,
+      polygonOffset: true,
+      polygonOffsetFactor: -1.2,
+      polygonOffsetUnits: -1.2,
+      side: THREE.DoubleSide
+    });
+
+    // Left Decal (Visible in standard 1st person aim)
+    const awpDecalLeft = new THREE.Mesh(new THREE.PlaneGeometry(1.44, 0.38), awpSideDecalMat);
+    awpDecalLeft.rotation.y = -Math.PI / 2;
+    awpDecalLeft.position.set(-0.0392, 0.008, -0.06);
+    awpGroup.add(awpDecalLeft);
+
+    // Right Decal (Visible during F inspect turnaround)
+    const awpDecalRight = new THREE.Mesh(new THREE.PlaneGeometry(1.44, 0.38), awpSideDecalMat);
+    awpDecalRight.rotation.y = Math.PI / 2;
+    awpDecalRight.scale.x = -1;
+    awpDecalRight.position.set(0.0392, 0.008, -0.06);
+    awpGroup.add(awpDecalRight);
+
+    // --- 7. GLOVED ARMS HOLDING AWP ---
+    const awpArmsGroup = new THREE.Group();
+    awpGroup.add(awpArmsGroup);
+
+    const gloveMat = new THREE.MeshStandardMaterial({ color: 0x242830, roughness: 0.8 });
+    const leatherSleeveMat = new THREE.MeshStandardMaterial({ color: 0x543d2b, roughness: 0.75 });
+
+    // Right Hand (Thumbhole Grip & Trigger)
+    const rHand = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.1, 0.12), gloveMat);
+    rHand.rotation.set(0.3, 0.1, -0.2);
+    rHand.position.set(0.04, -0.11, 0.12);
+    awpArmsGroup.add(rHand);
+
+    const rForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.075, 0.45, 12), leatherSleeveMat);
+    rForearm.rotation.set(0.8, -0.2, 0.5);
+    rForearm.position.set(0.18, -0.28, 0.32);
+    awpArmsGroup.add(rForearm);
+
+    // Left Hand (Cradling lower forend behind bipod)
+    const lHand = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.08, 0.14), gloveMat);
+    lHand.rotation.set(-0.1, -0.25, 0.35);
+    lHand.position.set(-0.05, -0.06, -0.32);
+    awpArmsGroup.add(lHand);
+
+    const lForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.075, 0.5, 12), leatherSleeveMat);
+    lForearm.rotation.set(0.4, 0.3, -0.6);
+    lForearm.position.set(-0.25, -0.26, -0.12);
+    awpArmsGroup.add(lForearm);
+  }
+
+  // --- APPLY SKIN TO SLOT (WITH DYNAMIC AWP / AK / M4 SWITCHING) ---
   function applySkinToSlot(slotNum, skin) {
     if (!skin) return;
     STATE.slots[slotNum].skin = skin;
@@ -1699,19 +2463,116 @@
     const res = generateSkinTexture(skin);
 
     if (slotNum === 1) {
-      rifleMaterials.forEach(m => { m.map = res.canvasTex; m.color.setHex(0xffffff); m.needsUpdate = true; });
-      if (rifleSideDecalMat) {
-        rifleSideDecalMat.map = res.decalTex;
-        rifleSideDecalMat.needsUpdate = true;
-      }
-      if (akRealMaterial) {
-        if (skin.id === 'ak-wildlotus' || (skin.name && skin.name.toLowerCase().includes('lotus'))) {
-          akRealMaterial.map = akBakedLotusTexture;
-        } else {
-          akRealMaterial.map = res.canvasTex;
+      const isAwp = (skin.weapon === 'AWP');
+      const isAk = (skin.weapon === 'AK-47');
+
+      if (isAwp) {
+        STATE.slots[1].weapon = 'AWP';
+        STATE.slots[1].maxAmmo = 5;
+        STATE.slots[1].ammo = 5;
+        STATE.slots[1].reserveAmmo = 30;
+        STATE.slots[1].damageBody = 115; // 1-shot body kill!
+        STATE.slots[1].damageHead = 450;
+        STATE.slots[1].fireRate = 1250; // Bolt-action cycle delay
+
+        if (awpGroup) awpGroup.visible = (STATE.currentSlot === 1);
+        if (akRealGroup) akRealGroup.visible = false;
+        if (rifleGroup) rifleGroup.visible = false;
+
+        awpMaterials.forEach(m => {
+          m.map = res.canvasTex;
+          m.color.setHex(0xffffff);
+          m.needsUpdate = true;
+        });
+
+        if (awpScopeCheckerMat) {
+          awpScopeCheckerMat.map = res.scopeTex || res.canvasTex;
+          awpScopeCheckerMat.needsUpdate = true;
         }
-        akRealMaterial.needsUpdate = true;
+
+        if (awpSideDecalMat) {
+          awpSideDecalMat.map = res.decalTex;
+          awpSideDecalMat.needsUpdate = true;
+        }
+
+        if (muzzleFlashLight && muzzleSprite) {
+          muzzleFlashLight.position.set(0, 0.044, -1.26);
+          muzzleSprite.position.set(0, 0.044, -1.26);
+        }
+
+      } else if (isAk) {
+        STATE.slots[1].weapon = 'AK-47';
+        STATE.slots[1].maxAmmo = 30;
+        STATE.slots[1].ammo = 30;
+        STATE.slots[1].reserveAmmo = 90;
+        STATE.slots[1].damageBody = 35;
+        STATE.slots[1].damageHead = 100;
+        STATE.slots[1].fireRate = 105;
+
+        if (awpGroup) awpGroup.visible = false;
+
+        if (akRealGroup) {
+          akRealGroup.visible = (STATE.currentSlot === 1);
+          if (rifleGroup) rifleGroup.visible = false;
+
+          if (akRealMaterial) {
+            const isLotus = skin.id === 'ak-wildlotus' || (skin.name && skin.name.toLowerCase().includes('lotus'));
+            const isAsiimov = skin.id === 'ak-asiimov' || (skin.name && skin.name.toLowerCase().includes('asiimov'));
+
+            if (isLotus) {
+              akRealMaterial.map = akBakedLotusTexture;
+              akRealMaterial.roughness = 0.18;
+            } else if (isAsiimov) {
+              akRealMaterial.map = generateBakedAsiimovTexture();
+              akRealMaterial.roughness = 0.22;
+            } else {
+              akRealMaterial.map = res.canvasTex;
+              akRealMaterial.roughness = 0.25;
+            }
+            akRealMaterial.needsUpdate = true;
+          }
+        } else {
+          if (rifleGroup) rifleGroup.visible = (STATE.currentSlot === 1);
+        }
+
+        rifleMaterials.forEach(m => { m.map = res.canvasTex; m.color.setHex(0xffffff); m.needsUpdate = true; });
+        if (rifleSideDecalMat) {
+          rifleSideDecalMat.map = res.decalTex;
+          rifleSideDecalMat.needsUpdate = true;
+        }
+
+        if (muzzleFlashLight && muzzleSprite) {
+          muzzleFlashLight.position.set(0, 0.02, -0.75);
+          muzzleSprite.position.set(0, 0.02, -0.75);
+        }
+
+      } else {
+        // M4A4 or other Primary Rifle
+        STATE.slots[1].weapon = skin.weapon || 'M4A4';
+        STATE.slots[1].maxAmmo = 30;
+        STATE.slots[1].ammo = 30;
+        STATE.slots[1].reserveAmmo = 90;
+        STATE.slots[1].damageBody = 33;
+        STATE.slots[1].damageHead = 92;
+        STATE.slots[1].fireRate = 90;
+
+        if (awpGroup) awpGroup.visible = false;
+        if (akRealGroup) akRealGroup.visible = false;
+        if (rifleGroup) {
+          rifleGroup.visible = (STATE.currentSlot === 1);
+          rifleMaterials.forEach(m => { m.map = res.canvasTex; m.color.setHex(0xffffff); m.needsUpdate = true; });
+          if (rifleSideDecalMat) {
+            rifleSideDecalMat.map = res.decalTex;
+            rifleSideDecalMat.needsUpdate = true;
+          }
+        }
+
+        if (muzzleFlashLight && muzzleSprite) {
+          muzzleFlashLight.position.set(0, 0.02, -0.75);
+          muzzleSprite.position.set(0, 0.02, -0.75);
+        }
       }
+
     } else if (slotNum === 2) {
       pistolMaterials.forEach(m => { m.map = res.canvasTex; m.color.setHex(0xffffff); m.needsUpdate = true; });
       if (pistolSideDecalMat) {
@@ -1748,23 +2609,53 @@
 
     playDeploySound(slotNum);
 
-    if (akRealGroup) {
-      akRealGroup.visible = (slotNum === 1);
-      if (rifleGroup) rifleGroup.visible = false;
-    } else {
-      if (rifleGroup) rifleGroup.visible = (slotNum === 1);
-    }
-    if (pistolGroup) pistolGroup.visible = (slotNum === 2);
-    if (knifeGroup) knifeGroup.visible = (slotNum === 3);
+    const isAwp = (STATE.slots[1].weapon === 'AWP');
 
-    if (muzzleFlashLight && muzzleSprite) {
-      if (slotNum === 1) {
-        muzzleFlashLight.position.set(0, 0.02, -0.75);
-        muzzleSprite.position.set(0, 0.02, -0.75);
-      } else if (slotNum === 2) {
+    if (slotNum === 1) {
+      if (isAwp) {
+        if (awpGroup) awpGroup.visible = true;
+        if (akRealGroup) akRealGroup.visible = false;
+        if (rifleGroup) rifleGroup.visible = false;
+        if (muzzleFlashLight && muzzleSprite) {
+          muzzleFlashLight.position.set(0, 0.044, -1.26);
+          muzzleSprite.position.set(0, 0.044, -1.26);
+        }
+      } else if (akRealGroup) {
+        akRealGroup.visible = true;
+        if (awpGroup) awpGroup.visible = false;
+        if (rifleGroup) rifleGroup.visible = false;
+        if (muzzleFlashLight && muzzleSprite) {
+          muzzleFlashLight.position.set(0, 0.02, -0.75);
+          muzzleSprite.position.set(0, 0.02, -0.75);
+        }
+      } else {
+        if (rifleGroup) rifleGroup.visible = true;
+        if (awpGroup) awpGroup.visible = false;
+        if (muzzleFlashLight && muzzleSprite) {
+          muzzleFlashLight.position.set(0, 0.02, -0.75);
+          muzzleSprite.position.set(0, 0.02, -0.75);
+        }
+      }
+      if (pistolGroup) pistolGroup.visible = false;
+      if (knifeGroup) knifeGroup.visible = false;
+
+    } else if (slotNum === 2) {
+      if (awpGroup) awpGroup.visible = false;
+      if (akRealGroup) akRealGroup.visible = false;
+      if (rifleGroup) rifleGroup.visible = false;
+      if (pistolGroup) pistolGroup.visible = true;
+      if (knifeGroup) knifeGroup.visible = false;
+      if (muzzleFlashLight && muzzleSprite) {
         muzzleFlashLight.position.set(0, 0.06, -0.28);
         muzzleSprite.position.set(0, 0.06, -0.28);
       }
+
+    } else if (slotNum === 3) {
+      if (awpGroup) awpGroup.visible = false;
+      if (akRealGroup) akRealGroup.visible = false;
+      if (rifleGroup) rifleGroup.visible = false;
+      if (pistolGroup) pistolGroup.visible = false;
+      if (knifeGroup) knifeGroup.visible = true;
     }
 
     [1, 2, 3].forEach(s => {
@@ -1895,24 +2786,35 @@
     updateWeaponHUD();
 
     if (STATE.currentSlot === 1) {
-      playRifleShotSound();
+      const isAwp = (cur.weapon === 'AWP');
+      if (isAwp) {
+        playAwpShotSound();
+        // Heavy AWP sniper kickback & screen impulse
+        recoilOffset.z = 0.22;
+        recoilOffset.y = 0.08;
+        recoilRot.x = 0.28;
+        recoilRot.y = (Math.random() - 0.5) * 0.04;
+        player.pitch += 0.024;
+      } else {
+        playRifleShotSound();
 
-      if (akRealActions['fire']) {
-        akRealActions['fire'].stop();
-        akRealActions['fire'].play();
+        if (akRealActions['fire']) {
+          akRealActions['fire'].stop();
+          akRealActions['fire'].play();
+        }
+
+        // CS2 AK Spray Recoil Progression
+        const sprayY = Math.min(0.06, 0.02 + (STATE.sprayCount * 0.003));
+        const sprayX = (Math.sin(STATE.sprayCount * 0.8) * 0.02);
+
+        recoilOffset.z = 0.08;
+        recoilOffset.y = sprayY;
+        recoilRot.x = 0.1 + Math.min(0.08, STATE.sprayCount * 0.004);
+        recoilRot.y = sprayX;
+
+        // Subtle screen recoil
+        player.pitch += 0.008;
       }
-
-      // CS2 AK Spray Recoil Progression
-      const sprayY = Math.min(0.06, 0.02 + (STATE.sprayCount * 0.003));
-      const sprayX = (Math.sin(STATE.sprayCount * 0.8) * 0.02);
-
-      recoilOffset.z = 0.08;
-      recoilOffset.y = sprayY;
-      recoilRot.x = 0.1 + Math.min(0.08, STATE.sprayCount * 0.004);
-      recoilRot.y = sprayX;
-
-      // Subtle screen recoil
-      player.pitch += 0.008;
     } else {
       playPistolShotSound();
       recoilOffset.z = 0.09;
@@ -1932,8 +2834,17 @@
 
     // Bullet Raycast Hit
     const raycaster = new THREE.Raycaster();
-    // When scoped: laser precision; when spraying: slight spread
-    const spreadFactor = STATE.isScoped ? 0.001 : (STATE.currentSlot === 1 ? Math.min(0.04, STATE.sprayCount * 0.003) : 0.008);
+    const isAwp = (STATE.currentSlot === 1 && cur.weapon === 'AWP');
+    let spreadFactor;
+    if (isAwp) {
+      spreadFactor = STATE.isScoped ? 0.0001 : 0.085; // Scoped = laser pinpoint; Unscoped = noscope spread
+    } else if (STATE.isScoped) {
+      spreadFactor = 0.001;
+    } else if (STATE.currentSlot === 1) {
+      spreadFactor = Math.min(0.04, STATE.sprayCount * 0.003);
+    } else {
+      spreadFactor = 0.008;
+    }
     const spreadX = (Math.random() - 0.5) * spreadFactor;
     const spreadY = (Math.random() - 0.5) * spreadFactor;
 
@@ -2335,17 +3246,18 @@
     const dt = Math.min((now - lastTime) / 1000, 0.05);
     lastTime = now;
 
-    // FULL-AUTO SPRAY LOOP (Sấy liên thanh AK 30 viên khi giữ chuột trái)
+    // FULL-AUTO SPRAY LOOP (Only for rifles like AK/M4; AWP is bolt-action)
     if (isPointerLocked && STATE.isMouseDown && STATE.currentSlot === 1 && !STATE.isReloading && !STATE.isSwitching) {
       const curSlot = STATE.slots[1];
-      if (now - STATE.lastShotTime >= curSlot.fireRate) {
+      if (curSlot.weapon !== 'AWP' && (now - STATE.lastShotTime >= curSlot.fireRate)) {
         fireSingleBullet();
         STATE.lastShotTime = now;
       }
     }
 
-    // Camera FOV Zoom for Sniper Scope
-    const targetFOV = STATE.isScoped ? 22 : 75;
+    // Camera FOV Zoom for Sniper Scope (AWP optical zoom 18 deg; Rifle 24 deg)
+    const isAwpWeapon = (STATE.slots[1].weapon === 'AWP');
+    const targetFOV = STATE.isScoped ? (isAwpWeapon ? 18 : 24) : 75;
     if (Math.abs(camera.fov - targetFOV) > 0.1) {
       camera.fov = THREE.MathUtils.lerp(camera.fov, targetFOV, dt * 18);
       camera.updateProjectionMatrix();
@@ -2484,6 +3396,10 @@
 
       weaponMesh.position.set(posX, posY, posZ);
       weaponMesh.rotation.set(rotX, rotY, rotZ);
+
+      if (awpGroup) {
+        awpGroup.visible = (STATE.currentSlot === 1 && STATE.slots[1].weapon === 'AWP' && !STATE.isScoped);
+      }
     }
 
     // Update targets

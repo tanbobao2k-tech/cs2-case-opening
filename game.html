@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/game.css?v=9" />
+  <link rel="stylesheet" href="css/game.css?v=11" />
 </head>
 <body>
   <!-- 3D WebGL Canvas Container -->
@@ -21,11 +21,21 @@
   <div id="crosshair"></div>
   <div id="hit-indicator">HEADSHOT!</div>
 
-  <!-- Sniper Scope Overlay (Chuột phải AWP) -->
+  <!-- CS2 Sniper Scope Overlay (Chuột phải AWP) -->
   <div id="sniper-scope" class="hidden">
-    <div class="scope-ring"></div>
-    <div class="scope-crosshair-h"></div>
-    <div class="scope-crosshair-v"></div>
+    <div class="scope-ring">
+      <div class="scope-lens-tint"></div>
+      <div class="scope-crosshair-h"></div>
+      <div class="scope-crosshair-v"></div>
+      <div class="scope-mil-ticks-h"></div>
+      <div class="scope-mil-ticks-v"></div>
+      <div class="scope-center-dot"></div>
+      <div class="scope-bracket-tl"></div>
+      <div class="scope-bracket-tr"></div>
+      <div class="scope-bracket-bl"></div>
+      <div class="scope-bracket-br"></div>
+      <div class="scope-lens-glare"></div>
+    </div>
   </div>
 
   <!-- HUD: Top Bar -->
@@ -158,6 +168,6 @@
   <!-- Three.js GLTF Loader -->
   <script src="js/GLTFLoader.js"></script>
   <!-- Game Engine -->
-  <script src="js/fps-game.js?v=10"></script>
+  <script src="js/fps-game.js?v=11"></script>
 </body>
 </html>
