@@ -42,7 +42,6 @@ async function adminFetch(endpoint, options = {}) {
   const headers = {
     "Content-Type": "application/json",
     "Authorization": `Bearer ${currentAdminToken}`,
-    "X-Admin-Key": currentAdminToken,
     ...(options.headers || {}),
   };
 
