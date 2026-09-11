@@ -6,11 +6,11 @@ const ITEMS=window.CS2_ITEMS,OFFICIAL=window.CS2_CASES,RARITY={1:{name:"Mil-Spec
   openModal("#modal-battle-setup");
 }
 function renderBattleSetup(){
-  $("#bs-type button").forEach(t=>t.classList.toggle("active",t.dataset.type===(bs.type||"online")));
+  $$("#bs-type button").forEach(t=>t.classList.toggle("active",t.dataset.type===(bs.type||"online")));
   const botField=$("#bs-bots-field");
   if(botField) botField.hidden=(bs.type==="online");
-  $("#bs-bots button").forEach(t=>t.classList.toggle("active",Number(t.dataset.bots)===bs.bots));
-  $("#bs-mode button").forEach(t=>t.classList.toggle("active",t.dataset.mode===bs.mode));
+  $$("#bs-bots button").forEach(t=>t.classList.toggle("active",Number(t.dataset.bots)===bs.bots));
+  $$("#bs-mode button").forEach(t=>t.classList.toggle("active",t.dataset.mode===bs.mode));
   const t=$("#bs-selected");t.innerHTML="";const e=new Map;
   bs.cases.forEach(t=>e.set(t,(e.get(t)||0)+1));
   e.forEach((e,n)=>{
@@ -985,7 +985,7 @@ function initOnlineBattles() {
   const pvpEmptyBtn = $("#battle-pvp-empty-create-btn");
   if (pvpEmptyBtn) pvpEmptyBtn.onclick = () => openBattleSetup(null, "online");
 
-  const botNewBtn = $("#battle-bot-new-btn");
+  const botNewBtn = $("#battle-bot-new-btn") || $("#battle-new");
   if (botNewBtn) botNewBtn.onclick = () => openBattleSetup(null, "bot");
 
   const pvpRefreshBtn = $("#battle-pvp-refresh-btn");
